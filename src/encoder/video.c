@@ -25,7 +25,7 @@ void srVideoEncoderCreate(SREncoder* encoder, const SRInput* input) {
    av_dict_set(&options, "global_quality", "30", 0);
    if ((ret = srEncoderCreate(encoder, &(SREncoderParams){
       .input = input,
-      .name = "h264x_vaapi",
+      .name = "h264_vaapi",
       .format = AV_PIX_FMT_NV12,
       .options = &options,
       .hwType = AV_HWDEVICE_TYPE_VAAPI,

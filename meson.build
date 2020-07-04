@@ -14,7 +14,7 @@ configure_file(
 )
 
 executable(
-   'replay', [
+   'source-replay', [
       'src/main.c',
       'src/error.c',
       'src/pktcircle.c',

@@ -2,18 +2,25 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+#include "main.h"
 #include "error.h"
 #include "record.h"
 #include "save.h"
 #include "user/user.h"
 #include "user/default.h"
 #include <stdlib.h>
+#include <signal.h>
 
 static struct {
    SRUser user;
 } priv;
 
-static void mainExit(void) {
+static void mainSignal(int signal) {
+   (void)signal;
+   srMainExit();
+}
+
+void srMainExit(void) {
    srUserDestroy(&priv.user);
    srSaveExit();
    srRecordExit();
@@ -23,6 +30,9 @@ static void mainExit(void) {
 int main(int argv, char** argc) {
    (void)argc;
    (void)argv;
+   signal(SIGINT, mainSignal);
+   signal(SIGTERM, mainSignal);
+
    srErrorInit();
    srRecordInit();
    srSaveInit();
