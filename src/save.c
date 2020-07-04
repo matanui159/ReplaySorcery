@@ -7,6 +7,8 @@
 #include "pktcircle.h"
 #include "record.h"
 #include "encoder/encoder.h"
+#include <libavutil/avutil.h>
+#include <libavutil/opt.h>
 #include <libavformat/avformat.h>
 
 static struct {
@@ -26,6 +28,7 @@ void srSave(void) {
    AVFormatContext* formatCtx;
    srCheck(avformat_alloc_output_context2(&formatCtx, NULL, NULL, file));
    srCheck(avio_open2(&formatCtx->pb, file, AVIO_FLAG_WRITE, NULL, NULL));
+   srCheck(av_opt_set(formatCtx, "movflags", "+faststart", AV_OPT_SEARCH_CHILDREN));
 
    const SREncoder* encoder = srRecordVideo();
    AVStream* stream = avformat_new_stream(formatCtx, encoder->codecCtx->codec);
