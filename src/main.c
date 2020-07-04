@@ -6,10 +6,10 @@
 #include "error.h"
 #include "record.h"
 #include "save.h"
-#include "user/user.h"
 #include "user/default.h"
-#include <stdlib.h>
+#include "user/user.h"
 #include <signal.h>
+#include <stdlib.h>
 
 static struct {
    /**

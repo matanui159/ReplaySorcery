@@ -4,8 +4,8 @@
 
 #include "debug.h"
 #include "../main.h"
-#include <stdio.h>
 #include <libavutil/avutil.h>
+#include <stdio.h>
 
 static void debugUserWait(RSUser* user) {
    (void)user;

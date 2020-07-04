@@ -3,15 +3,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "record.h"
+#include "encoder/video.h"
 #include "error.h"
 #include "input/input.h"
 #include "input/video.h"
-#include "encoder/video.h"
-#include <stdbool.h>
-#include <pthread.h>
-#include <libavutil/avutil.h>
-#include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/avutil.h>
+#include <pthread.h>
+#include <stdbool.h>
 
 static struct {
    RSInput input;

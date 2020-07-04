@@ -4,15 +4,15 @@
 
 #ifndef RS_PKTCIRCLE_H
 #define RS_PKTCIRCLE_H
-#include <pthread.h>
 #include <libavcodec/avcodec.h>
+#include <pthread.h>
 
 /**
  * A circle buffer of packets. Allows reading making copies from other threads while one
  * thread is writing to it. Note that for performance and code simplicity only one thread
  * can write to it at a time. Also note that the creation and destruction functions are in
  * no way multi-thread safe.
- * 
+ *
  * To write to the packet circle, write into `input` and then call `rsPacketCircleRotate`
  * which will change what `input` is pointing to. Repeat.
  *

@@ -4,8 +4,8 @@
 
 #include "error.h"
 #include "rs-config.h"
-#include <stdlib.h>
 #include <signal.h>
+#include <stdlib.h>
 
 /**
  * Same as the `UNW_INIT_SIGNAL_FRAME` flag but always defined even if libunwind is not
@@ -39,7 +39,7 @@ static int errorUnwind(int flags) {
       if (unw_get_proc_name(&cursor, name, ERROR_NAME_SIZE, &offset) < 0) {
          av_log(NULL, AV_LOG_INFO, " - ???\n");
       } else {
-         av_log(NULL, AV_LOG_INFO, " - %s+%"PRIXPTR"\n", name, offset);
+         av_log(NULL, AV_LOG_INFO, " - %s+%" PRIXPTR "\n", name, offset);
       }
    } while ((ret = unw_step(&cursor)) > 0);
    return ret;
@@ -68,15 +68,15 @@ static av_noreturn void errorImpl(int error, int flags) {
  */
 static void errorSignal(int signal) {
    switch (signal) {
-      case SIGSEGV:
-         av_log(NULL, AV_LOG_ERROR, "Segment violation\n");
-         break;
-      case SIGILL:
-         av_log(NULL, AV_LOG_ERROR, "Illegal program\n");
-         break;
-      case SIGFPE:
-         av_log(NULL, AV_LOG_ERROR, "Floating point error\n");
-         break;
+   case SIGSEGV:
+      av_log(NULL, AV_LOG_ERROR, "Segment violation\n");
+      break;
+   case SIGILL:
+      av_log(NULL, AV_LOG_ERROR, "Illegal program\n");
+      break;
+   case SIGFPE:
+      av_log(NULL, AV_LOG_ERROR, "Floating point error\n");
+      break;
    }
    // We use `ERROR_SIGNAL` here since we are in a signal handler.
    errorImpl(AVERROR_BUG, ERROR_SIGNAL);

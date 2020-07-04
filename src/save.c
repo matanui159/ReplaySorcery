@@ -3,17 +3,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "save.h"
+#include "encoder/encoder.h"
 #include "error.h"
 #include "pktcircle.h"
 #include "record.h"
-#include "encoder/encoder.h"
+#include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libavutil/opt.h>
-#include <libavformat/avformat.h>
 
-static struct {
-   RSPacketCircle pktCircle;
-} priv;
+static struct { RSPacketCircle pktCircle; } priv;
 
 void rsSaveInit(void) {
    rsPacketCircleCreate(&priv.pktCircle);

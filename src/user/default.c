@@ -3,8 +3,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "default.h"
-#include "debug.h"
 #include "../error.h"
+#include "debug.h"
 #include <libavutil/avutil.h>
 
 void rsDefaultUserCreate(RSUser* user) {

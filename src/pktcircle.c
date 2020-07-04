@@ -14,8 +14,9 @@
 /**
  * Iterates all the indices in the packet circle that current contain data.
  */
-#define PACKET_CIRCLE_FOREACH(pktCircle, index) \
-   for (size_t index = (pktCircle)->head; index != (pktCircle)->tail; PACKET_CIRCLE_NEXT(pktCircle, index))
+#define PACKET_CIRCLE_FOREACH(pktCircle, index)                                          \
+   for (size_t index = (pktCircle)->head; index != (pktCircle)->tail;                    \
+        PACKET_CIRCLE_NEXT(pktCircle, index))
 
 /**
  * Internal implementation of `rsPacketCircleClear` that does not lock the mutex. Used in

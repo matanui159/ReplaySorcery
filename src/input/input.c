@@ -4,14 +4,15 @@
 
 #include "input.h"
 #include "../error.h"
-#include <string.h>
 #include <libavdevice/avdevice.h>
+#include <string.h>
 
 void rsInputInit(void) {
    avdevice_register_all();
 }
 
-int rsInputCreate(RSInput* input, const char* name, const char* url, AVDictionary** options) {
+int rsInputCreate(RSInput* input, const char* name, const char* url,
+                  AVDictionary** options) {
    AVInputFormat* format = av_find_input_format(name);
    if (format == NULL) {
       av_dict_free(options);

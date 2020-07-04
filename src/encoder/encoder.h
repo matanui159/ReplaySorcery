@@ -4,12 +4,12 @@
 
 #ifndef RS_ENCODER_H
 #define RS_ENCODER_H
-#include "../pktcircle.h"
 #include "../input/input.h"
+#include "../pktcircle.h"
+#include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
 #include <libavutil/dict.h>
 #include <libavutil/hwcontext.h>
-#include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
 
 /**

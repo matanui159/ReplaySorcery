@@ -4,10 +4,10 @@
 
 #ifndef RS_INPUT_H
 #define RS_INPUT_H
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libavutil/dict.h>
-#include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
 
 /**
  * A single stream A/V input device.
@@ -44,7 +44,8 @@ void rsInputInit(void);
  * `options` is a dictionary of options to pass to the device creation. This will be freed
  * before this function returns, even if it failed.
  */
-int rsInputCreate(RSInput* input, const char* name, const char* url, AVDictionary** options);
+int rsInputCreate(RSInput* input, const char* name, const char* url,
+                  AVDictionary** options);
 
 /**
  * Destroys the input device.

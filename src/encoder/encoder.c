@@ -5,9 +5,11 @@
 #include "encoder.h"
 #include "../error.h"
 
-static int encoderHardwareCreate(RSEncoder* encoder, const RSEncoderParams* params, AVCodecContext* inputCodec) {
+static int encoderHardwareCreate(RSEncoder* encoder, const RSEncoderParams* params,
+                                 AVCodecContext* inputCodec) {
    int ret;
-   if ((ret = av_hwdevice_ctx_create(&encoder->hwDeviceRef, params->hwType, NULL, NULL, 0)) < 0) {
+   if ((ret = av_hwdevice_ctx_create(&encoder->hwDeviceRef, params->hwType, NULL, NULL,
+                                     0)) < 0) {
       return ret;
    }
 
@@ -77,10 +79,8 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
 
    if (encoder->format != inputCodec->pix_fmt) {
       encoder->scaleCtx = sws_getContext(
-         inputCodec->width, inputCodec->height, inputCodec->pix_fmt,
-         outputCodec->width, outputCodec->height, encoder->format,
-         SWS_FAST_BILINEAR, NULL, NULL, NULL
-      );
+          inputCodec->width, inputCodec->height, inputCodec->pix_fmt, outputCodec->width,
+          outputCodec->height, encoder->format, SWS_FAST_BILINEAR, NULL, NULL, NULL);
       if (encoder->scaleCtx == NULL) rsError(AVERROR_EXTERNAL);
 
       encoder->scaleFrame = av_frame_alloc();
@@ -107,12 +107,9 @@ void rsEncoderDestroy(RSEncoder* encoder) {
 void rsEncode(RSEncoder* encoder, const AVFrame* frame) {
    AVFrame* inputFrame = (AVFrame*)frame;
    if (encoder->scaleCtx != NULL) {
-      sws_scale(
-         encoder->scaleCtx,
-         (const uint8_t* const*)inputFrame->data, inputFrame->linesize,
-         0, inputFrame->height,
-         encoder->scaleFrame->data, encoder->scaleFrame->linesize
-      );
+      sws_scale(encoder->scaleCtx, (const uint8_t* const*)inputFrame->data,
+                inputFrame->linesize, 0, inputFrame->height, encoder->scaleFrame->data,
+                encoder->scaleFrame->linesize);
       inputFrame = encoder->scaleFrame;
    }
 
@@ -124,7 +121,8 @@ void rsEncode(RSEncoder* encoder, const AVFrame* frame) {
    if (inputFrame != frame) {
       rsCheck(av_frame_copy_props(inputFrame, frame));
    }
-   inputFrame->pts = av_rescale_q(inputFrame->pts, encoder->inputBase, encoder->codecCtx->time_base);
+   inputFrame->pts =
+       av_rescale_q(inputFrame->pts, encoder->inputBase, encoder->codecCtx->time_base);
 
    rsCheck(avcodec_send_frame(encoder->codecCtx, inputFrame));
    int ret = avcodec_receive_packet(encoder->codecCtx, encoder->pktCircle.input);
