@@ -1,6 +1,6 @@
 # ReplaySorcery
 ## An open-source, instant-replay solution for Linux.
-Back when I used to use windows I used AMD ReLive alot. It, and the nVidia version ShadowPlay Instand Replay, will constantly record the screen without using too much computer resources and at the press of a keycombo will save the last 30 seconds.
+Back when I used to use windows I used AMD ReLive alot. It, and the nVidia version ShadowPlay Instant Replay, will constantly record the screen without using too much computer resources and at the press of a keycombo will save the last 30 seconds.
 
 I wanted something like this for Linux...
 
@@ -29,14 +29,16 @@ $ ninja -C bin
 ## Ubuntu Dependencies
 To install the required dependencies on Ubuntu run:
 ```
-$ apt-get install libavutil-dev libavformat-dev libavdevice-dev \
-                  libavcodec-dev libswscale-dev libx11-dev \
-                  libunwind-dev
+$ apt-get install ninja-build libavutil-dev libavformat-dev libavdevice-dev \
+                  libavcodec-dev libswscale-dev libx11-dev libunwind-dev
+$ pip3 install meson
 ```
 
 ## Fedora Dependencies
+To install the required dependencies on Fedora run:
 ```
-$ dnf install ffmpeg-devel libX11-devel libunwind-devel
+$ dnf install ninja-build ffmpeg-devel libX11-devel libunwind-devel
+$ pip install meson
 ```
 
 # Running
@@ -48,9 +50,9 @@ TODO: user documentation. Maybe move `Building`/`Running` to Github wiki along w
 The code itself is partway through getting better documentation and commenting. If you want to jump into it I would recommend looking at these source files and headers inparticular:
 - `src/input/input`: handles different input devices.
 - `src/input/video`: finds a video input device.
-- `src/encoder/encoder`: handles different encoders.
+- `src/encoder/encoder`: handles different encoders (partly documented).
 - `src/encoder/video`: finds a video encoder.
-- `src/save`: saves into an `mp4` container.
+- `src/save`: saves into an `mp4` container (not documented).
 - `src/pktcircle`: a multithreaded circle buffer for packets.
 
 # TODO
