@@ -1,8 +1,5 @@
 # ReplaySorcery
 ## An open-source, instant-replay solution for Linux.
-
-TODO: actually rename to that
-
 Back when I used to use windows I used AMD ReLive alot. It, and the nVidia version ShadowPlay Instand Replay, will constantly record the screen without using too much computer resources and at the press of a keycombo will save the last 30 seconds.
 
 I wanted something like this for Linux...
@@ -43,7 +40,7 @@ $ dnf install ffmpeg-devel libX11-devel libunwind-devel
 ```
 
 # Running
-Currently can be run as `bin/source-replay`. Pressing enter will save the last 30 seconds. Early stages :)
+Currently can be run as `bin/replay-sorcery`. Pressing enter will save the last 30 seconds. Early stages :)
 
 # Documentation
 TODO: user documentation. Maybe move `Building`/`Running` to Github wiki along with documenting configuration options when that is implemented.

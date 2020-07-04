@@ -5,7 +5,7 @@
 #include "encoder.h"
 #include "../error.h"
 
-static int encoderHardwareCreate(SREncoder* encoder, const SREncoderParams* params, AVCodecContext* inputCodec) {
+static int encoderHardwareCreate(RSEncoder* encoder, const RSEncoderParams* params, AVCodecContext* inputCodec) {
    int ret;
    if ((ret = av_hwdevice_ctx_create(&encoder->hwDeviceRef, params->hwType, NULL, NULL, 0)) < 0) {
       return ret;
@@ -25,11 +25,11 @@ static int encoderHardwareCreate(SREncoder* encoder, const SREncoderParams* para
    }
 
    encoder->hwFrame = av_frame_alloc();
-   srCheck(av_hwframe_get_buffer(encoder->hwFramesRef, encoder->hwFrame, 0));
+   rsCheck(av_hwframe_get_buffer(encoder->hwFramesRef, encoder->hwFrame, 0));
    return 0;
 }
 
-static void encoderHardwareDestroy(SREncoder* encoder) {
+static void encoderHardwareDestroy(RSEncoder* encoder) {
    if (encoder->hwDeviceRef != NULL) {
       av_frame_free(&encoder->hwFrame);
       av_buffer_unref(&encoder->hwFramesRef);
@@ -37,7 +37,7 @@ static void encoderHardwareDestroy(SREncoder* encoder) {
    }
 }
 
-int srEncoderCreate(SREncoder* encoder, const SREncoderParams* params) {
+int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
    int ret;
    encoder->format = params->format;
    encoder->inputBase = params->input->formatCtx->streams[0]->time_base;
@@ -81,21 +81,21 @@ int srEncoderCreate(SREncoder* encoder, const SREncoderParams* params) {
          outputCodec->width, outputCodec->height, encoder->format,
          SWS_FAST_BILINEAR, NULL, NULL, NULL
       );
-      if (encoder->scaleCtx == NULL) srError(AVERROR_EXTERNAL);
+      if (encoder->scaleCtx == NULL) rsError(AVERROR_EXTERNAL);
 
       encoder->scaleFrame = av_frame_alloc();
       encoder->scaleFrame->width = outputCodec->width;
       encoder->scaleFrame->height = outputCodec->height;
       encoder->scaleFrame->format = encoder->format;
-      srCheck(av_frame_get_buffer(encoder->scaleFrame, 0));
+      rsCheck(av_frame_get_buffer(encoder->scaleFrame, 0));
    }
 
-   srPacketCircleCreate(&encoder->pktCircle);
+   rsPacketCircleCreate(&encoder->pktCircle);
    return 0;
 }
 
-void srEncoderDestroy(SREncoder* encoder) {
-   srPacketCircleDestroy(&encoder->pktCircle);
+void rsEncoderDestroy(RSEncoder* encoder) {
+   rsPacketCircleDestroy(&encoder->pktCircle);
    if (encoder->scaleCtx != NULL) {
       av_frame_free(&encoder->hwFrame);
       sws_freeContext(encoder->scaleCtx);
@@ -104,7 +104,7 @@ void srEncoderDestroy(SREncoder* encoder) {
    encoderHardwareDestroy(encoder);
 }
 
-void srEncode(SREncoder* encoder, const AVFrame* frame) {
+void rsEncode(RSEncoder* encoder, const AVFrame* frame) {
    AVFrame* inputFrame = (AVFrame*)frame;
    if (encoder->scaleCtx != NULL) {
       sws_scale(
@@ -117,21 +117,21 @@ void srEncode(SREncoder* encoder, const AVFrame* frame) {
    }
 
    if (encoder->hwDeviceRef != NULL) {
-      srCheck(av_hwframe_transfer_data(encoder->hwFrame, inputFrame, 0));
+      rsCheck(av_hwframe_transfer_data(encoder->hwFrame, inputFrame, 0));
       inputFrame = encoder->hwFrame;
    }
 
    if (inputFrame != frame) {
-      srCheck(av_frame_copy_props(inputFrame, frame));
+      rsCheck(av_frame_copy_props(inputFrame, frame));
    }
    inputFrame->pts = av_rescale_q(inputFrame->pts, encoder->inputBase, encoder->codecCtx->time_base);
 
-   srCheck(avcodec_send_frame(encoder->codecCtx, inputFrame));
+   rsCheck(avcodec_send_frame(encoder->codecCtx, inputFrame));
    int ret = avcodec_receive_packet(encoder->codecCtx, encoder->pktCircle.input);
    if (ret == AVERROR(EAGAIN)) return;
-   srCheck(ret);
+   rsCheck(ret);
    if (!(encoder->pktCircle.input->flags & AV_PKT_FLAG_KEY)) {
       av_log(NULL, AV_LOG_WARNING, "Encoded packet is not a keyframe\n");
    }
-   srPacketCircleRotate(&encoder->pktCircle);
+   rsPacketCircleRotate(&encoder->pktCircle);
 }

@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#ifndef SR_PKTCIRCLE_H
-#define SR_PKTCIRCLE_H
+#ifndef RS_PKTCIRCLE_H
+#define RS_PKTCIRCLE_H
 #include <pthread.h>
 #include <libavcodec/avcodec.h>
 
@@ -13,14 +13,14 @@
  * can write to it at a time. Also note that the creation and destruction functions are in
  * no way multi-thread safe.
  * 
- * To write to the packet circle, write into `input` and then call `srPacketCircleRotate`
+ * To write to the packet circle, write into `input` and then call `rsPacketCircleRotate`
  * which will change what `input` is pointing to. Repeat.
  *
  * To read from the packet circle that no other threads are writing to, directly index
  * into the `packets` array. If another thread is writing into the packet buffer, create
- * your own packet buffer and copy the data with `srPacketCircleCopy`.
+ * your own packet buffer and copy the data with `rsPacketCircleCopy`.
  */
-typedef struct SRPacketCircle {
+typedef struct RSPacketCircle {
    /**
     * The array of packets in the circle buffer.
     */
@@ -52,36 +52,36 @@ typedef struct SRPacketCircle {
     * A pointer to the current packet to write into.
     */
    AVPacket* input;
-} SRPacketCircle;
+} RSPacketCircle;
 
 /**
  * Creates a new packet circle. The size of the circle buffer will be based on the
  * program configuration.
  */
-void srPacketCircleCreate(SRPacketCircle* pktCircle);
+void rsPacketCircleCreate(RSPacketCircle* pktCircle);
 
 /**
  * Destroys the provided packet circle.
  */
-void srPacketCircleDestroy(SRPacketCircle* pktCircle);
+void rsPacketCircleDestroy(RSPacketCircle* pktCircle);
 
 /**
  * Rotate the packet circle such that the current `input` is ready for copying and the
  * next packet is freed and provided as an input.
  */
-void srPacketCircleRotate(SRPacketCircle* pktCircle);
+void rsPacketCircleRotate(RSPacketCircle* pktCircle);
 
 /**
  * Clears all the data held in the packet circle.
  */
-void srPacketCircleClear(SRPacketCircle* pktCircle);
+void rsPacketCircleClear(RSPacketCircle* pktCircle);
 
 /**
  * Copy the data from `src` into `dst`. The current `input` field of `src` will not be
  * copied. This function is safe to call even if another thread is using
- * `srPacketCircleRotate` (which changes the `input` field) on `src`. This will also
+ * `rsPacketCircleRotate` (which changes the `input` field) on `src`. This will also
  * "normalize" the packets such that you can easily iterate `dst` from 0 to `tail`.
  */
-void srPacketCircleCopy(SRPacketCircle* dst, const SRPacketCircle* src);
+void rsPacketCircleCopy(RSPacketCircle* dst, const RSPacketCircle* src);
 
 #endif

@@ -7,13 +7,13 @@
 #include <stdio.h>
 #include <libavutil/avutil.h>
 
-static void debugUserWait(SRUser* user) {
+static void debugUserWait(RSUser* user) {
    (void)user;
    av_log(NULL, AV_LOG_INFO, "Press enter to save\n");
-   if (getchar() == EOF) srMainExit();
+   if (getchar() == EOF) rsMainExit();
 }
 
-int srDebugUserCreate(SRUser* user) {
+int rsDebugUserCreate(RSUser* user) {
    user->destroy = NULL;
    user->wait = debugUserWait;
    return 0;

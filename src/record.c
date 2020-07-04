@@ -14,8 +14,8 @@
 #include <libavcodec/avcodec.h>
 
 static struct {
-   SRInput input;
-   SREncoder encoder;
+   RSInput input;
+   RSEncoder encoder;
    pthread_t thread;
    bool exit;
 } priv;
@@ -25,26 +25,26 @@ static void* recordThread(void* arg) {
    AVFrame* frame = av_frame_alloc();
 
    while (!priv.exit) {
-      srInputRead(&priv.input, frame);
-      srEncode(&priv.encoder, frame);
+      rsInputRead(&priv.input, frame);
+      rsEncode(&priv.encoder, frame);
    }
    return NULL;
 }
 
-void srRecordInit(void) {
-   srInputInit();
-   srVideoInputCreate(&priv.input);
-   srVideoEncoderCreate(&priv.encoder, &priv.input);
-   srCheckPosix(pthread_create(&priv.thread, NULL, recordThread, NULL));
+void rsRecordInit(void) {
+   rsInputInit();
+   rsVideoInputCreate(&priv.input);
+   rsVideoEncoderCreate(&priv.encoder, &priv.input);
+   rsCheckPosix(pthread_create(&priv.thread, NULL, recordThread, NULL));
 }
 
-void srRecordExit(void) {
+void rsRecordExit(void) {
    priv.exit = true;
    pthread_join(priv.thread, NULL);
-   srEncoderDestroy(&priv.encoder);
-   srInputDestroy(&priv.input);
+   rsEncoderDestroy(&priv.encoder);
+   rsInputDestroy(&priv.input);
 }
 
-const SREncoder* srRecordVideo(void) {
+const RSEncoder* rsRecordVideo(void) {
    return &priv.encoder;
 }

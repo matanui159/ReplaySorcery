@@ -15,7 +15,7 @@ static struct {
    /**
     * The user object to wait on before saving the video.
     */
-   SRUser user;
+   RSUser user;
 } priv;
 
 /**
@@ -23,13 +23,13 @@ static struct {
  */
 static void mainSignal(int signal) {
    (void)signal;
-   srMainExit();
+   rsMainExit();
 }
 
-void srMainExit(void) {
-   srUserDestroy(&priv.user);
-   srSaveExit();
-   srRecordExit();
+void rsMainExit(void) {
+   rsUserDestroy(&priv.user);
+   rsSaveExit();
+   rsRecordExit();
    exit(EXIT_SUCCESS);
 }
 
@@ -39,13 +39,13 @@ int main(int argv, char** argc) {
    signal(SIGINT, mainSignal);
    signal(SIGTERM, mainSignal);
 
-   srErrorInit();
-   srRecordInit();
-   srSaveInit();
-   srDefaultUserCreate(&priv.user);
+   rsErrorInit();
+   rsRecordInit();
+   rsSaveInit();
+   rsDefaultUserCreate(&priv.user);
    for (;;) {
-      srUserWait(&priv.user);
-      srSave();
+      rsUserWait(&priv.user);
+      rsSave();
    }
    return 0;
 }

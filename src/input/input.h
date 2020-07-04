@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#ifndef SR_INPUT_H
-#define SR_INPUT_H
+#ifndef RS_INPUT_H
+#define RS_INPUT_H
 #include <libavutil/avutil.h>
 #include <libavutil/dict.h>
 #include <libavformat/avformat.h>
@@ -12,7 +12,7 @@
 /**
  * A single stream A/V input device.
  */
-typedef struct SRInput {
+typedef struct RSInput {
    /**
     * The format context of the input device.
     */
@@ -27,12 +27,12 @@ typedef struct SRInput {
     * A buffer packet to read into and decode from.
     */
    AVPacket* packet;
-} SRInput;
+} RSInput;
 
 /**
  * Initializes global state for creating inputs.
  */
-void srInputInit(void);
+void rsInputInit(void);
 
 /**
  * Creates a new input. Returns 0 on success or a negative error code on failure. Unlike
@@ -44,16 +44,16 @@ void srInputInit(void);
  * `options` is a dictionary of options to pass to the device creation. This will be freed
  * before this function returns, even if it failed.
  */
-int srInputCreate(SRInput* input, const char* name, const char* url, AVDictionary** options);
+int rsInputCreate(RSInput* input, const char* name, const char* url, AVDictionary** options);
 
 /**
  * Destroys the input device.
  */
-void srInputDestroy(SRInput* input);
+void rsInputDestroy(RSInput* input);
 
 /**
  * Reads a frame from the input device.
  */
-void srInputRead(SRInput* input, AVFrame* frame);
+void rsInputRead(RSInput* input, AVFrame* frame);
 
 #endif

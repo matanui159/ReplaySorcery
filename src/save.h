@@ -2,11 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#ifndef SR_SAVE_H
-#define SR_SAVE_H
+#ifndef RS_SAVE_H
+#define RS_SAVE_H
 
-void srSaveInit(void);
-void srSaveExit(void);
-void srSave(void);
+void rsSaveInit(void);
+void rsSaveExit(void);
+void rsSave(void);
 
 #endif

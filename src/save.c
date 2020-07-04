@@ -12,25 +12,25 @@
 #include <libavformat/avformat.h>
 
 static struct {
-   SRPacketCircle pktCircle;
+   RSPacketCircle pktCircle;
 } priv;
 
-void srSaveInit(void) {
-   srPacketCircleCreate(&priv.pktCircle);
+void rsSaveInit(void) {
+   rsPacketCircleCreate(&priv.pktCircle);
 }
 
-void srSaveExit(void) {
-   srPacketCircleDestroy(&priv.pktCircle);
+void rsSaveExit(void) {
+   rsPacketCircleDestroy(&priv.pktCircle);
 }
 
-void srSave(void) {
+void rsSave(void) {
    const char* file = "recording.mp4";
    AVFormatContext* formatCtx;
-   srCheck(avformat_alloc_output_context2(&formatCtx, NULL, NULL, file));
-   srCheck(avio_open2(&formatCtx->pb, file, AVIO_FLAG_WRITE, NULL, NULL));
-   srCheck(av_opt_set(formatCtx, "movflags", "+faststart", AV_OPT_SEARCH_CHILDREN));
+   rsCheck(avformat_alloc_output_context2(&formatCtx, NULL, NULL, file));
+   rsCheck(avio_open2(&formatCtx->pb, file, AVIO_FLAG_WRITE, NULL, NULL));
+   rsCheck(av_opt_set(formatCtx, "movflags", "+faststart", AV_OPT_SEARCH_CHILDREN));
 
-   const SREncoder* encoder = srRecordVideo();
+   const RSEncoder* encoder = rsRecordVideo();
    AVStream* stream = avformat_new_stream(formatCtx, encoder->codecCtx->codec);
    stream->codecpar->codec_type = encoder->codecCtx->codec_type;
    stream->codecpar->codec_id = encoder->codecCtx->codec_id;
@@ -40,8 +40,8 @@ void srSave(void) {
    stream->time_base = encoder->codecCtx->time_base;
    av_dump_format(formatCtx, 0, file, 1);
 
-   srCheck(avformat_write_header(formatCtx, NULL));
-   srPacketCircleCopy(&priv.pktCircle, &encoder->pktCircle);
+   rsCheck(avformat_write_header(formatCtx, NULL));
+   rsPacketCircleCopy(&priv.pktCircle, &encoder->pktCircle);
    av_log(NULL, AV_LOG_INFO, "Saving %zu video packets...\n", priv.pktCircle.tail);
    int64_t ptsOffset = priv.pktCircle.packets[0].pts;
    if (ptsOffset == AV_NOPTS_VALUE) ptsOffset = 0;
@@ -53,10 +53,10 @@ void srSave(void) {
       packet->pts -= ptsOffset;
       packet->dts -= dtsOffset;
       av_packet_rescale_ts(packet, encoder->codecCtx->time_base, stream->time_base);
-      srCheck(av_write_frame(formatCtx, packet));
+      rsCheck(av_write_frame(formatCtx, packet));
    }
-   srPacketCircleClear(&priv.pktCircle);
-   srCheck(av_write_trailer(formatCtx));
+   rsPacketCircleClear(&priv.pktCircle);
+   rsCheck(av_write_trailer(formatCtx));
 
    avio_closep(&formatCtx->pb);
    avformat_free_context(formatCtx);

@@ -1,4 +1,4 @@
-project('SourceReplay', 'c', default_options: [
+project('ReplaySorcery', 'c', default_options: [
    'c_std=c99',
    'warning_level=3'
 ])
@@ -6,15 +6,15 @@ compiler = meson.get_compiler('c')
 
 unwind = dependency('libunwind', include_type: 'system', required: false)
 configure_file(
-   output: 'sr-config.h',
+   output: 'rs-config.h',
    configuration: {
-      'SR_CONFIG_UNWIND': unwind.found(),
-      'SR_CONFIG_X264': get_option('x264_gpl')
+      'RS_CONFIG_UNWIND': unwind.found(),
+      'RS_CONFIG_X264': get_option('x264_gpl')
    }
 )
 
 executable(
-   'source-replay', [
+   'replay-sorcery', [
       'src/main.c',
       'src/error.c',
       'src/pktcircle.c',

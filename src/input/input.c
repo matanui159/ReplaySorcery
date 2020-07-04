@@ -7,11 +7,11 @@
 #include <string.h>
 #include <libavdevice/avdevice.h>
 
-void srInputInit(void) {
+void rsInputInit(void) {
    avdevice_register_all();
 }
 
-int srInputCreate(SRInput* input, const char* name, const char* url, AVDictionary** options) {
+int rsInputCreate(RSInput* input, const char* name, const char* url, AVDictionary** options) {
    AVInputFormat* format = av_find_input_format(name);
    if (format == NULL) {
       av_dict_free(options);
@@ -27,30 +27,30 @@ int srInputCreate(SRInput* input, const char* name, const char* url, AVDictionar
    // We assume that the input device only has one stream.
    AVCodecParameters* codecpar = input->formatCtx->streams[0]->codecpar;
    AVCodec* codec = avcodec_find_decoder(codecpar->codec_id);
-   if (codec == NULL) srError(AVERROR_DECODER_NOT_FOUND);
+   if (codec == NULL) rsError(AVERROR_DECODER_NOT_FOUND);
    input->codecCtx = avcodec_alloc_context3(codec);
 
    // Copy the parameters from the format stream to configure the decoder.
-   srCheck(avcodec_parameters_to_context(input->codecCtx, codecpar));
-   srCheck(avcodec_open2(input->codecCtx, codec, NULL));
+   rsCheck(avcodec_parameters_to_context(input->codecCtx, codecpar));
+   rsCheck(avcodec_open2(input->codecCtx, codec, NULL));
    input->packet = av_packet_alloc();
    return 0;
 }
 
-void srInputDestroy(SRInput* input) {
+void rsInputDestroy(RSInput* input) {
    av_packet_free(&input->packet);
    avcodec_free_context(&input->codecCtx);
    avformat_close_input(&input->formatCtx);
 }
 
-void srInputRead(SRInput* input, AVFrame* frame) {
+void rsInputRead(RSInput* input, AVFrame* frame) {
    int ret;
    // Multiple packets might be needed or the last packet might still have enough data to
    // output another frame.
    while ((ret = avcodec_receive_frame(input->codecCtx, frame)) == AVERROR(EAGAIN)) {
-      srCheck(av_read_frame(input->formatCtx, input->packet));
-      srCheck(avcodec_send_packet(input->codecCtx, input->packet));
+      rsCheck(av_read_frame(input->formatCtx, input->packet));
+      rsCheck(avcodec_send_packet(input->codecCtx, input->packet));
       av_packet_unref(input->packet);
    }
-   srCheck(ret);
+   rsCheck(ret);
 }

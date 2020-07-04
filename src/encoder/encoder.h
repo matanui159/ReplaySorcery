@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#ifndef SR_ENCODER_H
-#define SR_ENCODER_H
+#ifndef RS_ENCODER_H
+#define RS_ENCODER_H
 #include "../pktcircle.h"
 #include "../input/input.h"
 #include <libavutil/avutil.h>
@@ -16,11 +16,11 @@
  * Parameters for creating the encoder. This was split out into a struct since there is
  * alot of them and some of them are optional.
  */
-typedef struct SREncoderParams {
+typedef struct RSEncoderParams {
    /**
     * A pointer to the input where the frames are going to come from.
     */
-   const SRInput* input;
+   const RSInput* input;
 
    /**
     * The name of the encoder to use.
@@ -48,9 +48,9 @@ typedef struct SREncoderParams {
     * The hardware format for hardware encoders.
     */
    enum AVPixelFormat hwFormat;
-} SREncoderParams;
+} RSEncoderParams;
 
-typedef struct SREncoder {
+typedef struct RSEncoder {
    enum AVPixelFormat format;
    AVCodecContext* codecCtx;
    AVRational inputBase;
@@ -59,11 +59,11 @@ typedef struct SREncoder {
    AVBufferRef* hwDeviceRef;
    AVBufferRef* hwFramesRef;
    AVFrame* hwFrame;
-   SRPacketCircle pktCircle;
-} SREncoder;
+   RSPacketCircle pktCircle;
+} RSEncoder;
 
-int srEncoderCreate(SREncoder* encoder, const SREncoderParams* params);
-void srEncoderDestroy(SREncoder* encoder);
-void srEncode(SREncoder* encoder, const AVFrame* frame);
+int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params);
+void rsEncoderDestroy(RSEncoder* encoder);
+void rsEncode(RSEncoder* encoder, const AVFrame* frame);
 
 #endif

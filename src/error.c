@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "error.h"
-#include "sr-config.h"
+#include "rs-config.h"
 #include <stdlib.h>
 #include <signal.h>
 
@@ -18,14 +18,14 @@
  */
 #define ERROR_NAME_SIZE 1024
 
-#ifdef SR_CONFIG_UNWIND
+#ifdef RS_CONFIG_UNWIND
 #define UNW_LOCAL_ONLY
 #include <libunwind.h>
 
 /**
  * Logs an libunwind-generated stack trace. Returns 0 on success or a negative code on
  * failure. Note that negative codes are not libav error codes and should not be passed to
- * `srError`.
+ * `rsError`.
  */
 static int errorUnwind(int flags) {
    int ret;
@@ -47,12 +47,12 @@ static int errorUnwind(int flags) {
 #endif
 
 /**
- * Internal implementation of `srError`. Allows passing flags for generating the stack
+ * Internal implementation of `rsError`. Allows passing flags for generating the stack
  * trace.
  */
 static av_noreturn void errorImpl(int error, int flags) {
    av_log(NULL, AV_LOG_FATAL, "%s\n", av_err2str(error));
-#ifdef SR_CONFIG_UNWIND
+#ifdef RS_CONFIG_UNWIND
    if (errorUnwind(flags) < 0) {
       av_log(NULL, AV_LOG_WARNING, "Failed to unwind stack\n");
    }
@@ -82,12 +82,12 @@ static void errorSignal(int signal) {
    errorImpl(AVERROR_BUG, ERROR_SIGNAL);
 }
 
-void srErrorInit(void) {
+void rsErrorInit(void) {
    signal(SIGSEGV, errorSignal);
    signal(SIGILL, errorSignal);
    signal(SIGFPE, errorSignal);
 }
 
-av_noreturn void srError(int error) {
+av_noreturn void rsError(int error) {
    errorImpl(error, 0);
 }
