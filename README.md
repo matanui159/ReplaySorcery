@@ -6,6 +6,9 @@ I wanted something like this for Linux...
 
 I got tired waiting for someone else to do it.
 
+## What is wrong with OBS?
+Alot of people online suggest using OBS's replay buffer feature. However this requires opening OBS and start recording. I do not know when something will happen that I want to share. Might not even happen while playing a game. I just want something in the background (like a `systemd` service) so that whenever something happens I can record it.
+
 # Current Features
 - Supported encoding backends:
   - NVENC (nVidia only, untested)
@@ -29,7 +32,7 @@ $ ninja -C bin
 ## Ubuntu Dependencies
 To install the required dependencies on Ubuntu run:
 ```
-$ apt-get install ninja-build libavutil-dev libavformat-dev libavdevice-dev \
+$ apt install ninja-build libavutil-dev libavformat-dev libavdevice-dev \
                   libavcodec-dev libswscale-dev libx11-dev libunwind-dev
 $ pip3 install meson
 ```
