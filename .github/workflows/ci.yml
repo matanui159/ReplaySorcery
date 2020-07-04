@@ -7,7 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - run: sudo apt-get install -y python3-setuptools ninja-build libavutil-dev libavformat-dev libavdevice-dev libavcodec-dev libswscale-dev libx11-dev libunwind-dev
+      - run: sudo apt-get install -y ninja-build libavutil-dev libavformat-dev libavdevice-dev libavcodec-dev libswscale-dev libx11-dev libunwind-dev
+      - run: pip3 install -U pip setuptools
       - run: pip3 install meson
       - run: meson bin --buildtype release -Dx11_gpl=true
       - run: ninja -C bin
