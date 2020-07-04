@@ -29,7 +29,7 @@ static void packetCircleRotate(SRPacketCircle* pktCircle) {
 }
 
 void srPacketCircleCreate(SRPacketCircle* pktCircle) {
-   pktCircle->size = 30 * 30;
+   pktCircle->size = 30 * 30 + 1;
    pktCircle->packets = av_mallocz_array(pktCircle->size, sizeof(AVPacket));
    for (size_t i = 0; i < pktCircle->size; ++i) {
       av_init_packet(&pktCircle->packets[i]);
