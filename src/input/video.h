@@ -6,6 +6,9 @@
 #define SR_INPUT_VIDEO_H
 #include "input.h"
 
+/**
+ * Checks different supported video inputs and finds one that works.
+ */
 void srVideoInputCreate(SRInput* input);
 
 #endif

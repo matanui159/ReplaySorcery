@@ -12,9 +12,15 @@
 #include <signal.h>
 
 static struct {
+   /**
+    * The user object to wait on before saving the video.
+    */
    SRUser user;
 } priv;
 
+/**
+ * Signal handler for termination requests.
+ */
 static void mainSignal(int signal) {
    (void)signal;
    srMainExit();

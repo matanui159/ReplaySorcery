@@ -7,13 +7,26 @@
 #include <stdlib.h>
 #include <signal.h>
 
-#define ERROR_SIGNAL 1 // UNW_INIT_SIGNAL_FRAME
+/**
+ * Same as the `UNW_INIT_SIGNAL_FRAME` flag but always defined even if libunwind is not
+ * supported.
+ */
+#define ERROR_SIGNAL 1
+
+/**
+ * The size for the name buffer when getting function names.
+ */
 #define ERROR_NAME_SIZE 1024
 
 #ifdef SR_CONFIG_UNWIND
 #define UNW_LOCAL_ONLY
 #include <libunwind.h>
 
+/**
+ * Logs an libunwind-generated stack trace. Returns 0 on success or a negative code on
+ * failure. Note that negative codes are not libav error codes and should not be passed to
+ * `srError`.
+ */
 static int errorUnwind(int flags) {
    int ret;
    unw_context_t context;
@@ -33,6 +46,10 @@ static int errorUnwind(int flags) {
 }
 #endif
 
+/**
+ * Internal implementation of `srError`. Allows passing flags for generating the stack
+ * trace.
+ */
 static av_noreturn void errorImpl(int error, int flags) {
    av_log(NULL, AV_LOG_FATAL, "%s\n", av_err2str(error));
 #ifdef SR_CONFIG_UNWIND
@@ -46,20 +63,22 @@ static av_noreturn void errorImpl(int error, int flags) {
    exit(EXIT_FAILURE);
 }
 
+/**
+ * Signal handler for segment fault, invalid programs or floating-point errors.
+ */
 static void errorSignal(int signal) {
-   const char* msg;
    switch (signal) {
+      case SIGSEGV:
+         av_log(NULL, AV_LOG_ERROR, "Segment violation\n");
+         break;
       case SIGILL:
-         msg = "Illegal program\n";
+         av_log(NULL, AV_LOG_ERROR, "Illegal program\n");
          break;
       case SIGFPE:
-         msg = "Floating point error\n";
-         break;
-      case SIGSEGV:
-         msg = "Segment violation\n";
+         av_log(NULL, AV_LOG_ERROR, "Floating point error\n");
          break;
    }
-   av_log(NULL, AV_LOG_ERROR, msg);
+   // We use `ERROR_SIGNAL` here since we are in a signal handler.
    errorImpl(AVERROR_BUG, ERROR_SIGNAL);
 }
 

@@ -12,12 +12,41 @@
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
 
+/**
+ * Parameters for creating the encoder. This was split out into a struct since there is
+ * alot of them and some of them are optional.
+ */
 typedef struct SREncoderParams {
+   /**
+    * A pointer to the input where the frames are going to come from.
+    */
    const SRInput* input;
+
+   /**
+    * The name of the encoder to use.
+    */
    const char* name;
+
+   /**
+    * The pixel format of the encoder. For hardware encoders this is the software format
+    * and the hardware format is listed below.
+    */
    enum AVPixelFormat format;
+
+   /**
+    * Options to pass to the encoder creation.
+    */
    AVDictionary** options;
+
+   /**
+    * The hardware device type for hardware encoders. Set this to `AV_HWDEVICE_TYPE_NONE`
+    * for software encoders or hardware encoders that do not require a device.
+    */
    enum AVHWDeviceType hwType;
+
+   /**
+    * The hardware format for hardware encoders.
+    */
    enum AVPixelFormat hwFormat;
 } SREncoderParams;
 

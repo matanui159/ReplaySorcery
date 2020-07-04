@@ -36,10 +36,13 @@ executable(
    dependencies: [
       unwind,
       dependency('threads', include_type: 'system'),
+
       dependency('libavutil', include_type: 'system'),
       dependency('libavformat', include_type: 'system'),
       dependency('libavdevice', include_type: 'system'),
       dependency('libavcodec', include_type: 'system'),
-      dependency('libswscale', include_type: 'system')
+      dependency('libswscale', include_type: 'system'),
+
+      dependency('x11', include_type: 'system')
    ]
 )

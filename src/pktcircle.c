@@ -6,10 +6,21 @@
 #include "error.h"
 #include <libavutil/avutil.h>
 
+/**
+ * A utility macro to increment the provided index while looping around the circle array.
+ */
 #define PACKET_CIRCLE_NEXT(pktCircle, index) index = (index + 1) % (pktCircle)->size
+
+/**
+ * Iterates all the indices in the packet circle that current contain data.
+ */
 #define PACKET_CIRCLE_FOREACH(pktCircle, index) \
    for (size_t index = (pktCircle)->head; index != (pktCircle)->tail; PACKET_CIRCLE_NEXT(pktCircle, index))
 
+/**
+ * Internal implementation of `srPacketCircleClear` that does not lock the mutex. Used in
+ * functions which already have locked the mutex or do not need to lock the mutex.
+ */
 static void packetCircleClear(SRPacketCircle* pktCircle) {
    PACKET_CIRCLE_FOREACH(pktCircle, i) {
       av_packet_unref(&pktCircle->packets[i]);
@@ -19,6 +30,10 @@ static void packetCircleClear(SRPacketCircle* pktCircle) {
    pktCircle->input = &pktCircle->packets[0];
 }
 
+/**
+ * Internal implementation of `srPacketCircleRotate` that does not lock the mutex. Used in
+ * functions which already have locked the mutex.
+ */
 static void packetCircleRotate(SRPacketCircle* pktCircle) {
    PACKET_CIRCLE_NEXT(pktCircle, pktCircle->tail);
    pktCircle->input = &pktCircle->packets[pktCircle->tail];
@@ -29,11 +44,14 @@ static void packetCircleRotate(SRPacketCircle* pktCircle) {
 }
 
 void srPacketCircleCreate(SRPacketCircle* pktCircle) {
+   // TODO: use program configuration when implemented
    pktCircle->size = 30 * 30 + 1;
    pktCircle->packets = av_mallocz_array(pktCircle->size, sizeof(AVPacket));
    for (size_t i = 0; i < pktCircle->size; ++i) {
       av_init_packet(&pktCircle->packets[i]);
    }
+
+   // Clear to set `head`, `tail` and `input`.
    packetCircleClear(pktCircle);
    srCheckPosix(pthread_mutex_init(&pktCircle->mutex, NULL));
 }
@@ -60,10 +78,13 @@ void srPacketCircleCopy(SRPacketCircle* dst, const SRPacketCircle* src) {
    srCheckPosix(pthread_mutex_lock(&dst->mutex));
    packetCircleClear(dst);
    srCheckPosix(pthread_mutex_lock((pthread_mutex_t*)&src->mutex));
+
+   // This shouldn't overflow the buffer (`tail` should equal `size` - 1 at most).
    PACKET_CIRCLE_FOREACH(src, i) {
       av_packet_ref(dst->input, &src->packets[i]);
       packetCircleRotate(dst);
    }
+
    srCheckPosix(pthread_mutex_unlock((pthread_mutex_t*)&src->mutex));
    srCheckPosix(pthread_mutex_unlock(&dst->mutex));
 }
