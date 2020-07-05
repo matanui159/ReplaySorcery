@@ -50,18 +50,67 @@ typedef struct RSEncoderParams {
    enum AVPixelFormat hwFormat;
 } RSEncoderParams;
 
+/**
+ * An output encoder. Encoded packets are written into its packet circle.
+ */
 typedef struct RSEncoder {
+   /**
+    * The codec context of the encoder.
+    */
    AVCodecContext* codecCtx;
+
+   /**
+    * A scale context for converting frames. Only created if the provided input has a
+    * different format or resolution to the encoder.
+    */
    struct SwsContext* scaleCtx;
+
+   /**
+    * A preallocated buffer frame to put scaling results into. Only created if `scaleCtx`
+    * is created.
+    */
    AVFrame* scaleFrame;
+
+   /**
+    * A reference to a hardware device used for encoding. Only created if this is a
+    * hardware-based encoder.
+    */
    AVBufferRef* hwDeviceRef;
+
+   /**
+    * A reference to a hardware frame pool. Only has a size of 1 to get `hwFrame` out of
+    * below. Only created if `hwDeviceRef` is created.
+    */
    AVBufferRef* hwFramesRef;
+
+   /**
+    * A buffer frame for uploading data to hardware. Created from `hwFramesRef`.
+    */
    AVFrame* hwFrame;
+
+   /**
+    * The packet circle that encoded packets are written to. Read from this to get the
+    * encoded data. See `pktcircle.h` on how to properly read from a packet circle.
+    */
    RSPacketCircle pktCircle;
 } RSEncoder;
 
+/**
+ * Creates a new encoder with the given parameters. Note that unlike most functions this
+ * returns an error code on failure instead of crashing. This makes it possible to test
+ * multiple encoders and find one that works.
+ */
 int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params);
+
+/**
+ * Destroys the provided encoder.
+ */
 void rsEncoderDestroy(RSEncoder* encoder);
+
+/**
+ * Encodes a single frame into the packet circle. Does not modify or destroy the provided
+ * frame.
+ */
 void rsEncode(RSEncoder* encoder, const AVFrame* frame);
 
 #endif

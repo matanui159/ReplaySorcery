@@ -11,6 +11,15 @@
 void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input) {
    int ret;
    AVDictionary* options = NULL;
+
+   // TODO: all the video encoder settings here use low values. Add some sort of
+   //       configuration to control these. Potentially a low/medium/high that translates
+   //       to different values for different encoders?
+
+   // Try to create a nVidia encoder. Note that while `nvenc` is technically a hardware
+   // based encoder, it acts more like a software one in FFmpeg. It takes a normal pixel
+   // format (does not require uploading frames) and does not require a hardware device.
+   // TODO: low/medium/high = fast/medium/slow
    av_dict_set(&options, "preset", "fast", 0);
    if ((ret = rsEncoderCreate(encoder, &(RSEncoderParams){.input = input,
                                                           .name = "h264_nvenc",
@@ -20,6 +29,8 @@ void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input) {
    }
    av_log(NULL, AV_LOG_WARNING, "Failed to create nVidia encoder: %s\n", av_err2str(ret));
 
+   // Try to create a VAAPI encoder.
+   // TODO: low/medium/high = 30/20/10
    av_dict_set(&options, "global_quality", "30", 0);
    if ((ret = rsEncoderCreate(encoder,
                               &(RSEncoderParams){.input = input,
@@ -32,6 +43,7 @@ void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input) {
    }
    av_log(NULL, AV_LOG_WARNING, "Failed to create VAAPI encoder: %s\n", av_err2str(ret));
 
+   // Try to create a software encoder.
    if ((ret = rsVideoEncoderCreateSW(encoder, input)) >= 0) {
       return;
    }
@@ -44,6 +56,10 @@ void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input) {
 int rsVideoEncoderCreateSW(RSEncoder* encoder, const RSInput* input) {
    int ret;
    AVDictionary* options = NULL;
+
+   // Try to create a x264 encoder.
+   // TODO: low/medium/high = ultrafast/medium/slower
+   // I really do not like GPL licensing and I want to be safe :)
 #ifdef RS_CONFIG_X264
    av_dict_set(&options, "preset", "ultrafast", 0);
    if ((ret = rsEncoderCreate(encoder, &(RSEncoderParams){.input = input,
@@ -58,6 +74,8 @@ int rsVideoEncoderCreateSW(RSEncoder* encoder, const RSInput* input) {
           "Compile with GPL-licensed x264 support for better software encoding\n");
 #endif
 
+   // Try to create an OpenH264 encoder.
+   // TODO: low/medium/high = 40-50/???/???
    av_dict_set(&options, "qmin", "40", 0);
    av_dict_set(&options, "qmax", "50", 0);
    if ((ret = rsEncoderCreate(encoder, &(RSEncoderParams){.input = input,

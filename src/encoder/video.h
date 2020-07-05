@@ -6,6 +6,10 @@
 #define RS_ENCODER_VIDEO_H
 #include "encoder.h"
 
+/**
+ * Creates a video encoder by trying a few different options to see what works and
+ * choosing the best one.
+ */
 void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input);
 
 /**
