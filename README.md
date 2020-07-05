@@ -11,8 +11,8 @@ Alot of people online suggest using OBS's replay buffer feature. However this re
 
 # Current Features
 - Supported encoding backends:
-  - NVENC (nVidia only, untested)
-  - VAAPI (Intel, AMD and nVidia. Only AMD has been tested)
+  - NVENC
+  - VAAPI
   - OpenH264
   - x264 (disabled by default due to GPL licensing)
 
@@ -72,7 +72,8 @@ If theres any part of user or developer documentation that you feel needs to be 
 - Document code better
 - Add X11 frontend to listen to key presses (right now only the `debug` frontend is available)
 - Add support for configuration files
-- Make a `systemd` service.
+- Make a `systemd` service
+- Implement different quality levels
 - Add audio support
   - On first look reading from audio output does not seem supported by FFmpeg.
   - For my personal requirements it would need to support hot plugging (I use a bluetooth headset).
