@@ -5,7 +5,7 @@
          "name": "GDB",
          "type": "cppdbg",
          "request": "launch",
-         "program": "${workspaceFolder}/bin/replay",
+         "program": "${workspaceFolder}/bin/replay-sorcery",
          "cwd": "${workspaceFolder}",
          "preLaunchTask": "Ninja"
       }

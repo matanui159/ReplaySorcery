@@ -8,4 +8,14 @@
 
 void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input);
 
+/**
+ * Same as `rsVideoEncoderCreate` but only creates software encoders. Used to fix some
+ * hardware encoders which do not support global headers.
+ *
+ * Unlike most functions this function will return an error code on failure instead of
+ * crashing. This is because a hardware encoder can still work even if it cannot create
+ * global headers.
+ */
+int rsVideoEncoderCreateSW(RSEncoder* encoder, const RSInput* input);
+
 #endif

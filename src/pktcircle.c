@@ -28,7 +28,7 @@ static void packetCircleClear(RSPacketCircle* pktCircle) {
    }
    pktCircle->head = 0;
    pktCircle->tail = 0;
-   pktCircle->input = &pktCircle->packets[0];
+   pktCircle->input = pktCircle->packets;
 }
 
 /**
@@ -52,8 +52,9 @@ void rsPacketCircleCreate(RSPacketCircle* pktCircle) {
       av_init_packet(&pktCircle->packets[i]);
    }
 
-   // Clear to set `head`, `tail` and `input`.
-   packetCircleClear(pktCircle);
+   pktCircle->head = 0;
+   pktCircle->tail = 0;
+   pktCircle->input = pktCircle->packets;
    rsCheckPosix(pthread_mutex_init(&pktCircle->mutex, NULL));
 }
 

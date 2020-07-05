@@ -4,6 +4,8 @@
 
 #include "encoder.h"
 #include "../error.h"
+#include "video.h"
+#include <string.h>
 
 static int encoderHardwareCreate(RSEncoder* encoder, const RSEncoderParams* params,
                                  AVCodecContext* inputCodec) {
@@ -48,7 +50,10 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
       return AVERROR_ENCODER_NOT_FOUND;
    }
 
-   if (params->hwType != AV_HWDEVICE_TYPE_NONE) {
+   if (params->hwType == AV_HWDEVICE_TYPE_NONE) {
+      encoder->hwDeviceRef = NULL;
+      encoder->hwFramesRef = NULL;
+   } else {
       if ((ret = encoderHardwareCreate(encoder, params, inputCodec)) < 0) {
          av_dict_free(params->options);
          return ret;
@@ -76,7 +81,9 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
       return ret;
    }
 
-   if (params->format != inputCodec->pix_fmt) {
+   if (params->format == inputCodec->pix_fmt) {
+      encoder->scaleCtx = NULL;
+   } else {
       encoder->scaleCtx = sws_getContext(
           inputCodec->width, inputCodec->height, inputCodec->pix_fmt, outputCodec->width,
           outputCodec->height, params->format, SWS_FAST_BILINEAR, NULL, NULL, NULL);
@@ -89,6 +96,23 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
       rsCheck(av_frame_get_buffer(encoder->scaleFrame, 0));
    }
 
+   if (encoder->hwDeviceRef != NULL && encoder->codecCtx->extradata == NULL) {
+      av_log(NULL, AV_LOG_WARNING, "Encoder is missing global header\n");
+      RSEncoder swEncoder;
+      if ((ret = rsVideoEncoderCreateSW(&swEncoder, params->input)) < 0) {
+         av_log(NULL, AV_LOG_WARNING,
+                "Failed to create software encoder to fix global header: %s\n",
+                av_err2str(ret));
+      } else {
+         size_t size = (size_t)swEncoder.codecCtx->extradata_size;
+         encoder->codecCtx->extradata_size = (int)size;
+         encoder->codecCtx->extradata = av_mallocz(size + AV_INPUT_BUFFER_PADDING_SIZE);
+         memcpy(encoder->codecCtx->extradata, swEncoder.codecCtx->extradata, size);
+         rsEncoderDestroy(&swEncoder);
+         av_log(NULL, AV_LOG_WARNING, "Hack: copied %zu-byte global header\n", size);
+      }
+   }
+
    rsPacketCircleCreate(&encoder->pktCircle);
    return 0;
 }
@@ -96,7 +120,7 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
 void rsEncoderDestroy(RSEncoder* encoder) {
    rsPacketCircleDestroy(&encoder->pktCircle);
    if (encoder->scaleCtx != NULL) {
-      av_frame_free(&encoder->hwFrame);
+      av_frame_free(&encoder->scaleFrame);
       sws_freeContext(encoder->scaleCtx);
    }
    avcodec_free_context(&encoder->codecCtx);

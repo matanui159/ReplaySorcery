@@ -24,7 +24,7 @@ void rsSaveExit(void) {
 void rsSave(void) {
    const char* file = "recording.mp4";
    AVFormatContext* formatCtx;
-   rsCheck(avformat_alloc_output_context2(&formatCtx, NULL, NULL, file));
+   rsCheck(avformat_alloc_output_context2(&formatCtx, NULL, "mp4", file));
    rsCheck(av_opt_set(formatCtx, "movflags", "+faststart", AV_OPT_SEARCH_CHILDREN));
    rsCheck(avio_open2(&formatCtx->pb, file, AVIO_FLAG_WRITE, NULL, NULL));
 
