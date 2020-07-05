@@ -44,6 +44,17 @@ void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input) {
 int rsVideoEncoderCreateSW(RSEncoder* encoder, const RSInput* input) {
    int ret;
    AVDictionary* options = NULL;
+   av_dict_set(&options, "qmin", "40", 0);
+   av_dict_set(&options, "qmax", "50", 0);
+   if ((ret = rsEncoderCreate(encoder, &(RSEncoderParams){.input = input,
+                                                          .name = "libopenh264",
+                                                          .format = AV_PIX_FMT_YUV420P,
+                                                          .options = &options})) >= 0) {
+      return 0;
+   }
+   av_log(NULL, AV_LOG_WARNING, "Failed to create OpenH264 encoder: %s\n",
+          av_err2str(ret));
+
 #ifdef RS_CONFIG_X264
    av_dict_set(&options, "preset", "ultrafast", 0);
    if ((ret = rsEncoderCreate(encoder, &(RSEncoderParams){.input = input,
@@ -54,12 +65,8 @@ int rsVideoEncoderCreateSW(RSEncoder* encoder, const RSInput* input) {
    }
    av_log(NULL, AV_LOG_WARNING, "Failed to create x264 encoder: %s\n", av_err2str(ret));
 #else
-   (void)encoder;
-   (void)input;
-   (void)ret;
-   (void)options;
    av_log(NULL, AV_LOG_WARNING,
-          "Compile with GPL-licensed x264 support for software encoding\n");
+          "Compile with GPL-licensed x264 support for better software encoding\n");
 #endif
 
    return AVERROR(ENOSYS);

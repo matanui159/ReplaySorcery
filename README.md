@@ -13,6 +13,7 @@ Alot of people online suggest using OBS's replay buffer feature. However this re
 - Supported encoding backends:
   - NVENC (nVidia only, untested)
   - VAAPI (Intel, AMD and nVidia. Only AMD has been tested)
+  - OpenH264
   - x264 (disabled by default due to GPL licensing)
 
 # Building
@@ -61,6 +62,7 @@ The code itself is partway through getting better documentation and commenting. 
 # TODO
 - Document code better
 - Add X11 frontend to listen to key presses (right now only the `debug` frontend is available)
+- Add support for configuration files
 - Make a `systemd` service.
 - Add audio support
   - On first look reading from audio output does not seem supported by FFmpeg.
