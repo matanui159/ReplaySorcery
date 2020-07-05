@@ -3,9 +3,25 @@
 #include <libavutil/avutil.h>
 #include <stdbool.h>
 
+/**
+ * Used for `recordQuality` to define the encoding quality. We have this instead of
+ * specific settings to make things easier and also because each encoder has a different
+ * set of settings.
+ */
 typedef enum RSConfigQuality {
+   /**
+    * Very fast with low resource usage.
+    */
    RS_QUALITY_LOW,
+
+   /**
+    * Somewhere inbetween the two.
+    */
    RS_QUALITY_MEDIUM,
+
+   /**
+    * High resource usage. May introduce lag in output video.
+    */
    RS_QUALITY_HIGH
 } RSConfigQuality;
 
@@ -41,8 +57,6 @@ typedef struct RSConfig {
    /**
     * The quality of the encoded video. This changes meaning depending on what encoder
     * is being used.
-    *
-    * Currently not implemented.
     */
    RSConfigQuality recordQuality;
 

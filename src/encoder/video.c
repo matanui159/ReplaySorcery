@@ -9,6 +9,18 @@
 #include <libavutil/avutil.h>
 #include <libavutil/dict.h>
 
+/**
+ * Arrays for mapping `rsConfig.recordQuality` to seperate quality settings for each
+ * encoder.
+ */
+static const char* encoderNvidiaPreset[] = {"fast", "medium", "slow"};
+static const char* encoderVaapiQuality[] = {"30", "20", "10"};
+static const char* encoderOpenH264QMin[] = {"30", "20", "10"};
+static const char* encoderOpenH264QMax[] = {"40", "30", "20"};
+#ifdef RS_CONFIG_X264
+static const char* encoderX264Preset[] = {"ultrafast", "medium", "slower"};
+#endif
+
 void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input) {
    int ret;
    AVDictionary* options = NULL;
@@ -23,7 +35,7 @@ void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input) {
       // pixel format (does not require uploading frames) and does not require a hardware
       // device.
       // TODO: low/medium/high = fast/medium/slow
-      av_dict_set(&options, "preset", "fast", 0);
+      av_dict_set(&options, "preset", encoderNvidiaPreset[rsConfig.recordQuality], 0);
       // clang-format off
       if ((ret = rsEncoderCreate(encoder, &(RSEncoderParams){
          .input = input,
@@ -40,7 +52,7 @@ void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input) {
       // Try to create a VAAPI encoder. The quality here is reveresed such that a higher
       // value equates to a lower quality.
       // TODO: low/medium/high = 30/20/10
-      av_dict_set(&options, "global_quality", "30", 0);
+      av_dict_set(&options, "global_quality", encoderVaapiQuality[rsConfig.recordQuality], 0);
       // clang-format off
       if ((ret = rsEncoderCreate(encoder, &(RSEncoderParams){
          .input = input,
@@ -73,7 +85,7 @@ int rsVideoEncoderCreateSW(RSEncoder* encoder, const RSInput* input) {
    // TODO: low/medium/high = ultrafast/medium/slower
    // I really do not like GPL licensing and I want to be safe :)
 #ifdef RS_CONFIG_X264
-   av_dict_set(&options, "preset", "ultrafast", 0);
+   av_dict_set(&options, "preset", encoderX264Preset[rsConfig.recordQuality], 0);
    // clang-format off
    if ((ret = rsEncoderCreate(encoder, &(RSEncoderParams){
       .input = input,
@@ -90,8 +102,8 @@ int rsVideoEncoderCreateSW(RSEncoder* encoder, const RSInput* input) {
 
    // Try to create an OpenH264 encoder.
    // TODO: low/medium/high = 40-50/???/???
-   av_dict_set(&options, "qmin", "40", 0);
-   av_dict_set(&options, "qmax", "50", 0);
+   av_dict_set(&options, "qmin", encoderOpenH264QMin[rsConfig.recordQuality], 0);
+   av_dict_set(&options, "qmax", encoderOpenH264QMax[rsConfig.recordQuality], 0);
    // clang-format off
    if ((ret = rsEncoderCreate(encoder, &(RSEncoderParams){
       .input = input,
