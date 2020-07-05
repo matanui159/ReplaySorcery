@@ -21,7 +21,7 @@ RSConfig rsConfig = {
 
    .outputFile = "recording.mp4",
 
-   .logLevel = AV_LOG_DEBUG,
+   .logLevel = AV_LOG_INFO,
    .enableDebug = false
 };
 // clang-format on

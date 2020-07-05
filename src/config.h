@@ -19,7 +19,7 @@ typedef struct RSConfig {
    const char* inputDisplay;
 
    /**
-    * The width, height and offset x, y to grab frames from.
+    * The width, height and offset x, y of the display to grab frames from.
     */
    int inputWidth;
    int inputHeight;
