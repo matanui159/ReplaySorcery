@@ -3,11 +3,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "main.h"
+#include "config.h"
 #include "error.h"
 #include "record.h"
 #include "save.h"
 #include "user/default.h"
 #include "user/user.h"
+#include <libavutil/avutil.h>
 #include <signal.h>
 #include <stdlib.h>
 
@@ -36,6 +38,7 @@ void rsMainExit(void) {
 int main(int argv, char** argc) {
    (void)argc;
    (void)argv;
+   av_log_set_level(rsConfig.logLevel);
    signal(SIGINT, mainSignal);
    signal(SIGTERM, mainSignal);
 

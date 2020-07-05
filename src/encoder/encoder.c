@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "encoder.h"
+#include "../config.h"
 #include "../error.h"
 #include "video.h"
 #include <string.h>
@@ -19,8 +20,7 @@ static inline void encoderLogIssues(void) {
  * encoders. This and `encoderHardwareDestroy` make it easy to split out hardware handling
  * as a seperate concern. Especially since it is not needed for all encoders.
  */
-static int encoderHardwareCreate(RSEncoder* encoder, const RSEncoderParams* params,
-                                 AVCodecContext* inputCodec) {
+static int encoderHardwareCreate(RSEncoder* encoder, const RSEncoderParams* params) {
    int ret;
    if ((ret = av_hwdevice_ctx_create(&encoder->hwDeviceRef, params->hwType, NULL, NULL,
                                      0)) < 0) {
@@ -29,8 +29,8 @@ static int encoderHardwareCreate(RSEncoder* encoder, const RSEncoderParams* para
 
    encoder->hwFramesRef = av_hwframe_ctx_alloc(encoder->hwDeviceRef);
    AVHWFramesContext* hwFramesCtx = (AVHWFramesContext*)encoder->hwFramesRef->data;
-   hwFramesCtx->width = inputCodec->width;
-   hwFramesCtx->height = inputCodec->height;
+   hwFramesCtx->width = rsConfig.recordWidth;
+   hwFramesCtx->height = rsConfig.recordHeight;
    hwFramesCtx->format = params->hwFormat;
    hwFramesCtx->sw_format = params->format;
 
@@ -65,8 +65,6 @@ static void encoderHardwareDestroy(RSEncoder* encoder) {
 
 int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
    int ret;
-   AVCodecContext* inputCodec = params->input->codecCtx;
-
    // We check for this first since if the encoder does not exist there is no point
    // setting up the hardware for it.
    AVCodec* codec = avcodec_find_encoder_by_name(params->name);
@@ -80,7 +78,7 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
       // encoder.
       encoder->hwDeviceRef = NULL;
    } else {
-      if ((ret = encoderHardwareCreate(encoder, params, inputCodec)) < 0) {
+      if ((ret = encoderHardwareCreate(encoder, params)) < 0) {
          av_dict_free(params->options);
          return ret;
       }
@@ -88,8 +86,8 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
 
    AVCodecContext* outputCodec = avcodec_alloc_context3(codec);
    encoder->codecCtx = outputCodec;
-   outputCodec->width = inputCodec->width;
-   outputCodec->height = inputCodec->height;
+   outputCodec->width = rsConfig.recordWidth;
+   outputCodec->height = rsConfig.recordHeight;
    outputCodec->pix_fmt = params->format;
 
    // The timebase of the codec is usually invalid.
@@ -119,8 +117,12 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
    // worry about returning safely on error.
    // Use the format from the parameters since the codec might have been set to the
    // hardware format.
-   // TODO: add support for downscaling.
-   if (params->format == inputCodec->pix_fmt) {
+   AVCodecContext* inputCodec = params->input->codecCtx;
+   if (outputCodec->width == inputCodec->width &&
+       outputCodec->height == inputCodec->height &&
+       params->format == inputCodec->pix_fmt) {
+      // Make sure this is `NULL` since we use it to detect if scaling is required when
+      // encoding frames.
       encoder->scaleCtx = NULL;
    } else {
       encoder->scaleCtx = sws_getContext(

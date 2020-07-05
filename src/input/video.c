@@ -3,7 +3,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "video.h"
+#include "../config.h"
 #include "../error.h"
+#include <libavutil/avstring.h>
 #include <libavutil/avutil.h>
 #include <libavutil/dict.h>
 
@@ -12,13 +14,17 @@ void rsVideoInputCreate(RSInput* input) {
    AVDictionary* options = NULL;
 
    // Try to create an X11 input.
-   // TODO: set these options from program configuration when implemented.
-   av_dict_set(&options, "video_size", "1920x1080", 0);
-   av_dict_set_int(&options, "framerate", 30, 0);
-   if ((ret = rsInputCreate(input, "x11grab", ":0.0", &options)) >= 0) {
-      return;
+   if (!rsConfig.disableX11Input) {
+      char* videoSize = av_asprintf("%ix%i", rsConfig.inputWidth, rsConfig.inputHeight);
+      av_dict_set(&options, "video_size", videoSize, AV_DICT_DONT_STRDUP_VAL);
+      av_dict_set_int(&options, "grab_x", rsConfig.inputX, 0);
+      av_dict_set_int(&options, "grab_y", rsConfig.inputY, 0);
+      av_dict_set_int(&options, "framerate", rsConfig.inputFramerate, 0);
+      if ((ret = rsInputCreate(input, "x11grab", rsConfig.inputDisplay, &options)) >= 0) {
+         return;
+      }
+      av_log(NULL, AV_LOG_WARNING, "Failed to create X11 input: %s\n", av_err2str(ret));
    }
-   av_log(NULL, AV_LOG_WARNING, "Failed to create X11 input: %s\n", av_err2str(ret));
 
    // All the options failed, fail with `ENOSYS` (not implemented).
    rsError(AVERROR(ENOSYS));

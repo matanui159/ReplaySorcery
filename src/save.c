@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "save.h"
+#include "config.h"
 #include "encoder/encoder.h"
 #include "error.h"
 #include "pktcircle.h"
@@ -22,16 +23,15 @@ void rsSaveExit(void) {
 }
 
 void rsSave(void) {
-   const char* file = "recording.mp4";
    AVFormatContext* formatCtx;
-   rsCheck(avformat_alloc_output_context2(&formatCtx, NULL, "mp4", file));
+   rsCheck(avformat_alloc_output_context2(&formatCtx, NULL, "mp4", rsConfig.outputFile));
    rsCheck(av_opt_set(formatCtx, "movflags", "+faststart", AV_OPT_SEARCH_CHILDREN));
-   rsCheck(avio_open2(&formatCtx->pb, file, AVIO_FLAG_WRITE, NULL, NULL));
+   rsCheck(avio_open2(&formatCtx->pb, rsConfig.outputFile, AVIO_FLAG_WRITE, NULL, NULL));
 
    const RSEncoder* encoder = rsRecordVideo();
    AVStream* stream = avformat_new_stream(formatCtx, encoder->codecCtx->codec);
    avcodec_parameters_from_context(stream->codecpar, encoder->codecCtx);
-   av_dump_format(formatCtx, 0, file, 1);
+   av_dump_format(formatCtx, 0, rsConfig.outputFile, 1);
 
    rsCheck(avformat_write_header(formatCtx, NULL));
    rsPacketCircleCopy(&priv.pktCircle, &encoder->pktCircle);

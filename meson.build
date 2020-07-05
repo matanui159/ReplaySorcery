@@ -16,6 +16,7 @@ configure_file(
 executable(
    'replay-sorcery', [
       'src/main.c',
+      'src/config.c',
       'src/error.c',
       'src/pktcircle.c',
       'src/input/input.c',

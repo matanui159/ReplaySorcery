@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "pktcircle.h"
+#include "config.h"
 #include "error.h"
 #include <libavutil/avutil.h>
 
@@ -45,8 +46,9 @@ static void packetCircleRotate(RSPacketCircle* pktCircle) {
 }
 
 void rsPacketCircleCreate(RSPacketCircle* pktCircle) {
-   // TODO: use program configuration when implemented
-   pktCircle->size = 30 * 30 + 1;
+   // We allocate one extra packet then needed so we always have a packet we can write
+   // into.
+   pktCircle->size = (size_t)(rsConfig.inputFramerate * rsConfig.recordDuration + 1);
    pktCircle->packets = av_mallocz_array(pktCircle->size, sizeof(AVPacket));
    for (size_t i = 0; i < pktCircle->size; ++i) {
       av_init_packet(&pktCircle->packets[i]);
