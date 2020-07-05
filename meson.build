@@ -1,4 +1,4 @@
-project('ReplaySorcery', 'c', default_options: [
+project('ReplaySorcery', 'c', version: '0.1.0-dev', default_options: [
    'c_std=c99',
    'warning_level=3'
 ])

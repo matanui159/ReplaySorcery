@@ -7,6 +7,13 @@
 #include "video.h"
 #include <string.h>
 
+/**
+ * A very small utility function to try and notify the user of potential encoding issues.
+ */
+static inline void encoderLogIssues(void) {
+   av_log(NULL, AV_LOG_WARNING, ">>> This may cause issues in the output file! <<<\n");
+}
+
 static int encoderHardwareCreate(RSEncoder* encoder, const RSEncoderParams* params,
                                  AVCodecContext* inputCodec) {
    int ret;
@@ -96,20 +103,29 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
       rsCheck(av_frame_get_buffer(encoder->scaleFrame, 0));
    }
 
+   // Some hardware encoder do not support creating global headers. So we instead create
+   // a temporary software encoder with similar parameters and try using its global
+   // header. It is a bit of a hack, but from my testing it seems to work.
+   // TODO: use OpenH264 as a reference and make a custom global header generator.
    if (encoder->hwDeviceRef != NULL && encoder->codecCtx->extradata == NULL) {
       av_log(NULL, AV_LOG_WARNING, "Encoder is missing global header\n");
+      av_log(NULL, AV_LOG_INFO,
+             "Creating software encoder to copy global header from...\n");
       RSEncoder swEncoder;
       if ((ret = rsVideoEncoderCreateSW(&swEncoder, params->input)) < 0) {
          av_log(NULL, AV_LOG_WARNING,
-                "Failed to create software encoder to fix global header: %s\n",
+                "Failed to create software encoder to copy global header: %s\n",
                 av_err2str(ret));
+         encoderLogIssues();
       } else {
+         // We cast to `size_t` since the two function calls both require an argument of
+         // type `size_t` and we have `-Wconversion` enabled.
          size_t size = (size_t)swEncoder.codecCtx->extradata_size;
          encoder->codecCtx->extradata_size = (int)size;
          encoder->codecCtx->extradata = av_mallocz(size + AV_INPUT_BUFFER_PADDING_SIZE);
          memcpy(encoder->codecCtx->extradata, swEncoder.codecCtx->extradata, size);
          rsEncoderDestroy(&swEncoder);
-         av_log(NULL, AV_LOG_WARNING, "Hack: copied %zu-byte global header\n", size);
+         av_log(NULL, AV_LOG_INFO, "Copied %zu-byte global header\n", size);
       }
    }
 
@@ -150,6 +166,7 @@ void rsEncode(RSEncoder* encoder, const AVFrame* frame) {
    rsCheck(ret);
    if (!(encoder->pktCircle.input->flags & AV_PKT_FLAG_KEY)) {
       av_log(NULL, AV_LOG_WARNING, "Encoded packet is not a keyframe\n");
+      encoderLogIssues();
    }
    rsPacketCircleRotate(&encoder->pktCircle);
 }

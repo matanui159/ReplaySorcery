@@ -10,7 +10,10 @@
 static void debugUserWait(RSUser* user) {
    (void)user;
    av_log(NULL, AV_LOG_INFO, "Press enter to save\n");
-   if (getchar() == EOF) rsMainExit();
+   int c;
+   while ((c = getchar()) != '\n') {
+      if (c == EOF) rsMainExit();
+   }
 }
 
 int rsDebugUserCreate(RSUser* user) {
