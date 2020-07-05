@@ -94,7 +94,7 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
 
    // The timebase of the codec is usually invalid.
    outputCodec->time_base = params->input->formatCtx->streams[0]->time_base;
-   // Set the Group Of Pictures (GOP) size to 0, thus making all frames I-frames.
+   // Set the Group Of Pictures (GOP) size to 0, thus making all frames intra-frames.
    outputCodec->gop_size = 0;
    // Needed for mp4.
    outputCodec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
@@ -195,11 +195,13 @@ void rsEncode(RSEncoder* encoder, const AVFrame* frame) {
    if (inputFrame != frame) {
       rsCheck(av_frame_copy_props((AVFrame*)inputFrame, frame));
    }
-
    rsCheck(avcodec_send_frame(encoder->codecCtx, inputFrame));
    int ret = avcodec_receive_packet(encoder->codecCtx, encoder->pktCircle.input);
+
+   // Some encoders require a couple of frames before starting to output packets.
    if (ret == AVERROR(EAGAIN)) return;
    rsCheck(ret);
+
    if (!(encoder->pktCircle.input->flags & AV_PKT_FLAG_KEY)) {
       // This will probably break things but it has not happened yet.
       av_log(NULL, AV_LOG_WARNING, "Encoded packet is not a keyframe\n");

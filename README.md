@@ -54,10 +54,12 @@ TODO: user documentation. Maybe move `Building`/`Running` to Github wiki along w
 The code itself is partway through getting better documentation and commenting. If you want to jump into it I would recommend looking at these source files and headers inparticular:
 - `src/input/input`: handles different input devices.
 - `src/input/video`: finds a video input device.
-- `src/encoder/encoder`: handles different encoders (partly documented).
+- `src/encoder/encoder`: handles different encoders.
 - `src/encoder/video`: finds a video encoder.
 - `src/save`: saves into an `mp4` container (not documented).
 - `src/pktcircle`: a multithreaded circle buffer for packets.
+
+If theres any part of user or developer documentation that you feel needs to be improved. Feel free to [let me know](https://github.com/matanui159/ReplaySorcery/issues).
 
 # TODO
 - Document code better

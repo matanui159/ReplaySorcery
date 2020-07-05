@@ -29,7 +29,8 @@ void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input) {
    }
    av_log(NULL, AV_LOG_WARNING, "Failed to create nVidia encoder: %s\n", av_err2str(ret));
 
-   // Try to create a VAAPI encoder.
+   // Try to create a VAAPI encoder. The quality here is reveresed such that a higher
+   // value equates to a lower quality.
    // TODO: low/medium/high = 30/20/10
    av_dict_set(&options, "global_quality", "30", 0);
    if ((ret = rsEncoderCreate(encoder,
