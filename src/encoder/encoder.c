@@ -103,7 +103,7 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
       rsCheck(av_frame_get_buffer(encoder->scaleFrame, 0));
    }
 
-   // Some hardware encoder do not support creating global headers. So we instead create
+   // Some hardware encoders do not support creating global headers. So we instead create
    // a temporary software encoder with similar parameters and try using its global
    // header. It is a bit of a hack, but from my testing it seems to work.
    // TODO: use OpenH264 as a reference and make a custom global header generator.
