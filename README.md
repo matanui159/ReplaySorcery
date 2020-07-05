@@ -33,15 +33,22 @@ $ ninja -C bin
 ## Ubuntu Dependencies
 To install the required dependencies on Ubuntu run:
 ```
-$ apt install ninja-build libavutil-dev libavformat-dev libavdevice-dev \
-                  libavcodec-dev libswscale-dev libx11-dev libunwind-dev
+$ apt install python3-pip ninja-build libavutil-dev libavformat-dev libavdevice-dev \
+              libavcodec-dev libswscale-dev libx11-dev libunwind-dev
 $ pip3 install meson
 ```
 
 ## Fedora Dependencies
 To install the required dependencies on Fedora run:
 ```
-$ dnf install ninja-build ffmpeg-devel libX11-devel libunwind-devel
+$ dnf install python3-pip ninja-build ffmpeg-devel libX11-devel libunwind-devel
+$ pip install meson
+```
+
+## Arch Dependencies
+To install the required dependencies on Arch run:
+```
+$ pacman -S python-pip ninja ffmpeg libx11 libunwind
 $ pip install meson
 ```
 
