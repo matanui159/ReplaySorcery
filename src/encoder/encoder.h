@@ -51,9 +51,7 @@ typedef struct RSEncoderParams {
 } RSEncoderParams;
 
 typedef struct RSEncoder {
-   enum AVPixelFormat format;
    AVCodecContext* codecCtx;
-   AVRational inputBase;
    struct SwsContext* scaleCtx;
    AVFrame* scaleFrame;
    AVBufferRef* hwDeviceRef;

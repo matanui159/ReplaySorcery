@@ -25,17 +25,12 @@ void rsSave(void) {
    const char* file = "recording.mp4";
    AVFormatContext* formatCtx;
    rsCheck(avformat_alloc_output_context2(&formatCtx, NULL, NULL, file));
-   rsCheck(avio_open2(&formatCtx->pb, file, AVIO_FLAG_WRITE, NULL, NULL));
    rsCheck(av_opt_set(formatCtx, "movflags", "+faststart", AV_OPT_SEARCH_CHILDREN));
+   rsCheck(avio_open2(&formatCtx->pb, file, AVIO_FLAG_WRITE, NULL, NULL));
 
    const RSEncoder* encoder = rsRecordVideo();
    AVStream* stream = avformat_new_stream(formatCtx, encoder->codecCtx->codec);
-   stream->codecpar->codec_type = encoder->codecCtx->codec_type;
-   stream->codecpar->codec_id = encoder->codecCtx->codec_id;
-   stream->codecpar->width = encoder->codecCtx->width;
-   stream->codecpar->height = encoder->codecCtx->height;
-   stream->codecpar->format = encoder->format;
-   stream->time_base = encoder->codecCtx->time_base;
+   avcodec_parameters_from_context(stream->codecpar, encoder->codecCtx);
    av_dump_format(formatCtx, 0, file, 1);
 
    rsCheck(avformat_write_header(formatCtx, NULL));

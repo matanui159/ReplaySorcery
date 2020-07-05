@@ -41,8 +41,6 @@ static void encoderHardwareDestroy(RSEncoder* encoder) {
 
 int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
    int ret;
-   encoder->format = params->format;
-   encoder->inputBase = params->input->formatCtx->streams[0]->time_base;
    AVCodecContext* inputCodec = params->input->codecCtx;
    AVCodec* codec = avcodec_find_encoder_by_name(params->name);
    if (codec == NULL) {
@@ -61,9 +59,10 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
    encoder->codecCtx = outputCodec;
    outputCodec->width = inputCodec->width;
    outputCodec->height = inputCodec->height;
-   outputCodec->pix_fmt = encoder->format;
-   outputCodec->time_base = AV_TIME_BASE_Q;
+   outputCodec->pix_fmt = params->format;
+   outputCodec->time_base = params->input->formatCtx->streams[0]->time_base;
    outputCodec->gop_size = 0;
+   outputCodec->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
    if (encoder->hwDeviceRef != NULL) {
       outputCodec->pix_fmt = params->hwFormat;
       outputCodec->hw_device_ctx = av_buffer_ref(encoder->hwDeviceRef);
@@ -77,16 +76,16 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
       return ret;
    }
 
-   if (encoder->format != inputCodec->pix_fmt) {
+   if (params->format != inputCodec->pix_fmt) {
       encoder->scaleCtx = sws_getContext(
           inputCodec->width, inputCodec->height, inputCodec->pix_fmt, outputCodec->width,
-          outputCodec->height, encoder->format, SWS_FAST_BILINEAR, NULL, NULL, NULL);
+          outputCodec->height, params->format, SWS_FAST_BILINEAR, NULL, NULL, NULL);
       if (encoder->scaleCtx == NULL) rsError(AVERROR_EXTERNAL);
 
       encoder->scaleFrame = av_frame_alloc();
       encoder->scaleFrame->width = outputCodec->width;
       encoder->scaleFrame->height = outputCodec->height;
-      encoder->scaleFrame->format = encoder->format;
+      encoder->scaleFrame->format = params->format;
       rsCheck(av_frame_get_buffer(encoder->scaleFrame, 0));
    }
 
@@ -105,7 +104,7 @@ void rsEncoderDestroy(RSEncoder* encoder) {
 }
 
 void rsEncode(RSEncoder* encoder, const AVFrame* frame) {
-   AVFrame* inputFrame = (AVFrame*)frame;
+   const AVFrame* inputFrame = frame;
    if (encoder->scaleCtx != NULL) {
       sws_scale(encoder->scaleCtx, (const uint8_t* const*)inputFrame->data,
                 inputFrame->linesize, 0, inputFrame->height, encoder->scaleFrame->data,
@@ -119,11 +118,8 @@ void rsEncode(RSEncoder* encoder, const AVFrame* frame) {
    }
 
    if (inputFrame != frame) {
-      rsCheck(av_frame_copy_props(inputFrame, frame));
+      rsCheck(av_frame_copy_props((AVFrame*)inputFrame, frame));
    }
-   inputFrame->pts =
-       av_rescale_q(inputFrame->pts, encoder->inputBase, encoder->codecCtx->time_base);
-
    rsCheck(avcodec_send_frame(encoder->codecCtx, inputFrame));
    int ret = avcodec_receive_packet(encoder->codecCtx, encoder->pktCircle.input);
    if (ret == AVERROR(EAGAIN)) return;
