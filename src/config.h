@@ -15,12 +15,12 @@ typedef enum RSConfigQuality {
    RS_QUALITY_LOW,
 
    /**
-    * Somewhere inbetween the two.
+    * Somewhere inbetween low and high.
     */
    RS_QUALITY_MEDIUM,
 
    /**
-    * High resource usage. May introduce lag in output video.
+    * High resource usage. May introduce lag in the output video.
     */
    RS_QUALITY_HIGH
 } RSConfigQuality;

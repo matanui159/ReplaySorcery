@@ -9,13 +9,6 @@ I got tired waiting for someone else to do it.
 ## What is wrong with OBS?
 Alot of people online suggest using OBS's replay buffer feature. However this requires opening OBS and start recording. I do not know when something will happen that I want to share. Might not even happen while playing a game. I just want something in the background (like a `systemd` service) so that whenever something happens I can record it.
 
-# Current Features
-- Supported encoding backends:
-  - NVENC
-  - VAAPI
-  - OpenH264
-  - x264 (disabled by default due to GPL licensing)
-
 # Building
 This project uses Meson and Ninja for compiling. It also depends on FFmpeg and X11 development libraries. `libunwind` is not directly needed but is recommended.
 ```
@@ -63,7 +56,7 @@ The code itself is partway through getting better documentation and commenting. 
 - `src/input/video`: finds a video input device.
 - `src/encoder/encoder`: handles different encoders.
 - `src/encoder/video`: finds a video encoder.
-- `src/save`: saves into an `mp4` container (not documented).
+- `src/save`: saves into an `mp4` container.
 - `src/pktcircle`: a multithreaded circle buffer for packets.
 
 If theres any part of user or developer documentation that you feel needs to be improved. Feel free to [let me know](https://github.com/matanui159/ReplaySorcery/issues).
@@ -83,3 +76,5 @@ If theres any part of user or developer documentation that you feel needs to be 
   - Theoretically possible since FFmpeg supports multiple platforms and provides inputs & encoders for them as well
   - Doubt there is any demand though
   - Maybe for Intel devices if they are fast enough?
+- Smaller tweaks:
+  - Add configuration option for changing scaler options

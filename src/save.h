@@ -5,8 +5,19 @@
 #ifndef RS_SAVE_H
 #define RS_SAVE_H
 
+/**
+ * Initializes the objects needed for saving.
+ */
 void rsSaveInit(void);
+
+/**
+ * Frees up resources used for saving.
+ */
 void rsSaveExit(void);
+
+/**
+ * Saves the currently encoded packets to a file.
+ */
 void rsSave(void);
 
 #endif

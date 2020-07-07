@@ -12,7 +12,12 @@
 #include <libavutil/avutil.h>
 #include <libavutil/opt.h>
 
-static struct { RSPacketCircle pktCircle; } priv;
+static struct {
+   /**
+    * Used for creating a copy of the currently encoded packets for saving.
+    */
+   RSPacketCircle pktCircle;
+} priv;
 
 void rsSaveInit(void) {
    rsPacketCircleCreate(&priv.pktCircle);
@@ -24,18 +29,28 @@ void rsSaveExit(void) {
 
 void rsSave(void) {
    AVFormatContext* formatCtx;
+   // Forcing it to be mp4 makes life alot easier
    rsCheck(avformat_alloc_output_context2(&formatCtx, NULL, "mp4", rsConfig.outputFile));
+   // `faststart` does a second pass of the encoding that puts the `MOOV` atom at the
+   // start. Does not take long and highly recommended for sharing since the video plays
+   // faster without downloading the whole file.
    rsCheck(av_opt_set(formatCtx, "movflags", "+faststart", AV_OPT_SEARCH_CHILDREN));
    rsCheck(avio_open2(&formatCtx->pb, rsConfig.outputFile, AVIO_FLAG_WRITE, NULL, NULL));
 
    const RSEncoder* encoder = rsRecordVideo();
    AVStream* stream = avformat_new_stream(formatCtx, encoder->codecCtx->codec);
+   // Share the parameters from the encoder.
    avcodec_parameters_from_context(stream->codecpar, encoder->codecCtx);
    av_dump_format(formatCtx, 0, rsConfig.outputFile, 1);
 
    rsCheck(avformat_write_header(formatCtx, NULL));
    rsPacketCircleCopy(&priv.pktCircle, &encoder->pktCircle);
    av_log(NULL, AV_LOG_INFO, "Saving %zu video packets...\n", priv.pktCircle.tail);
+
+   // Due to the encoder constantly running, the packets are very likely not starting at
+   // 0. So we get the timestamps of the first packet and shift all of them by that. If
+   // the value is `AV_NOPTS_VALUE`, the rest are likely the same so we should not modify
+   // them.
    int64_t ptsOffset = priv.pktCircle.packets[0].pts;
    if (ptsOffset == AV_NOPTS_VALUE) ptsOffset = 0;
    int64_t dtsOffset = priv.pktCircle.packets[0].dts;
@@ -45,6 +60,9 @@ void rsSave(void) {
       AVPacket* packet = &priv.pktCircle.packets[i];
       packet->pts -= ptsOffset;
       packet->dts -= dtsOffset;
+
+      // Despite copying the timebase from the encoder, the muxer may decide to choose a
+      // better timebase.
       av_packet_rescale_ts(packet, encoder->codecCtx->time_base, stream->time_base);
       rsCheck(av_write_frame(formatCtx, packet));
    }
