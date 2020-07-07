@@ -52,7 +52,8 @@ void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input) {
       // Try to create a VAAPI encoder. The quality here is reveresed such that a higher
       // value equates to a lower quality.
       // TODO: low/medium/high = 30/20/10
-      av_dict_set(&options, "global_quality", encoderVaapiQuality[rsConfig.recordQuality], 0);
+      av_dict_set(&options, "global_quality", encoderVaapiQuality[rsConfig.recordQuality],
+                  0);
       // clang-format off
       if ((ret = rsEncoderCreate(encoder, &(RSEncoderParams){
          .input = input,

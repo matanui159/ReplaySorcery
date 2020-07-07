@@ -6,6 +6,7 @@
 #include "config/config.h"
 #include "encoder/encoder.h"
 #include "error.h"
+#include "path.h"
 #include "pktcircle.h"
 #include "record.h"
 #include <libavformat/avformat.h>
@@ -28,24 +29,28 @@ void rsSaveExit(void) {
 }
 
 void rsSave(void) {
+   RSPath outputPath;
+   rsPathCreate(&outputPath, NULL);
+   rsPathAddDated(&outputPath, rsConfig.outputFile);
+   av_log(NULL, AV_LOG_INFO, "Saving as '%s'...\n", outputPath.value);
+
    AVFormatContext* formatCtx;
    // Forcing it to be mp4 makes life alot easier
-   rsCheck(avformat_alloc_output_context2(&formatCtx, NULL, "mp4", rsConfig.outputFile));
+   rsCheck(avformat_alloc_output_context2(&formatCtx, NULL, "mp4", outputPath.value));
    // `faststart` does a second pass of the encoding that puts the `MOOV` atom at the
    // start. Does not take long and highly recommended for sharing since the video plays
    // faster without downloading the whole file.
    rsCheck(av_opt_set(formatCtx, "movflags", "+faststart", AV_OPT_SEARCH_CHILDREN));
-   rsCheck(avio_open2(&formatCtx->pb, rsConfig.outputFile, AVIO_FLAG_WRITE, NULL, NULL));
+   rsCheck(avio_open2(&formatCtx->pb, outputPath.value, AVIO_FLAG_WRITE, NULL, NULL));
 
    const RSEncoder* encoder = rsRecordVideo();
    AVStream* stream = avformat_new_stream(formatCtx, encoder->codecCtx->codec);
    // Share the parameters from the encoder.
    avcodec_parameters_from_context(stream->codecpar, encoder->codecCtx);
-   av_dump_format(formatCtx, 0, rsConfig.outputFile, 1);
+   av_dump_format(formatCtx, 0, outputPath.value, 1);
 
    rsCheck(avformat_write_header(formatCtx, NULL));
    rsPacketCircleCopy(&priv.pktCircle, &encoder->pktCircle);
-   av_log(NULL, AV_LOG_INFO, "Saving %zu video packets...\n", priv.pktCircle.tail);
 
    // Due to the encoder constantly running, the packets are very likely not starting at
    // 0. So we get the timestamps of the first packet and shift all of them by that. If
@@ -72,4 +77,5 @@ void rsSave(void) {
    avio_closep(&formatCtx->pb);
    avformat_free_context(formatCtx);
    av_log(NULL, AV_LOG_INFO, "Successfully saved!\n");
+   rsPathDestroy(&outputPath);
 }

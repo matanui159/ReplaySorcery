@@ -17,6 +17,7 @@ executable(
    'replay-sorcery', [
       'src/main.c',
       'src/error.c',
+      'src/path.c',
       'src/pktcircle.c',
       'src/record.c',
       'src/save.c',

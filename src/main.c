@@ -38,10 +38,10 @@ void rsMainExit(void) {
 int main(int argv, char** argc) {
    (void)argc;
    (void)argv;
-   av_log_set_level(rsConfig.logLevel);
    signal(SIGINT, mainSignal);
    signal(SIGTERM, mainSignal);
 
+   rsConfigInit();
    rsErrorInit();
    rsRecordInit();
    rsSaveInit();
