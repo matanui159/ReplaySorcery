@@ -6,28 +6,28 @@ compiler = meson.get_compiler('c')
 
 unwind = dependency('libunwind', include_type: 'system', required: false)
 configure_file(
-   output: 'rs-config.h',
+   output: 'rs-build-config.h',
    configuration: {
       'RS_CONFIG_UNWIND': unwind.found(),
-      'RS_CONFIG_X264': get_option('x264_gpl')
+      'RS_CONFIG_X264': get_option('x264-gpl')
    }
 )
 
 executable(
    'replay-sorcery', [
       'src/main.c',
-      'src/config.c',
       'src/error.c',
       'src/pktcircle.c',
+      'src/record.c',
+      'src/save.c',
+      'src/config/config.c',
       'src/input/input.c',
       'src/input/video.c',
       'src/encoder/encoder.c',
       'src/encoder/video.c',
-      'src/record.c',
       'src/user/user.c',
       'src/user/debug.c',
-      'src/user/default.c',
-      'src/save.c'
+      'src/user/default.c'
    ],
    c_args: compiler.get_supported_arguments([
       '-Wconversion',

@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "main.h"
-#include "config.h"
+#include "config/config.h"
 #include "error.h"
 #include "record.h"
 #include "save.h"

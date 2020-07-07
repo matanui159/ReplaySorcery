@@ -3,9 +3,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "video.h"
-#include "../config.h"
+#include "../config/config.h"
 #include "../error.h"
-#include "rs-config.h"
+#include "rs-build-config.h"
 #include <libavutil/avutil.h>
 #include <libavutil/dict.h>
 

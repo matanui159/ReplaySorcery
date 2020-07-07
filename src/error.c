@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "error.h"
-#include "rs-config.h"
+#include "rs-build-config.h"
 #include <signal.h>
 #include <stdlib.h>
 

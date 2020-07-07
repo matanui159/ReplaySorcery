@@ -19,7 +19,7 @@ $ ninja -C bin
 To build with x264 support, which potentially (IANAL) makes the binary GPL-licensed, run:
 ```
 $ meson bin
-$ meson configure bin -Dx264_gpl=true
+$ meson configure bin -Dx264-gpl=true
 $ ninja -C bin
 ```
 

@@ -1,1 +1,1 @@
-option('x264_gpl', type: 'boolean', value: false, description: 'Compile with GPL-licensed x264 support')
+option('x264-gpl', type: 'boolean', value: false, description: 'Compile with GPL-licensed x264 support')
