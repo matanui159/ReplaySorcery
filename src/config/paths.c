@@ -5,10 +5,10 @@
 #include "paths.h"
 #include "../path.h"
 #include "file.h"
-#include <stdlib.h>
+#include <libavutil/avstring.h>
 #include <libavutil/avutil.h>
 #include <libavutil/bprint.h>
-#include <libavutil/avstring.h>
+#include <stdlib.h>
 
 /**
  * The name of the config file inside the XDG paths.
@@ -21,7 +21,8 @@
 static const char* configPathsEnv(const char* name, const char* def) {
    const char* value = getenv(name);
    if (value == NULL) {
-      av_log(NULL, AV_LOG_WARNING, "Environment variable '%s' does not exist, using default: %s\n", name, def);
+      av_log(NULL, AV_LOG_WARNING,
+             "Environment variable '%s' does not exist, using default: %s\n", name, def);
       return def;
    }
    return value;

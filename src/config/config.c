@@ -4,8 +4,8 @@
 
 #include "config.h"
 #include "../error.h"
-#include "paths.h"
 #include "libavutil/opt.h"
+#include "paths.h"
 
 /**
  * A utility macro to get the offset into the configuration object.
