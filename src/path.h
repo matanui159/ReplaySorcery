@@ -4,48 +4,25 @@
 
 #ifndef RS_PATH_H
 #define RS_PATH_H
-#include <stddef.h>
+#include <libavutil/avutil.h>
+#include <libavutil/bprint.h>
 
 /**
- * A dynamically resizing file path.
+ * Flags to be used for when joining paths.
  */
-typedef struct RSPath {
+typedef enum RSPathFlags {
    /**
-    * The current NULL-terminated string value of the path.
+    * Generate the appended path by passing it through `strftime` to create a datetime
+    * relative path.
     */
-   char* value;
-
-   /**
-    * The size of the above value not including the NULL-terminator.
-    */
-   size_t size;
-
-   /**
-    * The maximum capacity of `value`. Used internally to reduce the amount of
-    * reallocations.
-    */
-   size_t capacity;
-} RSPath;
+   RS_PATH_STRFTIME = 1
+} RSPathFlags;
 
 /**
- * Creates a new path with the initial value from `str`.
+ * A utility function to add `extra` to the dynamically-sized `path`. Will treat paths
+ * starting with `/` as absolute, expand paths starting with `~/` and otherwise make sure
+ * there is a `/` between `path` and `extra`.
  */
-void rsPathCreate(RSPath* path, const char* str);
-
-/**
- * The destroys the path and frees all memory used by it.
- */
-void rsPathDestroy(RSPath* path);
-
-/**
- * Concatenates another path to the provided one, making sure there is a `/` inbetween.
- * If the path to be added starts with `/` or `~`, it is treated as an absolute path.
- */
-void rsPathAdd(RSPath* path, const char* str);
-
-/**
- * Same as `rsAddPath`, but the string can have `strftime` formatting parameters.
- */
-void rsPathAddDated(RSPath* path, const char* str);
+void rsPathJoin(AVBPrint* path, const char* extra, RSPathFlags flags);
 
 #endif

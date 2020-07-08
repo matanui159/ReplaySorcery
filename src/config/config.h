@@ -96,20 +96,20 @@ typedef struct RSConfig {
     * Disable the X11 input. Since X11 is the only supported input right now, this option
     * is not recommended. Default is false.
     */
-   bool disableX11Input;
+   int disableX11Input;
 
    /**
     * Disable different encoders backends. The order goes nVidia (NVENC), VAAPI, software.
     * For example, if you had an nVidia GPU but wanted to use VAAPI, you can set
     * `disableNvidiaEncoder`. Default is false for all of these.
     */
-   bool disableNvidiaEncoder;
-   bool disableVaapiEncoder;
-   bool disableSoftwareEncoder;
+   int disableNvidiaEncoder;
+   int disableVaapiEncoder;
+   int disableSoftwareEncoder;
 
    /**
     * The name of the output file to write to. The name is passed through strftime to
-    * generate time-unique names. Default is `~/Videos/%F_%H-%M-%S.mp4`.
+    * generate time-unique names. Default is `~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4`.
     */
    const char* outputFile;
 
@@ -126,7 +126,7 @@ typedef struct RSConfig {
     *
     * Since currently this is the only user implementation, this option does nothing.
     */
-   bool enableDebug;
+   int enableDebug;
 } RSConfig;
 
 /**

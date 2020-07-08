@@ -22,6 +22,7 @@ executable(
       'src/record.c',
       'src/save.c',
       'src/config/config.c',
+      'src/config/file.c',
       'src/input/input.c',
       'src/input/video.c',
       'src/encoder/encoder.c',

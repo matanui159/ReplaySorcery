@@ -4,6 +4,7 @@
 
 #include "config.h"
 #include "../error.h"
+#include "file.h"
 #include "libavutil/opt.h"
 
 /**
@@ -34,7 +35,7 @@ static AVOption configOptions[] = {
    { "disableNvidiaEncoder", NULL, OFFSET(disableNvidiaEncoder), AV_OPT_TYPE_BOOL, {.i64=false}, false, true, 0, NULL },
    { "disableVaapiEncoder", NULL, OFFSET(disableVaapiEncoder), AV_OPT_TYPE_BOOL, {.i64=false}, false, true, 0, NULL },
    { "disableSoftwareEncoder", NULL, OFFSET(disableSoftwareEncoder), AV_OPT_TYPE_BOOL, {.i64=false}, false, true, 0, NULL },
-   { "outputFile", NULL, OFFSET(outputFile), AV_OPT_TYPE_STRING, {.str="~/Videos/%F_%H-%M-%S.mp4"}, false, true, 0, NULL },
+   { "outputFile", NULL, OFFSET(outputFile), AV_OPT_TYPE_STRING, {.str="~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4"}, 0, 0, 0, NULL },
    { "logLevel", NULL, OFFSET(logLevel), AV_OPT_TYPE_INT, {.i64=AV_LOG_VERBOSE}, AV_LOG_QUIET, AV_LOG_TRACE, 0, "log" },
       { "quiet", NULL, 0, AV_OPT_TYPE_CONST, {.i64=AV_LOG_QUIET}, 0, 0, 0, "log" },
       { "panic", NULL, 0, AV_OPT_TYPE_CONST, {.i64=AV_LOG_PANIC}, 0, 0, 0, "log" },
@@ -67,6 +68,8 @@ void rsConfigInit(void) {
    // Fixup width and height if set to -1 (auto).
    if (rsConfig.recordWidth == -1) rsConfig.recordWidth = rsConfig.inputWidth;
    if (rsConfig.recordHeight == -1) rsConfig.recordHeight = rsConfig.inputHeight;
+
+   rsConfigFileRead("replay-sorcery.conf");
 
    av_log_set_level(rsConfig.logLevel);
 }
