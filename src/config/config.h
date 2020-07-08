@@ -32,7 +32,7 @@ typedef enum RSConfigQuality {
 /**
  * The global configuration for the program. The configuration is read from the following
  * files:
- * - $XDG_CONFIG_HOME/replay-sorcery.conf ($XDG_CONFIG_HOME defaults to $HOME/.config)
+ * - $XDG_CONFIG_HOME/replay-sorcery.conf ($XDG_CONFIG_HOME defaults to ~/.config)
  * - $XDG_CONFIG_DIRS/replay-sorcery.conf ($XDG_CONFIG_DIRS defaults to /etc/xdg)
  * - <current working directory>/replay-sorcery.conf
  *

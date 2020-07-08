@@ -4,7 +4,7 @@
 
 #include "config.h"
 #include "../error.h"
-#include "file.h"
+#include "paths.h"
 #include "libavutil/opt.h"
 
 /**
@@ -64,12 +64,10 @@ void rsConfigInit(void) {
    // Use default until we know what level to set it to.
    av_log_set_level(AV_LOG_VERBOSE);
    av_opt_set_defaults(&rsConfig);
+   rsConfigPathsRead();
 
    // Fixup width and height if set to -1 (auto).
    if (rsConfig.recordWidth == -1) rsConfig.recordWidth = rsConfig.inputWidth;
    if (rsConfig.recordHeight == -1) rsConfig.recordHeight = rsConfig.inputHeight;
-
-   rsConfigFileRead("replay-sorcery.conf");
-
    av_log_set_level(rsConfig.logLevel);
 }

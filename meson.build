@@ -23,6 +23,7 @@ executable(
       'src/save.c',
       'src/config/config.c',
       'src/config/file.c',
+      'src/config/paths.c',
       'src/input/input.c',
       'src/input/video.c',
       'src/encoder/encoder.c',

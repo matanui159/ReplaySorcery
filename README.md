@@ -49,7 +49,7 @@ $ pip install meson
 Currently can be run as `bin/replay-sorcery`. Pressing enter will save the last 30 seconds. Early stages :)
 
 # Documentation
-TODO: user documentation. Maybe move `Building`/`Running` to Github wiki along with documenting configuration options when that is implemented.
+Check out `src/config.h` for documentation about the configuration files.
 
 The code itself is partway through getting better documentation and commenting. If you want to jump into it I would recommend looking at these source files and headers inparticular:
 - `src/input/input`: handles different input devices.
@@ -64,7 +64,6 @@ If theres any part of user or developer documentation that you feel needs to be 
 # TODO
 - Document code better
 - Add X11 frontend to listen to key presses (right now only the `debug` frontend is available)
-- Add support for configuration files
 - Make a `systemd` service
 - Implement different quality levels
 - Add audio support
