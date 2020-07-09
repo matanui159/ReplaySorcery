@@ -2,14 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#ifndef RS_USER_DEFAULT_H
-#define RS_USER_DEFAULT_H
+#ifndef RS_USER_X11_H
+#define RS_USER_X11_H
 #include "user.h"
 
 /**
- * Chooses a type of user to create based on the program configuration and supported
- * implementations.
+ * Creates a user that listens to X11 inputs for a keypress.
  */
-void rsDefaultUserCreate(RSUser* user);
+int rsX11UserCreate(RSUser* user);
 
 #endif

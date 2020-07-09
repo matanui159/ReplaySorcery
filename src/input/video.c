@@ -20,9 +20,8 @@ void rsVideoInputCreate(RSInput* input) {
       av_dict_set_int(&options, "grab_x", rsConfig.inputX, 0);
       av_dict_set_int(&options, "grab_y", rsConfig.inputY, 0);
       av_dict_set_int(&options, "framerate", rsConfig.inputFramerate, 0);
-      if ((ret = rsInputCreate(input, "x11grab", rsConfig.inputDisplay, &options)) >= 0) {
+      if ((ret = rsInputCreate(input, "x11grab", rsConfig.inputDisplay, &options)) >= 0)
          return;
-      }
       av_log(NULL, AV_LOG_WARNING, "Failed to create X11 input: %s\n", av_err2str(ret));
    }
 

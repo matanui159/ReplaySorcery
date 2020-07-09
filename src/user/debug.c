@@ -7,11 +7,15 @@
 #include <libavutil/avutil.h>
 #include <stdio.h>
 
+/**
+ * The implementation of `user.wait`.
+ */
 static void debugUserWait(RSUser* user) {
    (void)user;
    av_log(NULL, AV_LOG_INFO, "Press enter to save\n");
    int c;
    while ((c = getchar()) != '\n') {
+      // If we get Ctrl+D (EOF), exit.
       if (c == EOF) rsMainExit();
    }
 }

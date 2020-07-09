@@ -108,6 +108,13 @@ typedef struct RSConfig {
    int disableSoftwareEncoder;
 
    /**
+    * Disable the X11 user implementation. Since X11 is the only supported implementation
+    * right now, this option is not recommended unless `enableDebug` is true. Default is
+    * false.
+    */
+   int disableX11User;
+
+   /**
     * The name of the output file to write to. The name is passed through strftime to
     * generate time-unique names. Default is `~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4`.
     */
@@ -123,8 +130,6 @@ typedef struct RSConfig {
    /**
     * Enables the debug "user". This creates a simple command-line interface where you
     * just press enter to save the video. Makes it easy for development.
-    *
-    * Since currently this is the only user implementation, this option does nothing.
     */
    int enableDebug;
 } RSConfig;

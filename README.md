@@ -63,9 +63,7 @@ If theres any part of user or developer documentation that you feel needs to be 
 
 # TODO
 - Document code better
-- Add X11 frontend to listen to key presses (right now only the `debug` frontend is available)
 - Make a `systemd` service
-- Implement different quality levels
 - Add audio support
   - On first look reading from audio output does not seem supported by FFmpeg.
   - For my personal requirements it would need to support hot plugging (I use a bluetooth headset).
@@ -76,4 +74,7 @@ If theres any part of user or developer documentation that you feel needs to be 
   - Doubt there is any demand though
   - Maybe for Intel devices if they are fast enough?
 - Smaller tweaks:
+  - Add sound effect for when it saves
+  - Add configuration option for changing hotkey
   - Add configuration option for changing scaler options
+  - Look at `$DISPLAY` when choosing the default for `inputDisplay`
