@@ -1,0 +1,12 @@
+[Unit]
+Description=Replay Sorcery: an open-source, instant-replay solution for Linux.
+StartLimitIntervalSec=60
+StartLimitBurst=6
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/env replay-sorcery
+Restart=always
+
+[Install]
+WantedBy=graphical.target

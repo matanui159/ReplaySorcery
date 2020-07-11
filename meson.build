@@ -49,5 +49,8 @@ executable(
       dependency('libswscale', include_type: 'system'),
 
       dependency('x11', include_type: 'system')
-   ]
+   ],
+   install: true
 )
+
+install_data('replay-sorcery.service', install_dir: get_option('systemd-dir'))
