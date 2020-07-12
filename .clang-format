@@ -1,6 +1,4 @@
 BasedOnStyle: LLVM
 IndentWidth: 3
 ColumnLimit: 90
-PointerAlignment: Left
 AllowShortFunctionsOnASingleLine: Empty
-AllowShortIfStatementsOnASingleLine: WithoutElse

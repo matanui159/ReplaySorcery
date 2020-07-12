@@ -1,4 +1,4 @@
-project('ReplaySorcery', 'c', version: '0.1.0-dev', default_options: [
+project('ReplaySorcery', 'c', version: '0.2.0-dev', default_options: [
    'c_std=c99',
    'warning_level=3'
 ])
@@ -8,30 +8,20 @@ unwind = dependency('libunwind', include_type: 'system', required: false)
 configure_file(
    output: 'rs-build-config.h',
    configuration: {
-      'RS_CONFIG_UNWIND': unwind.found(),
-      'RS_CONFIG_X264': get_option('x264-gpl')
+      'RS_CONFIG_LIB_UNWIND': unwind.found(),
+      'RS_CONFIG_ATTR_NORETURN': compiler.has_function_attribute('noreturn')
    }
 )
 
 executable(
    'replay-sorcery', [
-      'src/main.c',
-      'src/error.c',
-      'src/path.c',
-      'src/pktcircle.c',
-      'src/record.c',
-      'src/save.c',
+      'src/common.c',
       'src/config/config.c',
-      'src/config/file.c',
-      'src/config/paths.c',
-      'src/input/input.c',
-      'src/input/video.c',
-      'src/encoder/encoder.c',
-      'src/encoder/video.c',
-      'src/user/user.c',
-      'src/user/debug.c',
-      'src/user/x11.c',
-      'src/user/default.c'
+      'src/system/system.c',
+      'src/system/xlib.c',
+      'src/buffer.c',
+      'src/compress.c',
+      'src/main.c'
    ],
    c_args: compiler.get_supported_arguments([
       '-Wconversion',
@@ -40,14 +30,8 @@ executable(
    ]),
    dependencies: [
       unwind,
-      dependency('threads', include_type: 'system'),
-
-      dependency('libavutil', include_type: 'system'),
-      dependency('libavformat', include_type: 'system'),
-      dependency('libavdevice', include_type: 'system'),
-      dependency('libavcodec', include_type: 'system'),
-      dependency('libswscale', include_type: 'system'),
-
-      dependency('x11', include_type: 'system')
+      dependency('x11', include_type: 'system'),
+      dependency('xext', include_type: 'system'),
+      dependency('libjpeg', include_type: 'system')
    ]
 )
