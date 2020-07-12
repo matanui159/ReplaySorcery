@@ -2,12 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+#include "circle.h"
 #include "common.h"
 #include "compress.h"
 #include "config/config.h"
 #include "system/xlib.h"
 #include <signal.h>
 #include <time.h>
+
+static bool mainRunning = true;
 
 static void mainSignal(int signal) {
    const char *error = NULL;
@@ -20,6 +23,10 @@ static void mainSignal(int signal) {
       break;
    case SIGFPE:
       error = "Floating point error";
+      break;
+   case SIGINT:
+   case SIGTERM:
+      mainRunning = false;
       break;
    }
 
@@ -34,37 +41,25 @@ int main(int argc, char *argv[]) {
    signal(SIGSEGV, mainSignal);
    signal(SIGILL, mainSignal);
    signal(SIGFPE, mainSignal);
+   signal(SIGINT, mainSignal);
+   signal(SIGTERM, mainSignal);
 
    RSConfig config;
-   rsConfigDefaults(&config);
-
    RSSystem system;
-   rsXlibSystemCreate(&system, &config);
-
    RSCompress compress;
-   RSBuffer buffer;
+   RSBufferCircle circle;
+   rsConfigDefaults(&config);
+   rsXlibSystemCreate(&system, &config);
    rsCompressCreate(&compress, &config);
-   rsBufferCreate(&buffer, 1024);
+   rsBufferCircleCreate(&circle, &config);
 
-   clock_t start = clock();
-   int framerate = 0;
-   while (clock() - start < CLOCKS_PER_SEC * 4) {
+   while (mainRunning) {
       RSSystemFrame frame;
       rsSystemGetFrame(&system, &frame);
-      rsCompress(&compress, &buffer, &frame);
-
-      if (clock() - start >= CLOCKS_PER_SEC) {
-         ++framerate;
-      }
+      rsCompress(&compress, rsBufferCircleAppend(&circle), &frame);
    }
-   rsLog("Memory size: %zu", buffer.size);
-   rsLog("FPS: %i", framerate / 3);
 
-   FILE *jpeg = fopen("test.jpg", "wb");
-   fwrite(buffer.data, buffer.size, 1, jpeg);
-   fclose(jpeg);
-
-   rsBufferDestroy(&buffer);
+   rsBufferCircleDestroy(&circle);
    rsCompressDestroy(&compress);
    rsSystemDestroy(&system);
 }

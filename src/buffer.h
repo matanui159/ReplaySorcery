@@ -6,6 +6,9 @@
 #define RS_BUFFER_H
 #include "common.h"
 
+#define RS_BUFFER_SMALL_CAPACITY 16
+#define RS_BUFFER_LARGE_CAPACITY 1024
+
 typedef struct RSBuffer {
    void *data;
    size_t size;
@@ -14,6 +17,7 @@ typedef struct RSBuffer {
 
 void rsBufferCreate(RSBuffer *buffer, size_t capacity);
 void rsBufferDestroy(RSBuffer *buffer);
+void rsBufferClone(RSBuffer *buffer, const RSBuffer *source);
 void *rsBufferAppend(RSBuffer *buffer, size_t size);
 void *rsBufferGetSpace(RSBuffer *buffer, size_t *size);
 void rsBufferClear(RSBuffer *buffer);

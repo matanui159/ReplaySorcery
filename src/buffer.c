@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "buffer.h"
+#include <string.h>
 
 void rsBufferCreate(RSBuffer *buffer, size_t capacity) {
    buffer->data = rsAllocate(capacity);
@@ -13,6 +14,12 @@ void rsBufferCreate(RSBuffer *buffer, size_t capacity) {
 void rsBufferDestroy(RSBuffer *buffer) {
    rsFree(buffer->data);
    rsClear(buffer, sizeof(RSBuffer));
+}
+
+void rsBufferClone(RSBuffer *buffer, const RSBuffer *source) {
+   rsBufferClear(buffer);
+   void *data = rsBufferAppend(buffer, source->size);
+   memcpy(data, source->data, source->size);
 }
 
 void *rsBufferAppend(RSBuffer *buffer, size_t size) {

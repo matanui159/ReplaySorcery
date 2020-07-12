@@ -5,23 +5,14 @@
 #include "system.h"
 
 void rsSystemDestroy(RSSystem *system) {
-   if (system->destroy != NULL) {
-      system->destroy(system);
-   }
+   system->destroy(system);
    rsClear(system, sizeof(RSSystem));
 }
 
 void rsSystemGetFrame(RSSystem *system, RSSystemFrame *frame) {
-   if (system->getFrame != NULL) {
-      system->getFrame(system, frame);
-   } else {
-      rsClear(frame, sizeof(RSSystemFrame));
-   }
+   system->getFrame(system, frame);
 }
 
 bool rsSystemWantsSave(RSSystem *system) {
-   if (system->wantsSave != NULL) {
-      return system->wantsSave(system);
-   }
-   return false;
+   return system->wantsSave(system);
 }

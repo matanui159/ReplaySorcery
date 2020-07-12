@@ -18,12 +18,15 @@ executable(
       'src/common.c',
       'src/config/config.c',
       'src/system/system.c',
+      'src/system/framerate.c',
       'src/system/xlib.c',
       'src/buffer.c',
+      'src/circle.c',
       'src/compress.c',
       'src/main.c'
    ],
    c_args: compiler.get_supported_arguments([
+      '-D_DEFAULT_SOURCE',
       '-Wconversion',
       '-Wstrict-prototypes',
       '-Wmissing-prototypes'

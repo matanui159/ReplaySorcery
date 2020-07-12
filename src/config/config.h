@@ -7,10 +7,12 @@
 #include "../common.h"
 
 typedef struct RSConfig {
-   int inputX;
-   int inputY;
-   int inputWidth;
-   int inputHeight;
+   int offsetX;
+   int offsetY;
+   int width;
+   int height;
+   int framerate;
+   int duration;
    int compressQuality;
 } RSConfig;
 
