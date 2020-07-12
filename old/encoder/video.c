@@ -13,17 +13,17 @@
  * Arrays for mapping `rsConfig.recordQuality` to seperate quality settings for each
  * encoder.
  */
-static const char* encoderNvidiaPreset[] = {"fast", "medium", "slow"};
-static const char* encoderVaapiQuality[] = {"30", "20", "10"};
-static const char* encoderOpenH264QMin[] = {"30", "20", "10"};
-static const char* encoderOpenH264QMax[] = {"40", "30", "20"};
+static const char *encoderNvidiaPreset[] = {"fast", "medium", "slow"};
+static const char *encoderVaapiQuality[] = {"30", "20", "10"};
+static const char *encoderOpenH264QMin[] = {"30", "20", "10"};
+static const char *encoderOpenH264QMax[] = {"40", "30", "20"};
 #ifdef RS_CONFIG_X264
-static const char* encoderX264Preset[] = {"ultrafast", "medium", "slower"};
+static const char *encoderX264Preset[] = {"ultrafast", "medium", "slower"};
 #endif
 
-void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input) {
+void rsVideoEncoderCreate(RSEncoder *encoder, const RSInput *input) {
    int ret;
-   AVDictionary* options = NULL;
+   AVDictionary *options = NULL;
 
    // TODO: all the video encoder settings here use low values. Add some sort of
    //       configuration to control these. Potentially a low/medium/high that translates
@@ -70,7 +70,8 @@ void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input) {
 
    if (!rsConfig.disableSoftwareEncoder) {
       // Try to create a software encoder.
-      if ((ret = rsVideoEncoderCreateSW(encoder, input)) >= 0) return;
+      if ((ret = rsVideoEncoderCreateSW(encoder, input)) >= 0)
+         return;
       av_log(NULL, AV_LOG_WARNING, "Failed to create software encoder: %s\n",
              av_err2str(ret));
    }
@@ -78,9 +79,9 @@ void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input) {
    rsError(AVERROR(ENOSYS));
 }
 
-int rsVideoEncoderCreateSW(RSEncoder* encoder, const RSInput* input) {
+int rsVideoEncoderCreateSW(RSEncoder *encoder, const RSInput *input) {
    int ret;
-   AVDictionary* options = NULL;
+   AVDictionary *options = NULL;
 
    // Try to create a x264 encoder.
    // TODO: low/medium/high = ultrafast/medium/slower

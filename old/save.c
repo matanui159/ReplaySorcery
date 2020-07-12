@@ -36,7 +36,7 @@ void rsSave(void) {
    rsPathJoin(&outputFile, rsConfig.outputFile, RS_PATH_STRFTIME);
    av_log(NULL, AV_LOG_INFO, "Saving as '%s'...\n", outputFile.str);
 
-   AVFormatContext* formatCtx;
+   AVFormatContext *formatCtx;
    // Forcing it to be mp4 makes life alot easier
    rsCheck(avformat_alloc_output_context2(&formatCtx, NULL, "mp4", outputFile.str));
    // `faststart` does a second pass of the encoding that puts the `MOOV` atom at the
@@ -45,8 +45,8 @@ void rsSave(void) {
    rsCheck(av_opt_set(formatCtx, "movflags", "+faststart", AV_OPT_SEARCH_CHILDREN));
    rsCheck(avio_open(&formatCtx->pb, outputFile.str, AVIO_FLAG_WRITE));
 
-   const RSEncoder* encoder = rsRecordVideo();
-   AVStream* stream = avformat_new_stream(formatCtx, encoder->codecCtx->codec);
+   const RSEncoder *encoder = rsRecordVideo();
+   AVStream *stream = avformat_new_stream(formatCtx, encoder->codecCtx->codec);
    // Share the parameters from the encoder.
    avcodec_parameters_from_context(stream->codecpar, encoder->codecCtx);
    av_dump_format(formatCtx, 0, outputFile.str, 1);
@@ -59,12 +59,14 @@ void rsSave(void) {
    // the value is `AV_NOPTS_VALUE`, the rest are likely the same so we should not modify
    // them.
    int64_t ptsOffset = priv.pktCircle.packets[0].pts;
-   if (ptsOffset == AV_NOPTS_VALUE) ptsOffset = 0;
+   if (ptsOffset == AV_NOPTS_VALUE)
+      ptsOffset = 0;
    int64_t dtsOffset = priv.pktCircle.packets[0].dts;
-   if (dtsOffset == AV_NOPTS_VALUE) dtsOffset = 0;
+   if (dtsOffset == AV_NOPTS_VALUE)
+      dtsOffset = 0;
 
    for (size_t i = 0; i < priv.pktCircle.tail; ++i) {
-      AVPacket* packet = &priv.pktCircle.packets[i];
+      AVPacket *packet = &priv.pktCircle.packets[i];
       packet->pts -= ptsOffset;
       packet->dts -= dtsOffset;
 

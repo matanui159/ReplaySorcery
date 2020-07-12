@@ -18,8 +18,8 @@
 /**
  * Small utility to get an environment variable, or use a default if it does not exist.
  */
-static const char* configPathsEnv(const char* name, const char* def) {
-   const char* value = getenv(name);
+static const char *configPathsEnv(const char *name, const char *def) {
+   const char *value = getenv(name);
    if (value == NULL) {
       av_log(NULL, AV_LOG_WARNING,
              "Environment variable '%s' does not exist, using default: %s\n", name, def);
@@ -34,9 +34,9 @@ void rsConfigPathsRead(void) {
 
    // Global directories. Multiple paths seperated by `:`. We have to duplicate it so we
    // can modify it for `av_strtok`.
-   char* xdgDirs = av_strdup(configPathsEnv("XDG_CONFIG_DIRS", "/etc/xdg"));
-   char* state = NULL;
-   char* dir = av_strtok(xdgDirs, ":", &state);
+   char *xdgDirs = av_strdup(configPathsEnv("XDG_CONFIG_DIRS", "/etc/xdg"));
+   char *state = NULL;
+   char *dir = av_strtok(xdgDirs, ":", &state);
    while (dir != NULL) {
       rsPathJoin(&path, dir, 0);
       rsPathJoin(&path, CONFIG_NAME, 0);

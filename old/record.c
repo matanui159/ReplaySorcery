@@ -20,9 +20,9 @@ static struct {
    bool exit;
 } priv;
 
-static void* recordThread(void* arg) {
+static void *recordThread(void *arg) {
    (void)arg;
-   AVFrame* frame = av_frame_alloc();
+   AVFrame *frame = av_frame_alloc();
 
    while (!priv.exit) {
       rsInputRead(&priv.input, frame);
@@ -45,6 +45,6 @@ void rsRecordExit(void) {
    rsInputDestroy(&priv.input);
 }
 
-const RSEncoder* rsRecordVideo(void) {
+const RSEncoder *rsRecordVideo(void) {
    return &priv.encoder;
 }

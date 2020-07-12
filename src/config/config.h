@@ -15,6 +15,6 @@ typedef struct RSConfig {
 } RSConfig;
 
 void rsConfigDefaults(RSConfig *config);
-void rsSetConfigParam(RSConfig *config, const char* key, const char* value);
+void rsSetConfigParam(RSConfig *config, const char *key, const char *value);
 
 #endif

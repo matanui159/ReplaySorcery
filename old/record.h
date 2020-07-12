@@ -8,6 +8,6 @@
 
 void rsRecordInit(void);
 void rsRecordExit(void);
-const RSEncoder* rsRecordVideo(void);
+const RSEncoder *rsRecordVideo(void);
 
 #endif

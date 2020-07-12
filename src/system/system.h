@@ -7,7 +7,7 @@
 #include "../common.h"
 
 typedef struct RSSystemFrame {
-   const uint8_t* data;
+   const uint8_t *data;
    size_t width;
    size_t height;
    size_t stride;

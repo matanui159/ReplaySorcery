@@ -12,7 +12,7 @@ typedef struct X11User {
    /**
     * The opened X11 display.
     */
-   Display* display;
+   Display *display;
 
    /**
     * The root window of the X11 display.
@@ -23,8 +23,8 @@ typedef struct X11User {
 /**
  * The implementation of `user.destroy`.
  */
-static void x11UserDestroy(RSUser* user) {
-   X11User* extra = user->extra;
+static void x11UserDestroy(RSUser *user) {
+   X11User *extra = user->extra;
    XCloseDisplay(extra->display);
    av_freep(&user->extra);
 }
@@ -32,13 +32,14 @@ static void x11UserDestroy(RSUser* user) {
 /**
  * The implementation of `user.wait`.
  */
-static void x11UserWait(RSUser* user) {
-   X11User* extra = user->extra;
+static void x11UserWait(RSUser *user) {
+   X11User *extra = user->extra;
    XEvent event;
    for (;;) {
       if (XEventsQueued(extra->display, QueuedAfterFlush) > 0) {
          XNextEvent(extra->display, &event);
-         if (event.type == KeyPress) break;
+         if (event.type == KeyPress)
+            break;
       } else {
          // A fast loop seems to block `signal` handlers so we sleep for 10 milliseconds.
          struct timespec sleep = {0, 10000000};
@@ -50,13 +51,13 @@ static void x11UserWait(RSUser* user) {
 /**
  * Small utility to grab a key with mods.
  */
-static void x11UserGrab(RSUser* user, int key, unsigned mods) {
-   X11User* extra = user->extra;
+static void x11UserGrab(RSUser *user, int key, unsigned mods) {
+   X11User *extra = user->extra;
    XGrabKey(extra->display, key, mods, extra->root, False, GrabModeAsync, GrabModeAsync);
 }
 
-int rsX11UserCreate(RSUser* user) {
-   X11User* extra = av_malloc(sizeof(X11User));
+int rsX11UserCreate(RSUser *user) {
+   X11User *extra = av_malloc(sizeof(X11User));
    user->extra = extra;
    extra->display = XOpenDisplay(rsConfig.inputDisplay);
    if (extra == NULL) {

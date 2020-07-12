@@ -9,13 +9,13 @@
 #include <libavutil/avutil.h>
 #include <libavutil/dict.h>
 
-void rsVideoInputCreate(RSInput* input) {
+void rsVideoInputCreate(RSInput *input) {
    int ret;
-   AVDictionary* options = NULL;
+   AVDictionary *options = NULL;
 
    // Try to create an X11 input.
    if (!rsConfig.disableX11Input) {
-      char* videoSize = av_asprintf("%ix%i", rsConfig.inputWidth, rsConfig.inputHeight);
+      char *videoSize = av_asprintf("%ix%i", rsConfig.inputWidth, rsConfig.inputHeight);
       av_dict_set(&options, "video_size", videoSize, AV_DICT_DONT_STRDUP_VAL);
       av_dict_set_int(&options, "grab_x", rsConfig.inputX, 0);
       av_dict_set_int(&options, "grab_y", rsConfig.inputY, 0);

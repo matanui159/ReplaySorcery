@@ -23,7 +23,7 @@
  * Internal implementation of `rsPacketCircleClear` that does not lock the mutex. Used in
  * functions which already have locked the mutex or do not need to lock the mutex.
  */
-static void packetCircleClear(RSPacketCircle* pktCircle) {
+static void packetCircleClear(RSPacketCircle *pktCircle) {
    PACKET_CIRCLE_FOREACH(pktCircle, i) {
       av_packet_unref(&pktCircle->packets[i]);
    }
@@ -36,7 +36,7 @@ static void packetCircleClear(RSPacketCircle* pktCircle) {
  * Internal implementation of `rsPacketCircleRotate` that does not lock the mutex. Used in
  * functions which already have locked the mutex.
  */
-static void packetCircleRotate(RSPacketCircle* pktCircle) {
+static void packetCircleRotate(RSPacketCircle *pktCircle) {
    PACKET_CIRCLE_NEXT(pktCircle, pktCircle->tail);
    pktCircle->input = &pktCircle->packets[pktCircle->tail];
    if (pktCircle->tail == pktCircle->head) {
@@ -45,7 +45,7 @@ static void packetCircleRotate(RSPacketCircle* pktCircle) {
    }
 }
 
-void rsPacketCircleCreate(RSPacketCircle* pktCircle) {
+void rsPacketCircleCreate(RSPacketCircle *pktCircle) {
    // We allocate one extra packet then needed so we always have a packet we can write
    // into.
    pktCircle->size = (size_t)(rsConfig.inputFramerate * rsConfig.recordDuration + 1);
@@ -60,28 +60,28 @@ void rsPacketCircleCreate(RSPacketCircle* pktCircle) {
    rsCheckPosix(pthread_mutex_init(&pktCircle->mutex, NULL));
 }
 
-void rsPacketCircleDestroy(RSPacketCircle* pktCircle) {
+void rsPacketCircleDestroy(RSPacketCircle *pktCircle) {
    pthread_mutex_destroy(&pktCircle->mutex);
    packetCircleClear(pktCircle);
    av_freep(&pktCircle->packets);
 }
 
-void rsPacketCircleRotate(RSPacketCircle* pktCircle) {
+void rsPacketCircleRotate(RSPacketCircle *pktCircle) {
    rsCheckPosix(pthread_mutex_lock(&pktCircle->mutex));
    packetCircleRotate(pktCircle);
    rsCheckPosix(pthread_mutex_unlock(&pktCircle->mutex));
 }
 
-void rsPacketCircleClear(RSPacketCircle* pktCircle) {
+void rsPacketCircleClear(RSPacketCircle *pktCircle) {
    rsCheckPosix(pthread_mutex_lock(&pktCircle->mutex));
    packetCircleClear(pktCircle);
    rsCheckPosix(pthread_mutex_unlock(&pktCircle->mutex));
 }
 
-void rsPacketCircleCopy(RSPacketCircle* dst, const RSPacketCircle* src) {
+void rsPacketCircleCopy(RSPacketCircle *dst, const RSPacketCircle *src) {
    rsCheckPosix(pthread_mutex_lock(&dst->mutex));
    packetCircleClear(dst);
-   rsCheckPosix(pthread_mutex_lock((pthread_mutex_t*)&src->mutex));
+   rsCheckPosix(pthread_mutex_lock((pthread_mutex_t *)&src->mutex));
 
    // This shouldn't overflow the buffer (`tail` should equal `size` - 1 at most).
    PACKET_CIRCLE_FOREACH(src, i) {
@@ -89,6 +89,6 @@ void rsPacketCircleCopy(RSPacketCircle* dst, const RSPacketCircle* src) {
       packetCircleRotate(dst);
    }
 
-   rsCheckPosix(pthread_mutex_unlock((pthread_mutex_t*)&src->mutex));
+   rsCheckPosix(pthread_mutex_unlock((pthread_mutex_t *)&src->mutex));
    rsCheckPosix(pthread_mutex_unlock(&dst->mutex));
 }

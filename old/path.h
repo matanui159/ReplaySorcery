@@ -23,6 +23,6 @@ typedef enum RSPathFlags {
  * starting with `/` as absolute, expand paths starting with `~/` and otherwise make sure
  * there is a `/` between `path` and `extra`.
  */
-void rsPathJoin(AVBPrint* path, const char* extra, RSPathFlags flags);
+void rsPathJoin(AVBPrint *path, const char *extra, RSPathFlags flags);
 
 #endif

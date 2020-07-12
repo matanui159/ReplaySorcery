@@ -23,7 +23,8 @@ av_noreturn void rsError(int error);
  * Otherwise, returns the code unmodified.
  */
 static inline int rsCheck(int ret) {
-   if (ret < 0) rsError(ret);
+   if (ret < 0)
+      rsError(ret);
    return ret;
 }
 
@@ -31,7 +32,8 @@ static inline int rsCheck(int ret) {
  * Similar to `rsCheck` but designed for POSIX return codes.
  */
 static inline int rsCheckPosix(int ret) {
-   if (ret != 0) rsError(AVERROR(ret));
+   if (ret != 0)
+      rsError(AVERROR(ret));
    return ret;
 }
 
@@ -39,7 +41,8 @@ static inline int rsCheckPosix(int ret) {
  * Similar to `rsCheck` but designed for functions that set `errno`.
  */
 static inline int rsCheckErrno(int ret) {
-   if (ret < 0) rsError(AVERROR(errno));
+   if (ret < 0)
+      rsError(AVERROR(errno));
    return ret;
 }
 

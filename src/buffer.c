@@ -24,7 +24,7 @@ void *rsAppendBuffer(RSBuffer *buffer, size_t size) {
       } while (buffer->size > buffer->capacity);
       buffer->data = rsReallocate(buffer->data, buffer->capacity);
    }
-   return (char*)buffer->data + offset;
+   return (char *)buffer->data + offset;
 }
 
 void *rsGetBufferSpace(RSBuffer *buffer, size_t *size) {
@@ -33,7 +33,7 @@ void *rsGetBufferSpace(RSBuffer *buffer, size_t *size) {
       buffer->data = rsReallocate(buffer->data, buffer->capacity);
    }
    *size = buffer->capacity - buffer->size;
-   return (char*)buffer->data + buffer->size;
+   return (char *)buffer->data + buffer->size;
 }
 
 void rsClearBuffer(RSBuffer *buffer) {

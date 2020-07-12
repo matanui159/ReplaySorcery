@@ -9,6 +9,6 @@
 /**
  * Checks different supported video inputs and finds one that works.
  */
-void rsVideoInputCreate(RSInput* input);
+void rsVideoInputCreate(RSInput *input);
 
 #endif

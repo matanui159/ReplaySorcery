@@ -10,7 +10,7 @@
  * Creates a video encoder by trying a few different options to see what works and
  * choosing the best one.
  */
-void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input);
+void rsVideoEncoderCreate(RSEncoder *encoder, const RSInput *input);
 
 /**
  * Same as `rsVideoEncoderCreate` but only creates software encoders. Used to fix some
@@ -20,6 +20,6 @@ void rsVideoEncoderCreate(RSEncoder* encoder, const RSInput* input);
  * crashing. This is because a hardware encoder can still work even if it cannot create
  * global headers.
  */
-int rsVideoEncoderCreateSW(RSEncoder* encoder, const RSInput* input);
+int rsVideoEncoderCreateSW(RSEncoder *encoder, const RSInput *input);
 
 #endif

@@ -51,12 +51,12 @@ typedef struct RSConfig {
     * The avutil class used internall to easily set options. Is not modifyable by
     * the configuration file and should be ignored by users.
     */
-   const AVClass* avclass;
+   const AVClass *avclass;
 
    /**
     * The name of the display to read from. Default is `:0.0`.
     */
-   const char* inputDisplay;
+   const char *inputDisplay;
 
    /**
     * The width, height and offset x, y of the display to grab frames from. Default is the
@@ -118,7 +118,7 @@ typedef struct RSConfig {
     * The name of the output file to write to. The name is passed through strftime to
     * generate time-unique names. Default is `~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4`.
     */
-   const char* outputFile;
+   const char *outputFile;
 
    /**
     * Sets the FFmpeg log level. The configuration file uses the strings "quiet", "panic",

@@ -30,9 +30,11 @@
 static int errorUnwind(int flags) {
    int ret;
    unw_context_t context;
-   if ((ret = unw_getcontext(&context)) < 0) return ret;
+   if ((ret = unw_getcontext(&context)) < 0)
+      return ret;
    unw_cursor_t cursor;
-   if ((ret = unw_init_local2(&cursor, &context, flags)) < 0) return ret;
+   if ((ret = unw_init_local2(&cursor, &context, flags)) < 0)
+      return ret;
    do {
       char name[ERROR_NAME_SIZE];
       unw_word_t offset;

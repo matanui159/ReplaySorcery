@@ -16,28 +16,28 @@ typedef struct RSUser {
     * An internal callback set by the implementation which destroys the user and frees
     * up resources. Can be NULL in which case nothing is done on destruction.
     */
-   void (*destroy)(struct RSUser* user);
+   void (*destroy)(struct RSUser *user);
 
    /**
     * An internal callback set by the implementation for waiting on input. Can be NULL in
     * which case `rsUserWait` returns immediately.
     */
-   void (*wait)(struct RSUser* user);
+   void (*wait)(struct RSUser *user);
 
    /**
     * Extra data the implementation can allocate. Can be NULL.
     */
-   void* extra;
+   void *extra;
 } RSUser;
 
 /**
  * Destroys the user object and frees up whatever resources it might be holding onto.
  */
-void rsUserDestroy(RSUser* user);
+void rsUserDestroy(RSUser *user);
 
 /**
  * Waits for the users input to specify to save a file.
  */
-void rsUserWait(RSUser* user);
+void rsUserWait(RSUser *user);
 
 #endif

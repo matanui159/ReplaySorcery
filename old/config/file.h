@@ -8,6 +8,6 @@
 /**
  * Reads a config file if it exists and loads its values into the global program config.
  */
-void rsConfigFileRead(const char* path);
+void rsConfigFileRead(const char *path);
 
 #endif

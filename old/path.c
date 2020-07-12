@@ -7,7 +7,7 @@
 #include <string.h>
 #include <time.h>
 
-void rsPathJoin(AVBPrint* path, const char* extra, RSPathFlags flags) {
+void rsPathJoin(AVBPrint *path, const char *extra, RSPathFlags flags) {
    if (extra[0] == '/') {
       // Absolute path
       av_bprint_clear(path);
@@ -24,7 +24,7 @@ void rsPathJoin(AVBPrint* path, const char* extra, RSPathFlags flags) {
    }
    if (flags & RS_PATH_STRFTIME) {
       time_t timeNum = time(NULL);
-      struct tm* timeObj = localtime(&timeNum);
+      struct tm *timeObj = localtime(&timeNum);
       av_bprint_strftime(path, extra, timeObj);
    } else {
       av_bprint_append_data(path, extra, (unsigned)strlen(extra));

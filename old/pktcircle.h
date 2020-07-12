@@ -24,7 +24,7 @@ typedef struct RSPacketCircle {
    /**
     * The array of packets in the circle buffer.
     */
-   AVPacket* packets;
+   AVPacket *packets;
 
    /**
     * The size of the above array.
@@ -51,30 +51,30 @@ typedef struct RSPacketCircle {
    /**
     * A pointer to the current packet to write into.
     */
-   AVPacket* input;
+   AVPacket *input;
 } RSPacketCircle;
 
 /**
  * Creates a new packet circle. The size of the circle buffer will be based on the
  * program configuration.
  */
-void rsPacketCircleCreate(RSPacketCircle* pktCircle);
+void rsPacketCircleCreate(RSPacketCircle *pktCircle);
 
 /**
  * Destroys the provided packet circle.
  */
-void rsPacketCircleDestroy(RSPacketCircle* pktCircle);
+void rsPacketCircleDestroy(RSPacketCircle *pktCircle);
 
 /**
  * Rotate the packet circle such that the current `input` is ready for copying and the
  * next packet is freed and provided as an input.
  */
-void rsPacketCircleRotate(RSPacketCircle* pktCircle);
+void rsPacketCircleRotate(RSPacketCircle *pktCircle);
 
 /**
  * Clears all the data held in the packet circle.
  */
-void rsPacketCircleClear(RSPacketCircle* pktCircle);
+void rsPacketCircleClear(RSPacketCircle *pktCircle);
 
 /**
  * Copy the data from `src` into `dst`. The current `input` field of `src` will not be
@@ -82,6 +82,6 @@ void rsPacketCircleClear(RSPacketCircle* pktCircle);
  * `rsPacketCircleRotate` (which changes the `input` field) on `src`. This will also
  * "normalize" the packets such that you can easily iterate `dst` from 0 to `tail`.
  */
-void rsPacketCircleCopy(RSPacketCircle* dst, const RSPacketCircle* src);
+void rsPacketCircleCopy(RSPacketCircle *dst, const RSPacketCircle *src);
 
 #endif

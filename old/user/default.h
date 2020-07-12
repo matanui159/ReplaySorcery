@@ -10,6 +10,6 @@
  * Chooses a type of user to create based on the program configuration and supported
  * implementations.
  */
-void rsDefaultUserCreate(RSUser* user);
+void rsDefaultUserCreate(RSUser *user);
 
 #endif

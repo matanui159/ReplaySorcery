@@ -18,18 +18,18 @@ static void growCompressDestination(RSCompressDestination *dest) {
 }
 
 static void initCompressDestination(struct jpeg_compress_struct *jpeg) {
-   RSCompressDestination *dest = (RSCompressDestination*)jpeg->dest;
+   RSCompressDestination *dest = (RSCompressDestination *)jpeg->dest;
    rsClearBuffer(dest->buffer);
    growCompressDestination(dest);
 }
 
 static void terminateCompressDestination(struct jpeg_compress_struct *jpeg) {
-   RSCompressDestination *dest = (RSCompressDestination*)jpeg->dest;
+   RSCompressDestination *dest = (RSCompressDestination *)jpeg->dest;
    rsAppendBuffer(dest->buffer, dest->size - dest->jpeg.free_in_buffer);
 }
 
 static boolean emptyCompressDestination(struct jpeg_compress_struct *jpeg) {
-   RSCompressDestination *dest = (RSCompressDestination*)jpeg->dest;
+   RSCompressDestination *dest = (RSCompressDestination *)jpeg->dest;
    rsAppendBuffer(dest->buffer, dest->size);
    growCompressDestination(dest);
    return true;
@@ -41,7 +41,7 @@ void rsCreateCompress(RSCompress *compress, const RSConfig *config) {
    compress->error.error_exit = outputCompressError;
    jpeg_create_compress(&compress->jpeg);
 
-   compress->jpeg.dest = (struct jpeg_destination_mgr*)&compress->dest;
+   compress->jpeg.dest = (struct jpeg_destination_mgr *)&compress->dest;
    compress->dest.jpeg.init_destination = initCompressDestination;
    compress->dest.jpeg.term_destination = terminateCompressDestination;
    compress->dest.jpeg.empty_output_buffer = emptyCompressDestination;
@@ -67,6 +67,6 @@ void rsCompressSystemFrame(RSCompress *compress, RSBuffer *buffer, RSSystemFrame
    }
 
    jpeg_start_compress(&compress->jpeg, true);
-   jpeg_write_scanlines(&compress->jpeg, (uint8_t**)scanlines, (unsigned)frame->height);
+   jpeg_write_scanlines(&compress->jpeg, (uint8_t **)scanlines, (unsigned)frame->height);
    jpeg_finish_compress(&compress->jpeg);
 }

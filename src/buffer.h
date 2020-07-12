@@ -7,7 +7,7 @@
 #include "common.h"
 
 typedef struct RSBuffer {
-   void* data;
+   void *data;
    size_t size;
    size_t capacity;
 } RSBuffer;

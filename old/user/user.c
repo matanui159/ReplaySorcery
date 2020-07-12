@@ -5,13 +5,13 @@
 #include "user.h"
 #include <stdlib.h>
 
-void rsUserDestroy(RSUser* user) {
+void rsUserDestroy(RSUser *user) {
    if (user->destroy != NULL) {
       user->destroy(user);
    }
 }
 
-void rsUserWait(RSUser* user) {
+void rsUserWait(RSUser *user) {
    if (user->wait != NULL) {
       user->wait(user);
    }

@@ -20,12 +20,12 @@ typedef struct RSEncoderParams {
    /**
     * A pointer to the input where the frames are going to come from.
     */
-   const RSInput* input;
+   const RSInput *input;
 
    /**
     * The name of the encoder to use.
     */
-   const char* name;
+   const char *name;
 
    /**
     * The pixel format of the encoder. For hardware encoders this is the software format
@@ -36,7 +36,7 @@ typedef struct RSEncoderParams {
    /**
     * Options to pass to the encoder creation.
     */
-   AVDictionary** options;
+   AVDictionary **options;
 
    /**
     * The hardware device type for hardware encoders. Set this to `AV_HWDEVICE_TYPE_NONE`
@@ -57,36 +57,36 @@ typedef struct RSEncoder {
    /**
     * The codec context of the encoder.
     */
-   AVCodecContext* codecCtx;
+   AVCodecContext *codecCtx;
 
    /**
     * A scale context for converting frames. Only created if the provided input has a
     * different format or resolution to the encoder.
     */
-   struct SwsContext* scaleCtx;
+   struct SwsContext *scaleCtx;
 
    /**
     * A preallocated buffer frame to put scaling results into. Only created if `scaleCtx`
     * is created.
     */
-   AVFrame* scaleFrame;
+   AVFrame *scaleFrame;
 
    /**
     * A reference to a hardware device used for encoding. Only created if this is a
     * hardware-based encoder.
     */
-   AVBufferRef* hwDeviceRef;
+   AVBufferRef *hwDeviceRef;
 
    /**
     * A reference to a hardware frame pool. Only has a size of 1 to get `hwFrame` out of
     * below. Only created if `hwDeviceRef` is created.
     */
-   AVBufferRef* hwFramesRef;
+   AVBufferRef *hwFramesRef;
 
    /**
     * A buffer frame for uploading data to hardware. Created from `hwFramesRef`.
     */
-   AVFrame* hwFrame;
+   AVFrame *hwFrame;
 
    /**
     * The packet circle that encoded packets are written to. Read from this to get the
@@ -100,17 +100,17 @@ typedef struct RSEncoder {
  * returns an error code on failure instead of crashing. This makes it possible to test
  * multiple encoders and find one that works.
  */
-int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params);
+int rsEncoderCreate(RSEncoder *encoder, const RSEncoderParams *params);
 
 /**
  * Destroys the provided encoder.
  */
-void rsEncoderDestroy(RSEncoder* encoder);
+void rsEncoderDestroy(RSEncoder *encoder);
 
 /**
  * Encodes a single frame into the packet circle. Does not modify or destroy the provided
  * frame.
  */
-void rsEncode(RSEncoder* encoder, const AVFrame* frame);
+void rsEncode(RSEncoder *encoder, const AVFrame *frame);
 
 #endif

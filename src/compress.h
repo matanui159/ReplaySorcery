@@ -4,12 +4,12 @@
 
 #ifndef RS_COMPRESS_H
 #define RS_COMPRESS_H
-#include "common.h"
-#include "system/system.h"
 #include "buffer.h"
+#include "common.h"
 #include "config/config.h"
-#include <stdio.h>
+#include "system/system.h"
 #include <jpeglib.h>
+#include <stdio.h>
 
 typedef struct RSCompressDestination {
    struct jpeg_destination_mgr jpeg;

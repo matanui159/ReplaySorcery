@@ -10,6 +10,6 @@
  * Creates a debug user that waits for a newline from standard input. Always returns 0
  * but has a return code regardless just to be consistent with other implementations.
  */
-int rsDebugUserCreate(RSUser* user);
+int rsDebugUserCreate(RSUser *user);
 
 #endif

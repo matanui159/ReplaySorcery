@@ -3,9 +3,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "common.h"
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 #ifdef RS_CONFIG_LIB_UNWIND
 #define UNW_LOCAL_ONLY
 #include <libunwind.h>
@@ -42,7 +42,7 @@ static void errorUnwind(RSErrorFlags flags) {
       char name[1024];
       unw_word_t offset;
       if (unw_get_proc_name(&cursor, name, sizeof(name), &offset) == 0) {
-         rsLog(" - %s +%"PRIXPTR, name, offset);
+         rsLog(" - %s +%" PRIXPTR, name, offset);
       } else {
          rsLog(" - ???");
       }
@@ -52,7 +52,7 @@ static void errorUnwind(RSErrorFlags flags) {
 #endif
 }
 
-static void checkMemory(void* ptr, size_t size) {
+static void checkMemory(void *ptr, size_t size) {
    if (ptr == NULL) {
       rsError(0, "Out of memory when allocating %zu bytes", size);
    }
@@ -65,7 +65,7 @@ void rsLog(const char *fmt, ...) {
    va_end(args);
 }
 
-RS_NORETURN void rsError(RSErrorFlags flags, const char* fmt, ...) {
+RS_NORETURN void rsError(RSErrorFlags flags, const char *fmt, ...) {
    va_list args;
    va_start(args, fmt);
    logArgs(fmt, args);
@@ -79,7 +79,7 @@ void *rsAllocate(size_t size) {
    if (size == 0) {
       return NULL;
    }
-   void* ptr = malloc(size);
+   void *ptr = malloc(size);
    checkMemory(ptr, size);
    return ptr;
 }
@@ -88,7 +88,7 @@ void rsFree(void *ptr) {
    free(ptr);
 }
 
-void* rsReallocate(void* ptr, size_t size) {
+void *rsReallocate(void *ptr, size_t size) {
    if (size == 0) {
       return ptr;
    }

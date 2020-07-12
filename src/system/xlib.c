@@ -2,8 +2,8 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
-#include <sys/shm.h>
 #include <sys/ipc.h>
+#include <sys/shm.h>
 
 typedef struct XlibSystemExtra {
    RSConfig config;
@@ -32,18 +32,22 @@ static void destroyXlibSystem(RSSystem *system) {
 static void getXlibSystemFrame(RSSystem *system, RSSystemFrame *frame) {
    XlibSystemExtra *extra = system->extra;
    if (extra->shared) {
-      XShmGetImage(extra->display, extra->rootWindow, extra->frame, (int)extra->config.inputX, (int)extra->config.inputY, AllPlanes);
+      XShmGetImage(extra->display, extra->rootWindow, extra->frame,
+                   (int)extra->config.inputX, (int)extra->config.inputY, AllPlanes);
    } else {
       if (extra->frame != NULL) {
          XDestroyImage(extra->frame);
       }
-      extra->frame = XGetImage(extra->display, extra->rootWindow, extra->config.inputX, extra->config.inputY, (unsigned)extra->config.inputWidth, (unsigned)extra->config.inputHeight, AllPlanes, ZPixmap);
+      extra->frame = XGetImage(extra->display, extra->rootWindow, extra->config.inputX,
+                               extra->config.inputY, (unsigned)extra->config.inputWidth,
+                               (unsigned)extra->config.inputHeight, AllPlanes, ZPixmap);
    }
 
-   if (extra->frame->depth != 24 || extra->frame->bits_per_pixel != 32 || extra->frame->byte_order != LSBFirst) {
+   if (extra->frame->depth != 24 || extra->frame->bits_per_pixel != 32 ||
+       extra->frame->byte_order != LSBFirst) {
       rsError(0, "Only BGRX X11 images are supported");
    }
-   frame->data = (uint8_t*)extra->frame->data;
+   frame->data = (uint8_t *)extra->frame->data;
    frame->width = (size_t)extra->frame->width;
    frame->height = (size_t)extra->frame->height;
    frame->stride = (size_t)extra->frame->bytes_per_line;
@@ -59,7 +63,9 @@ bool rsCreateXlibSystem(RSSystem *system, const RSConfig *config) {
       return false;
    }
    XSetErrorHandler(xlibError);
-   rsLog("X11 vendor: %s %i.%i.%i", ServerVendor(extra->display), ProtocolVersion(extra->display), ProtocolRevision(extra->display), VendorRelease(extra->display));
+   rsLog("X11 vendor: %s %i.%i.%i", ServerVendor(extra->display),
+         ProtocolVersion(extra->display), ProtocolRevision(extra->display),
+         VendorRelease(extra->display));
    extra->rootWindow = DefaultRootWindow(extra->display);
 
    int major, minor, pixmaps;
@@ -71,8 +77,14 @@ bool rsCreateXlibSystem(RSSystem *system, const RSConfig *config) {
       rsLog("X11 shared memory version: %i.%i", major, minor);
       rsClear(&extra->sharedInfo, sizeof(XShmSegmentInfo));
       int screen = DefaultScreen(extra->display);
-      extra->frame = XShmCreateImage(extra->display, DefaultVisual(extra->display, screen), (unsigned)DefaultDepth(extra->display, screen), ZPixmap, NULL, &extra->sharedInfo, (unsigned)config->inputWidth, (unsigned)config->inputHeight);
-      extra->sharedInfo.shmid = shmget(IPC_PRIVATE, (size_t)(extra->frame->bytes_per_line * extra->frame->height), IPC_CREAT | 0777);
+      extra->frame =
+          XShmCreateImage(extra->display, DefaultVisual(extra->display, screen),
+                          (unsigned)DefaultDepth(extra->display, screen), ZPixmap, NULL,
+                          &extra->sharedInfo, (unsigned)config->inputWidth,
+                          (unsigned)config->inputHeight);
+      extra->sharedInfo.shmid = shmget(
+          IPC_PRIVATE, (size_t)(extra->frame->bytes_per_line * extra->frame->height),
+          IPC_CREAT | 0777);
       extra->sharedInfo.shmaddr = shmat(extra->sharedInfo.shmid, NULL, 0);
       extra->frame->data = extra->sharedInfo.shmaddr;
       XShmAttach(extra->display, &extra->sharedInfo);

@@ -35,7 +35,7 @@ void rsMainExit(void) {
    exit(EXIT_SUCCESS);
 }
 
-int main(int argv, char** argc) {
+int main(int argv, char **argc) {
    (void)argc;
    (void)argv;
    signal(SIGINT, mainSignal);

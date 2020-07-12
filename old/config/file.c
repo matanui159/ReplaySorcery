@@ -18,7 +18,7 @@
 /**
  * Finds the first non-space character.
  */
-static char* configFileTrimStart(char* str) {
+static char *configFileTrimStart(char *str) {
    while (isspace(*str)) {
       ++str;
    }
@@ -28,9 +28,9 @@ static char* configFileTrimStart(char* str) {
 /**
  * Finds the last non-space character and NULL-terminates the string after it.
  */
-static char* configFileTrimEnd(char* str) {
+static char *configFileTrimEnd(char *str) {
    // `strchr` can be used to find the NULL terminated end of a string.
-   char* end = strchr(str, '\0') - 1;
+   char *end = strchr(str, '\0') - 1;
    while (isspace(*end)) {
       --end;
    }
@@ -43,18 +43,20 @@ static char* configFileTrimEnd(char* str) {
  * Parses a single line from a config file. Heavily modifies the line so the line should
  * not be used after being passed into this function.
  */
-static void configFileLine(char* line) {
+static void configFileLine(char *line) {
    int ret;
    // Remove comment on line if there is one.
-   char* comment = strchr(line, '#');
-   if (comment != NULL) *comment = '\0';
+   char *comment = strchr(line, '#');
+   if (comment != NULL)
+      *comment = '\0';
 
    // Check if empty line by trimming first.
    line = configFileTrimEnd(configFileTrimStart(line));
-   if (*line == '\0') return;
+   if (*line == '\0')
+      return;
 
    // Split by `=`.
-   char* eq = strchr(line, '=');
+   char *eq = strchr(line, '=');
    if (eq == NULL) {
       av_log(NULL, AV_LOG_WARNING, "Invalid config line: %s\n", line);
       return;
@@ -62,8 +64,8 @@ static void configFileLine(char* line) {
    *eq = '\0';
    // We do not need to trim from both ends since the other ends was already trimmed
    // earlier.
-   char* key = configFileTrimEnd(line);
-   char* value = configFileTrimStart(eq + 1);
+   char *key = configFileTrimEnd(line);
+   char *value = configFileTrimStart(eq + 1);
 
    // Set the value.
    if ((ret = av_opt_set(&rsConfig, key, value, 0)) < 0) {
@@ -72,7 +74,7 @@ static void configFileLine(char* line) {
    }
 }
 
-void rsConfigFileRead(const char* path) {
+void rsConfigFileRead(const char *path) {
    av_log(NULL, AV_LOG_INFO, "Reading config from '%s'...\n", path);
    int fd = open(path, O_RDONLY);
    if (fd < 0) {
@@ -90,8 +92,8 @@ void rsConfigFileRead(const char* path) {
    close(fd);
 
    // Read line by line.
-   char* state = NULL;
-   char* line = av_strtok(contents, "\n", &state);
+   char *state = NULL;
+   char *line = av_strtok(contents, "\n", &state);
    while (line != NULL) {
       configFileLine(line);
       line = av_strtok(NULL, "\n", &state);

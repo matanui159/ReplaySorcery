@@ -3,24 +3,24 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "common.h"
-#include "system/xlib.h"
-#include "config/config.h"
 #include "compress.h"
+#include "config/config.h"
+#include "system/xlib.h"
 #include <signal.h>
 #include <time.h>
 
 static void mainSignal(int signal) {
-   const char* error = NULL;
+   const char *error = NULL;
    switch (signal) {
-      case SIGSEGV:
-         error = "Segment violation";
-         break;
-      case SIGILL:
-         error = "Illegal program";
-         break;
-      case SIGFPE:
-         error = "Floating point error";
-         break;
+   case SIGSEGV:
+      error = "Segment violation";
+      break;
+   case SIGILL:
+      error = "Illegal program";
+      break;
+   case SIGFPE:
+      error = "Floating point error";
+      break;
    }
 
    if (error != NULL) {
@@ -28,7 +28,7 @@ static void mainSignal(int signal) {
    }
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
    (void)argc;
    (void)argv;
    signal(SIGSEGV, mainSignal);

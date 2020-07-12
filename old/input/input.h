@@ -16,17 +16,17 @@ typedef struct RSInput {
    /**
     * The format context of the input device.
     */
-   AVFormatContext* formatCtx;
+   AVFormatContext *formatCtx;
 
    /**
     * The codec context to decode the input packets. This is usually `rawvideo`.
     */
-   AVCodecContext* codecCtx;
+   AVCodecContext *codecCtx;
 
    /**
     * A buffer packet to read into and decode from.
     */
-   AVPacket* packet;
+   AVPacket *packet;
 } RSInput;
 
 /**
@@ -44,17 +44,17 @@ void rsInputInit(void);
  * `options` is a dictionary of options to pass to the device creation. This will be freed
  * before this function returns, even if it failed.
  */
-int rsInputCreate(RSInput* input, const char* name, const char* url,
-                  AVDictionary** options);
+int rsInputCreate(RSInput *input, const char *name, const char *url,
+                  AVDictionary **options);
 
 /**
  * Destroys the input device.
  */
-void rsInputDestroy(RSInput* input);
+void rsInputDestroy(RSInput *input);
 
 /**
  * Reads a frame from the input device.
  */
-void rsInputRead(RSInput* input, AVFrame* frame);
+void rsInputRead(RSInput *input, AVFrame *frame);
 
 #endif

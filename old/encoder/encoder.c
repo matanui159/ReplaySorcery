@@ -20,7 +20,7 @@ static inline void encoderLogIssues(void) {
  * encoders. This and `encoderHardwareDestroy` make it easy to split out hardware handling
  * as a seperate concern. Especially since it is not needed for all encoders.
  */
-static int encoderHardwareCreate(RSEncoder* encoder, const RSEncoderParams* params) {
+static int encoderHardwareCreate(RSEncoder *encoder, const RSEncoderParams *params) {
    int ret;
    if ((ret = av_hwdevice_ctx_create(&encoder->hwDeviceRef, params->hwType, NULL, NULL,
                                      0)) < 0) {
@@ -28,7 +28,7 @@ static int encoderHardwareCreate(RSEncoder* encoder, const RSEncoderParams* para
    }
 
    encoder->hwFramesRef = av_hwframe_ctx_alloc(encoder->hwDeviceRef);
-   AVHWFramesContext* hwFramesCtx = (AVHWFramesContext*)encoder->hwFramesRef->data;
+   AVHWFramesContext *hwFramesCtx = (AVHWFramesContext *)encoder->hwFramesRef->data;
    hwFramesCtx->width = rsConfig.recordWidth;
    hwFramesCtx->height = rsConfig.recordHeight;
    hwFramesCtx->format = params->hwFormat;
@@ -55,7 +55,7 @@ static int encoderHardwareCreate(RSEncoder* encoder, const RSEncoderParams* para
 /**
  * Destroys the hardware device and frame-pool.
  */
-static void encoderHardwareDestroy(RSEncoder* encoder) {
+static void encoderHardwareDestroy(RSEncoder *encoder) {
    if (encoder->hwDeviceRef != NULL) {
       av_frame_free(&encoder->hwFrame);
       av_buffer_unref(&encoder->hwFramesRef);
@@ -63,11 +63,11 @@ static void encoderHardwareDestroy(RSEncoder* encoder) {
    }
 }
 
-int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
+int rsEncoderCreate(RSEncoder *encoder, const RSEncoderParams *params) {
    int ret;
    // We check for this first since if the encoder does not exist there is no point
    // setting up the hardware for it.
-   AVCodec* codec = avcodec_find_encoder_by_name(params->name);
+   AVCodec *codec = avcodec_find_encoder_by_name(params->name);
    if (codec == NULL) {
       av_dict_free(params->options);
       return AVERROR_ENCODER_NOT_FOUND;
@@ -84,7 +84,7 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
       }
    }
 
-   AVCodecContext* outputCodec = avcodec_alloc_context3(codec);
+   AVCodecContext *outputCodec = avcodec_alloc_context3(codec);
    encoder->codecCtx = outputCodec;
    outputCodec->width = rsConfig.recordWidth;
    outputCodec->height = rsConfig.recordHeight;
@@ -117,7 +117,7 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
    // worry about returning safely on error.
    // Use the format from the parameters since the codec might have been set to the
    // hardware format.
-   AVCodecContext* inputCodec = params->input->codecCtx;
+   AVCodecContext *inputCodec = params->input->codecCtx;
    if (outputCodec->width == inputCodec->width &&
        outputCodec->height == inputCodec->height &&
        params->format == inputCodec->pix_fmt) {
@@ -128,7 +128,8 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
       encoder->scaleCtx = sws_getContext(
           inputCodec->width, inputCodec->height, inputCodec->pix_fmt, outputCodec->width,
           outputCodec->height, params->format, SWS_FAST_BILINEAR, NULL, NULL, NULL);
-      if (encoder->scaleCtx == NULL) rsError(AVERROR_EXTERNAL);
+      if (encoder->scaleCtx == NULL)
+         rsError(AVERROR_EXTERNAL);
 
       encoder->scaleFrame = av_frame_alloc();
       encoder->scaleFrame->width = outputCodec->width;
@@ -167,7 +168,7 @@ int rsEncoderCreate(RSEncoder* encoder, const RSEncoderParams* params) {
    return 0;
 }
 
-void rsEncoderDestroy(RSEncoder* encoder) {
+void rsEncoderDestroy(RSEncoder *encoder) {
    rsPacketCircleDestroy(&encoder->pktCircle);
    if (encoder->scaleCtx != NULL) {
       av_frame_free(&encoder->scaleFrame);
@@ -177,12 +178,12 @@ void rsEncoderDestroy(RSEncoder* encoder) {
    encoderHardwareDestroy(encoder);
 }
 
-void rsEncode(RSEncoder* encoder, const AVFrame* frame) {
+void rsEncode(RSEncoder *encoder, const AVFrame *frame) {
    // The actual frame that we pass into the encoder can change.
-   const AVFrame* inputFrame = frame;
+   const AVFrame *inputFrame = frame;
 
    if (encoder->scaleCtx != NULL) {
-      sws_scale(encoder->scaleCtx, (const uint8_t* const*)inputFrame->data,
+      sws_scale(encoder->scaleCtx, (const uint8_t *const *)inputFrame->data,
                 inputFrame->linesize, 0, inputFrame->height, encoder->scaleFrame->data,
                 encoder->scaleFrame->linesize);
       inputFrame = encoder->scaleFrame;
@@ -195,13 +196,14 @@ void rsEncode(RSEncoder* encoder, const AVFrame* frame) {
 
    // If the frame is different from the provided ones, copy over the metadata.
    if (inputFrame != frame) {
-      rsCheck(av_frame_copy_props((AVFrame*)inputFrame, frame));
+      rsCheck(av_frame_copy_props((AVFrame *)inputFrame, frame));
    }
    rsCheck(avcodec_send_frame(encoder->codecCtx, inputFrame));
    int ret = avcodec_receive_packet(encoder->codecCtx, encoder->pktCircle.input);
 
    // Some encoders require a couple of frames before starting to output packets.
-   if (ret == AVERROR(EAGAIN)) return;
+   if (ret == AVERROR(EAGAIN))
+      return;
    rsCheck(ret);
 
    if (!(encoder->pktCircle.input->flags & AV_PKT_FLAG_KEY)) {

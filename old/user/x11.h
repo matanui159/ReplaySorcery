@@ -9,6 +9,6 @@
 /**
  * Creates a user that listens to X11 inputs for a keypress.
  */
-int rsX11UserCreate(RSUser* user);
+int rsX11UserCreate(RSUser *user);
 
 #endif

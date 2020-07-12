@@ -3,8 +3,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "config.h"
-#include <stdlib.h>
 #include <limits.h>
+#include <stdlib.h>
 
 typedef struct ConfigParam {
    const char *key;
@@ -13,9 +13,10 @@ typedef struct ConfigParam {
    const char *def;
 } ConfigParam;
 
-#define CONFIG_PARAM(key, set, def) { #key, offsetof(RSConfig, key), set, def }
+#define CONFIG_PARAM(key, set, def)                                                      \
+   { #key, offsetof(RSConfig, key), set, def }
 
-static void setConfigInt(void *param, const char* value) {
+static void setConfigInt(void *param, const char *value) {
    int *num = param;
    char *end;
    long ret = strtol(value, &end, 10);
@@ -26,12 +27,10 @@ static void setConfigInt(void *param, const char* value) {
 }
 
 static const ConfigParam configParams[] = {
-   CONFIG_PARAM(inputX, setConfigInt, "0"),
-   CONFIG_PARAM(inputY, setConfigInt, "0"),
-   CONFIG_PARAM(inputWidth, setConfigInt, "1920"),
-   CONFIG_PARAM(inputHeight, setConfigInt, "1080"),
-   CONFIG_PARAM(compressQuality, setConfigInt, "100")
-};
+    CONFIG_PARAM(inputX, setConfigInt, "0"), CONFIG_PARAM(inputY, setConfigInt, "0"),
+    CONFIG_PARAM(inputWidth, setConfigInt, "1920"),
+    CONFIG_PARAM(inputHeight, setConfigInt, "1080"),
+    CONFIG_PARAM(compressQuality, setConfigInt, "100")};
 
 void rsConfigDefaults(RSConfig *config) {
    for (size_t i = 0; i < RS_ARRAY_SIZE(configParams); ++i) {
@@ -39,10 +38,10 @@ void rsConfigDefaults(RSConfig *config) {
    }
 }
 
-void rsSetConfigParam(RSConfig *config, const char* key, const char* value) {
-   for (size_t i = 0 ; i < RS_ARRAY_SIZE(configParams); ++i) {
+void rsSetConfigParam(RSConfig *config, const char *key, const char *value) {
+   for (size_t i = 0; i < RS_ARRAY_SIZE(configParams); ++i) {
       if (strcmp(configParams[i].key, key) == 0) {
-         void* param = (char*)config + configParams[i].offset;
+         void *param = (char *)config + configParams[i].offset;
          configParams[i].set(param, value);
          break;
       }

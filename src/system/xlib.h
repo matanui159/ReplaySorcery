@@ -4,9 +4,9 @@
 
 #ifndef RS_SYSTEM_XCB_H
 #define RS_SYSTEM_XCB_H
-#include "system.h"
 #include "../common.h"
 #include "../config/config.h"
+#include "system.h"
 
 bool rsCreateXlibSystem(RSSystem *system, const RSConfig *config);
 

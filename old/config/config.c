@@ -68,7 +68,9 @@ void rsConfigInit(void) {
    rsConfigPathsRead();
 
    // Fixup width and height if set to -1 (auto).
-   if (rsConfig.recordWidth == -1) rsConfig.recordWidth = rsConfig.inputWidth;
-   if (rsConfig.recordHeight == -1) rsConfig.recordHeight = rsConfig.inputHeight;
+   if (rsConfig.recordWidth == -1)
+      rsConfig.recordWidth = rsConfig.inputWidth;
+   if (rsConfig.recordHeight == -1)
+      rsConfig.recordHeight = rsConfig.inputHeight;
    av_log_set_level(rsConfig.logLevel);
 }

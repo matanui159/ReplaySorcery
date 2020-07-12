@@ -10,17 +10,18 @@
 /**
  * The implementation of `user.wait`.
  */
-static void debugUserWait(RSUser* user) {
+static void debugUserWait(RSUser *user) {
    (void)user;
    av_log(NULL, AV_LOG_INFO, "Press enter to save\n");
    int c;
    while ((c = getchar()) != '\n') {
       // If we get Ctrl+D (EOF), exit.
-      if (c == EOF) rsMainExit();
+      if (c == EOF)
+         rsMainExit();
    }
 }
 
-int rsDebugUserCreate(RSUser* user) {
+int rsDebugUserCreate(RSUser *user) {
    user->destroy = NULL;
    user->wait = debugUserWait;
    return 0;
