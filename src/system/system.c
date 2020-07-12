@@ -4,14 +4,14 @@
 
 #include "system.h"
 
-void rsDestroySystem(RSSystem *system) {
+void rsSystemDestroy(RSSystem *system) {
    if (system->destroy != NULL) {
       system->destroy(system);
    }
    rsClear(system, sizeof(RSSystem));
 }
 
-void rsGetSystemFrame(RSSystem *system, RSSystemFrame *frame) {
+void rsSystemGetFrame(RSSystem *system, RSSystemFrame *frame) {
    if (system->getFrame != NULL) {
       system->getFrame(system, frame);
    } else {

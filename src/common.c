@@ -52,7 +52,7 @@ static void errorUnwind(RSErrorFlags flags) {
 #endif
 }
 
-static void checkMemory(void *ptr, size_t size) {
+static void memoryCheck(void *ptr, size_t size) {
    if (ptr == NULL) {
       rsError(0, "Out of memory when allocating %zu bytes", size);
    }
@@ -80,7 +80,7 @@ void *rsAllocate(size_t size) {
       return NULL;
    }
    void *ptr = malloc(size);
-   checkMemory(ptr, size);
+   memoryCheck(ptr, size);
    return ptr;
 }
 
@@ -93,6 +93,6 @@ void *rsReallocate(void *ptr, size_t size) {
       return ptr;
    }
    ptr = realloc(ptr, size);
-   checkMemory(ptr, size);
+   memoryCheck(ptr, size);
    return ptr;
 }

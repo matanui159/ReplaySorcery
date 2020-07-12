@@ -12,10 +12,10 @@ typedef struct RSBuffer {
    size_t capacity;
 } RSBuffer;
 
-void rsCreateBuffer(RSBuffer *buffer, size_t capacity);
-void rsDestroyBuffer(RSBuffer *buffer);
-void *rsAppendBuffer(RSBuffer *buffer, size_t size);
-void *rsGetBufferSpace(RSBuffer *buffer, size_t *size);
-void rsClearBuffer(RSBuffer *buffer);
+void rsBufferCreate(RSBuffer *buffer, size_t capacity);
+void rsBufferDestroy(RSBuffer *buffer);
+void *rsBufferAppend(RSBuffer *buffer, size_t size);
+void *rsBufferGetSpace(RSBuffer *buffer, size_t *size);
+void rsBufferClear(RSBuffer *buffer);
 
 #endif

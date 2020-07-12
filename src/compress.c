@@ -1,50 +1,50 @@
 #include "compress.h"
 
-static void outputCompressMessage(struct jpeg_common_struct *jpeg) {
+static void compressOutputMessage(struct jpeg_common_struct *jpeg) {
    char error[JMSG_LENGTH_MAX];
    jpeg->err->format_message(jpeg, error);
    rsLog("JPEG warning: %s", error);
 }
 
-static void outputCompressError(struct jpeg_common_struct *jpeg) {
+static void compressErrorExit(struct jpeg_common_struct *jpeg) {
    char error[JMSG_LENGTH_MAX];
    jpeg->err->format_message(jpeg, error);
    rsError(0, "JPEG error: %s", error);
 }
 
-static void growCompressDestination(RSCompressDestination *dest) {
-   dest->jpeg.next_output_byte = rsGetBufferSpace(dest->buffer, &dest->size);
+static void compressDestinationGrow(RSCompressDestination *dest) {
+   dest->jpeg.next_output_byte = rsBufferGetSpace(dest->buffer, &dest->size);
    dest->jpeg.free_in_buffer = dest->size;
 }
 
-static void initCompressDestination(struct jpeg_compress_struct *jpeg) {
+static void compressDestinationInit(struct jpeg_compress_struct *jpeg) {
    RSCompressDestination *dest = (RSCompressDestination *)jpeg->dest;
-   rsClearBuffer(dest->buffer);
-   growCompressDestination(dest);
+   rsBufferClear(dest->buffer);
+   compressDestinationGrow(dest);
 }
 
-static void terminateCompressDestination(struct jpeg_compress_struct *jpeg) {
+static void compressDestinationTerm(struct jpeg_compress_struct *jpeg) {
    RSCompressDestination *dest = (RSCompressDestination *)jpeg->dest;
-   rsAppendBuffer(dest->buffer, dest->size - dest->jpeg.free_in_buffer);
+   rsBufferAppend(dest->buffer, dest->size - dest->jpeg.free_in_buffer);
 }
 
-static boolean emptyCompressDestination(struct jpeg_compress_struct *jpeg) {
+static boolean compressDestinationEmpty(struct jpeg_compress_struct *jpeg) {
    RSCompressDestination *dest = (RSCompressDestination *)jpeg->dest;
-   rsAppendBuffer(dest->buffer, dest->size);
-   growCompressDestination(dest);
+   rsBufferAppend(dest->buffer, dest->size);
+   compressDestinationGrow(dest);
    return true;
 }
 
-void rsCreateCompress(RSCompress *compress, const RSConfig *config) {
+void rsCompressCreate(RSCompress *compress, const RSConfig *config) {
    compress->jpeg.err = jpeg_std_error(&compress->error);
-   compress->error.output_message = outputCompressMessage;
-   compress->error.error_exit = outputCompressError;
+   compress->error.output_message = compressOutputMessage;
+   compress->error.error_exit = compressErrorExit;
    jpeg_create_compress(&compress->jpeg);
 
    compress->jpeg.dest = (struct jpeg_destination_mgr *)&compress->dest;
-   compress->dest.jpeg.init_destination = initCompressDestination;
-   compress->dest.jpeg.term_destination = terminateCompressDestination;
-   compress->dest.jpeg.empty_output_buffer = emptyCompressDestination;
+   compress->dest.jpeg.init_destination = compressDestinationInit;
+   compress->dest.jpeg.term_destination = compressDestinationTerm;
+   compress->dest.jpeg.empty_output_buffer = compressDestinationEmpty;
 
    compress->jpeg.input_components = 4;
    compress->jpeg.in_color_space = JCS_EXT_BGRX;
@@ -52,11 +52,11 @@ void rsCreateCompress(RSCompress *compress, const RSConfig *config) {
    jpeg_set_quality(&compress->jpeg, config->compressQuality, true);
 }
 
-void rsDestroyCompress(RSCompress *compress) {
+void rsCompressDestroy(RSCompress *compress) {
    jpeg_destroy_compress(&compress->jpeg);
 }
 
-void rsCompressSystemFrame(RSCompress *compress, RSBuffer *buffer, RSSystemFrame *frame) {
+void rsCompress(RSCompress *compress, RSBuffer *buffer, RSSystemFrame *frame) {
    compress->dest.buffer = buffer;
    compress->jpeg.image_width = (unsigned)frame->width;
    compress->jpeg.image_height = (unsigned)frame->height;

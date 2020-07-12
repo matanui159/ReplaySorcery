@@ -14,13 +14,13 @@ typedef struct XlibSystemExtra {
    bool shared;
 } XlibSystemExtra;
 
-static int xlibError(Display *display, XErrorEvent *event) {
+static int xlibSystemError(Display *display, XErrorEvent *event) {
    char error[1024];
    XGetErrorText(display, event->error_code, error, sizeof(error));
    rsError(0, "X11 error: %s", error);
 }
 
-static void destroyXlibSystem(RSSystem *system) {
+static void xlibSystemDestroy(RSSystem *system) {
    XlibSystemExtra *extra = system->extra;
    if (extra->frame != NULL) {
       XDestroyImage(extra->frame);
@@ -29,7 +29,7 @@ static void destroyXlibSystem(RSSystem *system) {
    rsFree(extra);
 }
 
-static void getXlibSystemFrame(RSSystem *system, RSSystemFrame *frame) {
+static void xlibSystemGetFrame(RSSystem *system, RSSystemFrame *frame) {
    XlibSystemExtra *extra = system->extra;
    if (extra->shared) {
       XShmGetImage(extra->display, extra->rootWindow, extra->frame,
@@ -53,7 +53,7 @@ static void getXlibSystemFrame(RSSystem *system, RSSystemFrame *frame) {
    frame->stride = (size_t)extra->frame->bytes_per_line;
 }
 
-bool rsCreateXlibSystem(RSSystem *system, const RSConfig *config) {
+bool rsXlibSystemCreate(RSSystem *system, const RSConfig *config) {
    system->extra = rsAllocate(sizeof(XlibSystemExtra));
    XlibSystemExtra *extra = system->extra;
    extra->config = *config;
@@ -62,7 +62,7 @@ bool rsCreateXlibSystem(RSSystem *system, const RSConfig *config) {
       rsLog("Failed to open X11 display");
       return false;
    }
-   XSetErrorHandler(xlibError);
+   XSetErrorHandler(xlibSystemError);
    rsLog("X11 vendor: %s %i.%i.%i", ServerVendor(extra->display),
          ProtocolVersion(extra->display), ProtocolRevision(extra->display),
          VendorRelease(extra->display));
@@ -93,7 +93,7 @@ bool rsCreateXlibSystem(RSSystem *system, const RSConfig *config) {
       extra->frame = NULL;
    }
 
-   system->destroy = destroyXlibSystem;
-   system->getFrame = getXlibSystemFrame;
+   system->destroy = xlibSystemDestroy;
+   system->getFrame = xlibSystemGetFrame;
    return true;
 }

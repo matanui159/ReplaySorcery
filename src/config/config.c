@@ -34,11 +34,11 @@ static const ConfigParam configParams[] = {
 
 void rsConfigDefaults(RSConfig *config) {
    for (size_t i = 0; i < RS_ARRAY_SIZE(configParams); ++i) {
-      rsSetConfigParam(config, configParams[i].key, configParams[i].def);
+      rsConfigSet(config, configParams[i].key, configParams[i].def);
    }
 }
 
-void rsSetConfigParam(RSConfig *config, const char *key, const char *value) {
+void rsConfigSet(RSConfig *config, const char *key, const char *value) {
    for (size_t i = 0; i < RS_ARRAY_SIZE(configParams); ++i) {
       if (strcmp(configParams[i].key, key) == 0) {
          void *param = (char *)config + configParams[i].offset;

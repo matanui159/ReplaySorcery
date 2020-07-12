@@ -4,18 +4,18 @@
 
 #include "buffer.h"
 
-void rsCreateBuffer(RSBuffer *buffer, size_t capacity) {
+void rsBufferCreate(RSBuffer *buffer, size_t capacity) {
    buffer->data = rsAllocate(capacity);
    buffer->size = 0;
    buffer->capacity = capacity;
 }
 
-void rsDestroyBuffer(RSBuffer *buffer) {
+void rsBufferDestroy(RSBuffer *buffer) {
    rsFree(buffer->data);
    rsClear(buffer, sizeof(RSBuffer));
 }
 
-void *rsAppendBuffer(RSBuffer *buffer, size_t size) {
+void *rsBufferAppend(RSBuffer *buffer, size_t size) {
    size_t offset = buffer->size;
    buffer->size += size;
    if (buffer->size > buffer->capacity) {
@@ -27,7 +27,7 @@ void *rsAppendBuffer(RSBuffer *buffer, size_t size) {
    return (char *)buffer->data + offset;
 }
 
-void *rsGetBufferSpace(RSBuffer *buffer, size_t *size) {
+void *rsBufferGetSpace(RSBuffer *buffer, size_t *size) {
    if (buffer->size >= buffer->capacity) {
       buffer->capacity *= 2;
       buffer->data = rsReallocate(buffer->data, buffer->capacity);
@@ -36,6 +36,6 @@ void *rsGetBufferSpace(RSBuffer *buffer, size_t *size) {
    return (char *)buffer->data + buffer->size;
 }
 
-void rsClearBuffer(RSBuffer *buffer) {
+void rsBufferClear(RSBuffer *buffer) {
    buffer->size = 0;
 }

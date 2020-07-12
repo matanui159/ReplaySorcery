@@ -20,8 +20,8 @@ typedef struct RSSystem {
    bool (*wantsSave)(struct RSSystem *system);
 } RSSystem;
 
-void rsDestroySystem(RSSystem *system);
-void rsGetSystemFrame(RSSystem *system, RSSystemFrame *frame);
+void rsSystemDestroy(RSSystem *system);
+void rsSystemGetFrame(RSSystem *system, RSSystemFrame *frame);
 bool rsSystemWantsSave(RSSystem *system);
 
 #endif

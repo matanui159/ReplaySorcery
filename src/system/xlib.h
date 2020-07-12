@@ -8,6 +8,6 @@
 #include "../config/config.h"
 #include "system.h"
 
-bool rsCreateXlibSystem(RSSystem *system, const RSConfig *config);
+bool rsXlibSystemCreate(RSSystem *system, const RSConfig *config);
 
 #endif

@@ -39,19 +39,19 @@ int main(int argc, char *argv[]) {
    rsConfigDefaults(&config);
 
    RSSystem system;
-   rsCreateXlibSystem(&system, &config);
+   rsXlibSystemCreate(&system, &config);
 
    RSCompress compress;
    RSBuffer buffer;
-   rsCreateCompress(&compress, &config);
-   rsCreateBuffer(&buffer, 1024);
+   rsCompressCreate(&compress, &config);
+   rsBufferCreate(&buffer, 1024);
 
    clock_t start = clock();
    int framerate = 0;
    while (clock() - start < CLOCKS_PER_SEC * 4) {
       RSSystemFrame frame;
-      rsGetSystemFrame(&system, &frame);
-      rsCompressSystemFrame(&compress, &buffer, &frame);
+      rsSystemGetFrame(&system, &frame);
+      rsCompress(&compress, &buffer, &frame);
 
       if (clock() - start >= CLOCKS_PER_SEC) {
          ++framerate;
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
    fwrite(buffer.data, buffer.size, 1, jpeg);
    fclose(jpeg);
 
-   rsDestroyBuffer(&buffer);
-   rsDestroyCompress(&compress);
-   rsDestroySystem(&system);
+   rsBufferDestroy(&buffer);
+   rsCompressDestroy(&compress);
+   rsSystemDestroy(&system);
 }

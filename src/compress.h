@@ -8,8 +8,11 @@
 #include "common.h"
 #include "config/config.h"
 #include "system/system.h"
-#include <jpeglib.h>
+
+// clang-format off
 #include <stdio.h>
+#include <jpeglib.h>
+// clanf-format on
 
 typedef struct RSCompressDestination {
    struct jpeg_destination_mgr jpeg;
@@ -23,8 +26,8 @@ typedef struct RSCompress {
    struct jpeg_error_mgr error;
 } RSCompress;
 
-void rsCreateCompress(RSCompress *compress, const RSConfig *config);
-void rsDestroyCompress(RSCompress *compress);
-void rsCompressSystemFrame(RSCompress *compress, RSBuffer *buffer, RSSystemFrame *frame);
+void rsCompressCreate(RSCompress *compress, const RSConfig *config);
+void rsCompressDestroy(RSCompress *compress);
+void rsCompress(RSCompress *compress, RSBuffer *buffer, RSSystemFrame *frame);
 
 #endif
