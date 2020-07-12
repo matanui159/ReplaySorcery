@@ -26,6 +26,7 @@ static void compressDestinationInit(struct jpeg_compress_struct *jpeg) {
 static void compressDestinationTerm(struct jpeg_compress_struct *jpeg) {
    RSCompressDestination *dest = (RSCompressDestination *)jpeg->dest;
    rsBufferAppend(dest->buffer, dest->size - dest->jpeg.free_in_buffer);
+   rsBufferOptimize(dest->buffer);
 }
 
 static boolean compressDestinationEmpty(struct jpeg_compress_struct *jpeg) {

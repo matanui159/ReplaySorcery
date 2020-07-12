@@ -43,6 +43,18 @@ void *rsBufferGetSpace(RSBuffer *buffer, size_t *size) {
    return (char *)buffer->data + buffer->size;
 }
 
+void rsBufferOptimize(RSBuffer *buffer) {
+   if (buffer->size < buffer->capacity / 4) {
+      do {
+         buffer->capacity /= 2;
+      } while (buffer->size < buffer->capacity / 4);
+      void *data = rsAllocate(buffer->capacity);
+      memcpy(data, buffer->data, buffer->size);
+      rsFree(buffer->data);
+      buffer->data = data;
+   }
+}
+
 void rsBufferClear(RSBuffer *buffer) {
    buffer->size = 0;
 }

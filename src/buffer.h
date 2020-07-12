@@ -20,6 +20,7 @@ void rsBufferDestroy(RSBuffer *buffer);
 void rsBufferClone(RSBuffer *buffer, const RSBuffer *source);
 void *rsBufferAppend(RSBuffer *buffer, size_t size);
 void *rsBufferGetSpace(RSBuffer *buffer, size_t *size);
+void rsBufferOptimize(RSBuffer *buffer);
 void rsBufferClear(RSBuffer *buffer);
 
 #endif
