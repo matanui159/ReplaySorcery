@@ -2,6 +2,7 @@ project('ReplaySorcery', 'c', version: '0.2.0-dev', default_options: [
    'c_std=c99',
    'warning_level=3'
 ])
+cmake = import('cmake')
 compiler = meson.get_compiler('c')
 
 unwind = dependency('libunwind', include_type: 'system', required: false)
@@ -12,6 +13,10 @@ configure_file(
       'RS_CONFIG_ATTR_NORETURN': compiler.has_function_attribute('noreturn')
    }
 )
+
+webm = cmake.subproject('libwebm', default_options: [
+   'warning_level=0'
+]).dependency('webm')
 
 executable(
    'replay-sorcery', [
@@ -33,6 +38,8 @@ executable(
    ]),
    dependencies: [
       unwind,
+      webm,
+      dependency('threads', include_type: 'system'),
       dependency('x11', include_type: 'system'),
       dependency('xext', include_type: 'system'),
       dependency('libjpeg', include_type: 'system')
