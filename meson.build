@@ -14,9 +14,18 @@ configure_file(
    }
 )
 
-webm = cmake.subproject('libwebm', default_options: [
-   'warning_level=0'
-]).dependency('webm')
+jpegOpts = cmake.subproject_options()
+jpegOpts.set_override_option('warning_level', '0')
+jpegOpts.add_cmake_defines({
+   'ENABLE_SHARED': false,
+   'WITH_SIMD': false,
+   'WITH_TURBOJPEG': false
+})
+jpeg = cmake.subproject('libjpeg-turbo', options: jpegOpts).dependency('jpeg-static')
+
+webmOpts = cmake.subproject_options()
+webmOpts.set_override_option('warning_level', '0')
+webm = cmake.subproject('libwebm', options: webmOpts).dependency('webm')
 
 executable(
    'replay-sorcery', [
@@ -38,10 +47,10 @@ executable(
    ]),
    dependencies: [
       unwind,
+      jpeg,
       webm,
       dependency('threads', include_type: 'system'),
       dependency('x11', include_type: 'system'),
-      dependency('xext', include_type: 'system'),
-      dependency('libjpeg', include_type: 'system')
+      dependency('xext', include_type: 'system')
    ]
 )
