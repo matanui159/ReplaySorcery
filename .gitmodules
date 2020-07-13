@@ -1,3 +1,6 @@
+[submodule "subprojects/libjpeg-turbo"]
+	path = subprojects/libjpeg-turbo
+	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git
 [submodule "subprojects/libwebm"]
 	path = subprojects/libwebm
 	url = https://github.com/webmproject/libwebm.git
