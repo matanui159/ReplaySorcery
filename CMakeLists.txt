@@ -43,12 +43,12 @@ target_link_libraries(${name} PRIVATE ${X11_LIBRARIES})
 
 set(ENABLE_SHARED OFF CACHE BOOL "")
 set(WITH_TURBOJPEG OFF CACHE BOOL "")
-add_subdirectory(subprojects/libjpeg-turbo)
+add_subdirectory(dep/libjpeg-turbo)
 target_link_libraries(${name} PRIVATE jpeg-static)
 
 set(ENABLE_WEBMINFO OFF CACHE BOOL "")
 set(ENABLE_WEBMTS OFF CACHE BOOL "")
-add_subdirectory(subprojects/libwebm)
+add_subdirectory(dep/libwebm)
 target_link_libraries(${name} PRIVATE webm)
 
 configure_file(rs-build-config.h.in rs-build-config.h)
