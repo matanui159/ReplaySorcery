@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(ReplaySorcery VERSION 0.2.0)
 include(CheckCCompilerFlag)
+include(ExternalProject)
 
 set(binary replay-sorcery)
 set(sources
@@ -21,13 +22,15 @@ add_executable(${binary} ${sources})
 set_property(TARGET ${binary} PROPERTY C_STANDARD 99)
 
 function(target_c_flag target flag)
-   message("Checking '${flag}'...")
-   unset(c_flag_compiles CACHE)
-   check_c_compiler_flag(${flag} c_flag_compiles)
-   if (c_flag_compiles)
+   string(MAKE_C_IDENTIFIER ${flag} have)
+   string(TOUPPER ${have} have)
+   set(have HAVE_${have})
+   check_c_compiler_flag(${flag} ${have})
+   if (${have})
       target_compile_options(${target} PRIVATE ${flag})
    endif()
 endfunction()
+target_c_flag(${binary} -g)
 target_c_flag(${binary} -Wall)
 target_c_flag(${binary} -Wextra)
 target_c_flag(${binary} -Wpedantic)
@@ -36,8 +39,21 @@ target_c_flag(${binary} -Wstrict-prototypes)
 target_c_flag(${binary} -Wmissing-prototypes)
 
 find_package(X11 REQUIRED)
+if (NOT X11_FOUND OR NOT X11_Xutil_FOUND OR NOT X11_XShm_FOUND)
+   message(SEND_ERROR "Failed to find X11 with util and shm extensions")
+endif()
 target_include_directories(${binary} SYSTEM PRIVATE ${X11_INCLUDE_DIRS})
 target_link_libraries(${binary} PRIVATE ${X11_LIBRARIES})
+
+ExternalProject_Add(backtrace
+   STEP_TARGETS backtrace
+   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dep/libbacktrace"
+   CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR>
+)
+add_dependencies(${binary} backtrace)
+ExternalProject_Get_Property(backtrace INSTALL_DIR)
+target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
+target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libbacktrace.a")
 
 set(ENABLE_SHARED OFF CACHE BOOL "")
 set(WITH_TURBOJPEG OFF CACHE BOOL "")
@@ -52,5 +68,5 @@ target_link_libraries(${binary} PRIVATE jpeg-static)
 add_custom_target(clang-format
    COMMAND clang-format -i ${sources}
    SOURCES ${sources}
-   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )

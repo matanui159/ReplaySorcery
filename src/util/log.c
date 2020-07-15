@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "log.h"
+#include <backtrace.h>
 
 #define LOG_FILE(file, fmt)                                                              \
    do {                                                                                  \
@@ -13,12 +14,21 @@
       fputc('\n', file);                                                                 \
    } while (0)
 
+static void backtraceError(void *data, const char *error, int code) {
+   (void)data;
+   rsLog("Backtrace error: %s (%i)\n", error, code);
+}
+
 void rsLog(const char *fmt, ...) {
    LOG_FILE(stdout, fmt);
 }
 
 void rsError(const char *fmt, ...) {
    LOG_FILE(stderr, fmt);
-   // TODO: include libbacktrace
+   struct backtrace_state *backtrace =
+       backtrace_create_state(NULL, false, backtraceError, NULL);
+   if (backtrace != NULL) {
+      backtrace_print(backtrace, 0, stderr);
+   }
    exit(EXIT_FAILURE);
 }

@@ -4,3 +4,6 @@
 [submodule "dep/libwebm"]
 	path = dep/libwebm
 	url = https://github.com/webmproject/libwebm.git
+[submodule "dep/libbacktrace"]
+	path = dep/libbacktrace
+	url = https://github.com/ianlancetaylor/libbacktrace.git

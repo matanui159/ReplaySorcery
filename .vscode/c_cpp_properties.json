@@ -5,8 +5,7 @@
          "name": "Linux",
          "cStandard": "c99",
          "includePath": [
-            "${workspaceFolder}/bin",
-            "/usr/include/ffmpeg"
+            "${workspaceFolder}/bin/backtrace-prefix/include"
          ],
          "defines": [
             "_GNU_SOURCE"
