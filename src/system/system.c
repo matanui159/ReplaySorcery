@@ -3,14 +3,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "system.h"
+#include "../util/memory.h"
 
 void rsSystemDestroy(RSSystem *system) {
    system->destroy(system);
-   rsClear(system, sizeof(RSSystem));
+   rsMemoryClear(system, sizeof(RSSystem));
 }
 
-void rsSystemGetFrame(RSSystem *system, RSSystemFrame *frame) {
-   system->getFrame(system, frame);
+void rsSystemFrameCreate(RSFrame *frame, RSSystem *system) {
+   system->frameCreate(frame, system);
 }
 
 bool rsSystemWantsSave(RSSystem *system) {

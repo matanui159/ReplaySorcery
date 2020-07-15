@@ -4,15 +4,11 @@
 
 #ifndef RS_COMPRESS_H
 #define RS_COMPRESS_H
-#include "buffer.h"
-#include "common.h"
+#include "std.h"
+#include "util/buffer.h"
+#include "util/frame.h"
 #include "config/config.h"
-#include "system/system.h"
-
-// clang-format off
-#include <stdio.h>
 #include <jpeglib.h>
-// clanf-format on
 
 typedef struct RSCompressDestination {
    struct jpeg_destination_mgr jpeg;
@@ -28,6 +24,6 @@ typedef struct RSCompress {
 
 void rsCompressCreate(RSCompress *compress, const RSConfig *config);
 void rsCompressDestroy(RSCompress *compress);
-void rsCompress(RSCompress *compress, RSBuffer *buffer, RSSystemFrame *frame);
+void rsCompress(RSCompress *compress, RSBuffer *buffer, const RSFrame *frame);
 
 #endif

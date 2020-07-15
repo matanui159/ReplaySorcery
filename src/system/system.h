@@ -4,24 +4,18 @@
 
 #ifndef RS_SYSTEM_H
 #define RS_SYSTEM_H
-#include "../common.h"
-
-typedef struct RSSystemFrame {
-   const uint8_t *data;
-   size_t width;
-   size_t height;
-   size_t stride;
-} RSSystemFrame;
+#include "../std.h"
+#include "../util/frame.h"
 
 typedef struct RSSystem {
    void *extra;
    void (*destroy)(struct RSSystem *system);
-   void (*getFrame)(struct RSSystem *system, RSSystemFrame *frame);
+   void (*frameCreate)(RSFrame *frame, struct RSSystem *system);
    bool (*wantsSave)(struct RSSystem *system);
 } RSSystem;
 
 void rsSystemDestroy(RSSystem *system);
-void rsSystemGetFrame(RSSystem *system, RSSystemFrame *frame);
+void rsSystemFrameCreate(RSFrame *frame, RSSystem *system);
 bool rsSystemWantsSave(RSSystem *system);
 
 #endif

@@ -1,4 +1,6 @@
 #include "xlib.h"
+#include "../util/log.h"
+#include "../util/memory.h"
 #include "framerate.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -12,16 +14,16 @@ typedef struct XlibSystemExtra {
    RSConfig config;
    Display *display;
    Window rootWindow;
-   XImage *frame;
    struct timespec frameTime;
    XShmSegmentInfo sharedInfo;
-   bool shared;
+   XImage *sharedFrame;
 } XlibSystemExtra;
 
 static int xlibSystemError(Display *display, XErrorEvent *event) {
    char error[1024];
    XGetErrorText(display, event->error_code, error, sizeof(error));
-   rsError(0, "X11 error: %s", error);
+   rsError("X11 error: %s", error);
+   return 0;
 }
 
 static void xlibSystemGrabKey(XlibSystemExtra *extra, int key, unsigned mods) {
@@ -31,36 +33,49 @@ static void xlibSystemGrabKey(XlibSystemExtra *extra, int key, unsigned mods) {
 
 static void xlibSystemDestroy(RSSystem *system) {
    XlibSystemExtra *extra = system->extra;
-   if (extra->frame != NULL) {
-      XDestroyImage(extra->frame);
+   if (extra->sharedFrame != NULL) {
+      XDestroyImage(extra->sharedFrame);
+      XShmDetach(extra->display, &extra->sharedInfo);
+      shmdt(extra->sharedInfo.shmaddr);
+      shmctl(extra->sharedInfo.shmid, IPC_RMID, NULL);
    }
    XCloseDisplay(extra->display);
-   rsFree(extra);
+   rsMemoryDestroy(extra);
 }
 
-static void xlibSystemGetFrame(RSSystem *system, RSSystemFrame *frame) {
+static void xlibSystemFrameDestroy(RSFrame *frame) {
+   if (frame->extra != NULL) {
+      XImage *image = frame->extra;
+      XDestroyImage(image);
+   }
+}
+
+static void xlibSystemCreateFrame(RSFrame *frame, RSSystem *system) {
    XlibSystemExtra *extra = system->extra;
    rsFramerateSleep(&extra->frameTime, extra->config.framerate);
-   if (extra->shared) {
-      XShmGetImage(extra->display, extra->rootWindow, extra->frame,
-                   (int)extra->config.offsetX, (int)extra->config.offsetY, AllPlanes);
+   XImage *image;
+   if (extra->sharedFrame == NULL) {
+      image = XGetImage(extra->display, extra->rootWindow, extra->config.offsetY,
+                        extra->config.offsetY, (unsigned)extra->config.width,
+                        (unsigned)extra->config.height, AllPlanes, ZPixmap);
+      frame->extra = image;
    } else {
-      if (extra->frame != NULL) {
-         XDestroyImage(extra->frame);
-      }
-      extra->frame = XGetImage(extra->display, extra->rootWindow, extra->config.offsetY,
-                               extra->config.offsetY, (unsigned)extra->config.width,
-                               (unsigned)extra->config.height, AllPlanes, ZPixmap);
+      XShmGetImage(extra->display, extra->rootWindow, extra->sharedFrame,
+                   (int)extra->config.offsetX, (int)extra->config.offsetY, AllPlanes);
+      image = extra->sharedFrame;
+      frame->extra = NULL;
    }
 
-   if (extra->frame->depth != 24 || extra->frame->bits_per_pixel != 32 ||
-       extra->frame->byte_order != LSBFirst) {
-      rsError(0, "Only BGRX X11 images are supported");
+   if (image->depth != 24 || image->bits_per_pixel != 32 ||
+       image->byte_order != LSBFirst) {
+      rsError("Only BGRX X11 images are supported");
    }
-   frame->data = (uint8_t *)extra->frame->data;
-   frame->width = (size_t)extra->frame->width;
-   frame->height = (size_t)extra->frame->height;
-   frame->stride = (size_t)extra->frame->bytes_per_line;
+   frame->data = (uint8_t *)image->data;
+   frame->width = (size_t)image->width;
+   frame->height = (size_t)image->height;
+   frame->strideX = 4;
+   frame->strideY = (size_t)image->bytes_per_line;
+   frame->destroy = xlibSystemFrameDestroy;
 }
 
 static bool xlibSystemWantsSave(RSSystem *system) {
@@ -77,7 +92,7 @@ static bool xlibSystemWantsSave(RSSystem *system) {
 }
 
 bool rsXlibSystemCreate(RSSystem *system, const RSConfig *config) {
-   system->extra = rsAllocate(sizeof(XlibSystemExtra));
+   system->extra = rsMemoryCreate(sizeof(XlibSystemExtra));
    XlibSystemExtra *extra = system->extra;
    extra->config = *config;
    extra->display = XOpenDisplay(NULL);
@@ -92,39 +107,44 @@ bool rsXlibSystemCreate(RSSystem *system, const RSConfig *config) {
    extra->rootWindow = DefaultRootWindow(extra->display);
 
    int key = XKeysymToKeycode(extra->display, XK_R);
+   // Ctrl and Super (Mod4) keys
    unsigned mods = ControlMask | Mod4Mask;
    xlibSystemGrabKey(extra, key, mods);
+   // Also need to register when Capslock or Numlock (Mod2) is enabled
    xlibSystemGrabKey(extra, key, mods | LockMask);
    xlibSystemGrabKey(extra, key, mods | Mod2Mask);
    xlibSystemGrabKey(extra, key, mods | LockMask | Mod2Mask);
 
-   int major, minor, pixmaps;
-   extra->shared = XShmQueryVersion(extra->display, &major, &minor, &pixmaps);
-   if (!pixmaps) {
-      extra->shared = false;
-   }
-   if (extra->shared) {
+   int major, minor, pixmap;
+   bool shared = XShmQueryVersion(extra->display, &major, &minor, &pixmap);
+   if (shared) {
       rsLog("X11 shared memory version: %i.%i", major, minor);
-      rsClear(&extra->sharedInfo, sizeof(XShmSegmentInfo));
       int screen = DefaultScreen(extra->display);
-      extra->frame = XShmCreateImage(
+
+      // Create the shared image
+      extra->sharedFrame = XShmCreateImage(
           extra->display, DefaultVisual(extra->display, screen),
           (unsigned)DefaultDepth(extra->display, screen), ZPixmap, NULL,
           &extra->sharedInfo, (unsigned)config->width, (unsigned)config->height);
+
+      // Create the shared memory ID
       extra->sharedInfo.shmid = shmget(
-          IPC_PRIVATE, (size_t)(extra->frame->bytes_per_line * extra->frame->height),
+          IPC_PRIVATE,
+          (size_t)(extra->sharedFrame->bytes_per_line * extra->sharedFrame->height),
           IPC_CREAT | 0777);
+
+      // Attach the shared memory
       extra->sharedInfo.shmaddr = shmat(extra->sharedInfo.shmid, NULL, 0);
-      extra->frame->data = extra->sharedInfo.shmaddr;
+      extra->sharedFrame->data = extra->sharedInfo.shmaddr;
       XShmAttach(extra->display, &extra->sharedInfo);
    } else {
       rsLog("X11 shared memory not supported");
-      extra->frame = NULL;
+      extra->sharedFrame = NULL;
    }
 
    clock_gettime(CLOCK_MONOTONIC, &extra->frameTime);
    system->destroy = xlibSystemDestroy;
-   system->getFrame = xlibSystemGetFrame;
+   system->frameCreate = xlibSystemCreateFrame;
    system->wantsSave = xlibSystemWantsSave;
    return true;
 }

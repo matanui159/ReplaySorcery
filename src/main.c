@@ -2,15 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#include "circle.h"
-#include "common.h"
 #include "compress.h"
 #include "config/config.h"
+#include "std.h"
 #include "system/xlib.h"
+#include "util/circle.h"
+#include "util/log.h"
 #include <signal.h>
-#include <time.h>
 
-static bool mainRunning = true;
+static sig_atomic_t mainRunning = true;
 
 static void mainSignal(int signal) {
    const char *error = NULL;
@@ -31,7 +31,7 @@ static void mainSignal(int signal) {
    }
 
    if (error != NULL) {
-      rsError(RS_ERROR_SIGNAL_FRAME, "Signal error: %s", error);
+      rsError("Signal error: %s", error);
    }
 }
 
@@ -51,12 +51,25 @@ int main(int argc, char *argv[]) {
    rsConfigDefaults(&config);
    rsXlibSystemCreate(&system, &config);
    rsCompressCreate(&compress, &config);
-   rsBufferCircleCreate(&circle, &config);
+   size_t capacity = (size_t)(config.duration * config.framerate);
+   rsBufferCircleCreate(&circle, capacity);
 
    while (mainRunning) {
-      RSSystemFrame frame;
-      rsSystemGetFrame(&system, &frame);
-      rsCompress(&compress, rsBufferCircleAppend(&circle), &frame);
+      RSFrame frame;
+      rsSystemFrameCreate(&frame, &system);
+      rsCompress(&compress, rsBufferCircleNext(&circle), &frame);
+      rsFrameDestroy(&frame);
+      if (rsSystemWantsSave(&system)) {
+         rsLog("Saving...");
+         RSBuffer buffer;
+         rsBufferCreate(&buffer);
+         rsBufferCircleExtract(&circle, &buffer);
+         FILE *output = fopen("recording.mjpg", "wb");
+         fwrite(buffer.data, buffer.size, 1, output);
+         fclose(output);
+         rsBufferDestroy(&buffer);
+         rsLog("Done!");
+      }
    }
 
    rsBufferCircleDestroy(&circle);

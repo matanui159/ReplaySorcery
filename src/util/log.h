@@ -2,12 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#ifndef RS_SYSTEM_XCB_H
-#define RS_SYSTEM_XCB_H
+#ifndef RS_UTIL_LOG_H
+#define RS_UTIL_LOG_H
 #include "../std.h"
-#include "../config/config.h"
-#include "system.h"
 
-bool rsXlibSystemCreate(RSSystem *system, const RSConfig *config);
+void rsLog(const char* fmt, ...);
+void rsError(const char* fmt, ...);
 
 #endif

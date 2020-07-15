@@ -1,4 +1,5 @@
 #include "compress.h"
+#include "util/log.h"
 
 static void compressOutputMessage(struct jpeg_common_struct *jpeg) {
    char error[JMSG_LENGTH_MAX];
@@ -9,29 +10,26 @@ static void compressOutputMessage(struct jpeg_common_struct *jpeg) {
 static void compressErrorExit(struct jpeg_common_struct *jpeg) {
    char error[JMSG_LENGTH_MAX];
    jpeg->err->format_message(jpeg, error);
-   rsError(0, "JPEG error: %s", error);
+   rsError("JPEG error: %s", error);
 }
 
 static void compressDestinationGrow(RSCompressDestination *dest) {
-   dest->jpeg.next_output_byte = rsBufferGetSpace(dest->buffer, &dest->size);
+   dest->jpeg.next_output_byte = rsBufferAutoGrow(dest->buffer, &dest->size);
    dest->jpeg.free_in_buffer = dest->size;
 }
 
 static void compressDestinationInit(struct jpeg_compress_struct *jpeg) {
    RSCompressDestination *dest = (RSCompressDestination *)jpeg->dest;
-   rsBufferClear(dest->buffer);
    compressDestinationGrow(dest);
 }
 
 static void compressDestinationTerm(struct jpeg_compress_struct *jpeg) {
    RSCompressDestination *dest = (RSCompressDestination *)jpeg->dest;
-   rsBufferAppend(dest->buffer, dest->size - dest->jpeg.free_in_buffer);
-   rsBufferOptimize(dest->buffer);
+   rsBufferShrink(dest->buffer, dest->jpeg.free_in_buffer);
 }
 
 static boolean compressDestinationEmpty(struct jpeg_compress_struct *jpeg) {
    RSCompressDestination *dest = (RSCompressDestination *)jpeg->dest;
-   rsBufferAppend(dest->buffer, dest->size);
    compressDestinationGrow(dest);
    return true;
 }
@@ -57,14 +55,14 @@ void rsCompressDestroy(RSCompress *compress) {
    jpeg_destroy_compress(&compress->jpeg);
 }
 
-void rsCompress(RSCompress *compress, RSBuffer *buffer, RSSystemFrame *frame) {
+void rsCompress(RSCompress *compress, RSBuffer *buffer, const RSFrame *frame) {
    compress->dest.buffer = buffer;
    compress->jpeg.image_width = (unsigned)frame->width;
    compress->jpeg.image_height = (unsigned)frame->height;
    const uint8_t *scanlines[frame->height];
    scanlines[0] = frame->data;
    for (size_t i = 1; i < frame->height; ++i) {
-      scanlines[i] = scanlines[i - 1] + frame->stride;
+      scanlines[i] = scanlines[i - 1] + frame->strideY;
    }
 
    jpeg_start_compress(&compress->jpeg, true);

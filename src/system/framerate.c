@@ -3,7 +3,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "framerate.h"
-#include <time.h>
 
 #define TIME_NANO_PER_SEC 1000000000L
 
