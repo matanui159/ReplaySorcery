@@ -1,0 +1,20 @@
+name: CI
+on: push
+
+jobs:
+  checks:
+    name: Code Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Configure code
+        run: cmake -B bin
+      - name: Build code
+        run: make -C bin
+      - name: Format code
+        run: make -C bin clang-format
+      - name: Check formatting and ignores
+        run: git diff --exit-code
