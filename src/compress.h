@@ -7,7 +7,7 @@
 #include "std.h"
 #include "util/buffer.h"
 #include "util/frame.h"
-#include "config/config.h"
+#include "config.h"
 #include <jpeglib.h>
 
 typedef struct RSCompressDestination {

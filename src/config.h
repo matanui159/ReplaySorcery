@@ -4,7 +4,7 @@
 
 #ifndef RS_CONFIG_H
 #define RS_CONFIG_H
-#include "../std.h"
+#include "std.h"
 
 typedef struct RSConfig {
    int offsetX;

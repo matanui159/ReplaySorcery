@@ -9,11 +9,12 @@ set(sources
    src/util/memory.c
    src/util/buffer.c
    src/util/circle.c
+   src/util/path.c
    src/util/frame.c
    src/system/system.c
    src/system/framerate.c
    src/system/xlib.c
-   src/config/config.c
+   src/config.c
    src/compress.c
    src/main.c
 )
@@ -21,22 +22,19 @@ set(sources
 add_executable(${binary} ${sources})
 set_property(TARGET ${binary} PROPERTY C_STANDARD 99)
 
-function(target_c_flag target flag)
-   string(MAKE_C_IDENTIFIER ${flag} have)
-   string(TOUPPER ${have} have)
-   set(have HAVE_${have})
-   check_c_compiler_flag(${flag} ${have})
-   if (${have})
+function(target_c_flag target flag var)
+   check_c_compiler_flag(${flag} ${var})
+   if (${var})
       target_compile_options(${target} PRIVATE ${flag})
    endif()
 endfunction()
-target_c_flag(${binary} -g)
-target_c_flag(${binary} -Wall)
-target_c_flag(${binary} -Wextra)
-target_c_flag(${binary} -Wpedantic)
-target_c_flag(${binary} -Wconversion)
-target_c_flag(${binary} -Wstrict-prototypes)
-target_c_flag(${binary} -Wmissing-prototypes)
+target_c_flag(${binary} -g HAVE_G_FLAG)
+target_c_flag(${binary} -Wall HAVE_ALL_WARN)
+target_c_flag(${binary} -Wextra HAVE_EXTRA_WARN)
+target_c_flag(${binary} -Wpedantic HAVE_PEDANTIC_WARN)
+target_c_flag(${binary} -Wconversion HAVE_CONVERSION_WARN)
+target_c_flag(${binary} -Wstrict-prototypes HAVE_STRICT_PROTOTYPES_WARN)
+target_c_flag(${binary} -Wmissing-prototypes HAVE_MISSING_PROTOTYPES_WARN)
 
 find_package(X11 REQUIRED)
 if (NOT X11_FOUND OR NOT X11_Xutil_FOUND OR NOT X11_XShm_FOUND)

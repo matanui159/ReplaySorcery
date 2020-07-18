@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "config.h"
-#include "../util/log.h"
+#include "util/log.h"
 #include <limits.h>
 
 typedef struct ConfigParam {

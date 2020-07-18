@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "compress.h"
-#include "config/config.h"
+#include "config.h"
 #include "std.h"
 #include "system/xlib.h"
 #include "util/circle.h"
@@ -60,15 +60,7 @@ int main(int argc, char *argv[]) {
       rsCompress(&compress, rsBufferCircleNext(&circle), &frame);
       rsFrameDestroy(&frame);
       if (rsSystemWantsSave(&system)) {
-         rsLog("Saving...");
-         RSBuffer buffer;
-         rsBufferCreate(&buffer);
-         rsBufferCircleExtract(&circle, &buffer);
-         FILE *output = fopen("recording.mjpg", "wb");
-         fwrite(buffer.data, buffer.size, 1, output);
-         fclose(output);
-         rsBufferDestroy(&buffer);
-         rsLog("Done!");
+         // TODO: save
       }
    }
 
