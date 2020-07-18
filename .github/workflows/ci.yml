@@ -11,7 +11,7 @@ jobs:
         with:
           submodules: true
       - name: Configure code
-        run: cmake -B bin
+        run: cmake -B bin -DHAVE_ERROR_WARN=ON
       - name: Build code
         run: make -C bin
       - name: Format code

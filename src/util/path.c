@@ -39,7 +39,7 @@ void rsPathAppend(RSBuffer *path, const char *value) {
       value += 2;
    }
 
-   if (path->data[path->size - 1] == '/') {
+   if (path->size == 0 || path->data[path->size - 1] == '/') {
       // Already has slash
       pathPrint(path, "%s", value);
    } else {

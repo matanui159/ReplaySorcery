@@ -3,8 +3,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #include "config.h"
+#include "util/buffer.h"
 #include "util/log.h"
+#include "util/path.h"
+#include "util/string.h"
+#include <ctype.h>
+#include <errno.h>
 #include <limits.h>
+
+#define CONFIG_NAME "replay-sorcery.conf"
 
 typedef struct ConfigParam {
    const char *key;
@@ -37,18 +44,98 @@ static const ConfigParam configParams[] = {
 
 #define CONFIG_PARAMS_SIZE (sizeof(configParams) / sizeof(ConfigParam))
 
-void rsConfigDefaults(RSConfig *config) {
-   for (size_t i = 0; i < CONFIG_PARAMS_SIZE; ++i) {
-      rsConfigSet(config, configParams[i].key, configParams[i].def);
-   }
-}
-
-void rsConfigSet(RSConfig *config, const char *key, const char *value) {
+static void configSet(RSConfig *config, const char *key, const char *value) {
+   rsLog("Setting config key '%s' to '%s'...", key, value);
    for (size_t i = 0; i < CONFIG_PARAMS_SIZE; ++i) {
       if (strcmp(configParams[i].key, key) == 0) {
          void *param = (char *)config + configParams[i].offset;
          configParams[i].set(param, value);
-         break;
+         return;
       }
    }
+   rsLog("Config key '%s' does not exist", key);
+}
+
+static void configLoadLine(RSConfig *config, char *line) {
+   line = rsStringTrimEnd(rsStringTrimStart(line));
+   // Remove comment
+   char *comment = strchr(line, '#');
+   if (comment != NULL) {
+      *comment = '\0';
+   }
+   if (*line == '\0') {
+      return;
+   }
+
+   char *eq = strchr(line, '=');
+   if (eq == NULL) {
+      rsError(
+          "Failed to load config line, format is <key> = <value> # <optional comment>");
+   }
+   *eq = '\0';
+   char *key = rsStringTrimEnd(line);
+   char *value = rsStringTrimStart(eq + 1);
+   configSet(config, key, value);
+}
+
+static void configLoadFile(RSConfig *config, const char *dir) {
+   RSBuffer path;
+   rsBufferCreate(&path);
+   rsPathAppend(&path, dir);
+   rsPathAppend(&path, CONFIG_NAME);
+
+   rsLog("Loading config file '%s'...", path.data);
+   FILE *file = fopen(path.data, "r");
+   rsBufferDestroy(&path);
+   if (file == NULL) {
+      rsLog("Failed to open config file: %s", strerror(errno));
+      return;
+   }
+
+   // Read the whole file
+   fseek(file, 0, SEEK_END);
+   size_t size = (size_t)ftell(file);
+   fseek(file, 0, SEEK_SET);
+   char buffer[size + 1];
+   fread(buffer, size, 1, file);
+   fclose(file);
+   buffer[size] = '\0';
+
+   char *ptr = buffer;
+   char *line;
+   while ((line = rsStringSplit(&ptr, '\n')) != NULL) {
+      configLoadLine(config, line);
+   }
+}
+
+void rsConfigLoad(RSConfig *config) {
+   // Load defaults
+   for (size_t i = 0; i < CONFIG_PARAMS_SIZE; ++i) {
+      configSet(config, configParams[i].key, configParams[i].def);
+   }
+
+   // Global configs
+   const char *dirs = getenv("XDG_CONFIG_DIRS");
+   if (dirs == NULL) {
+      dirs = "/etc/xdg";
+   }
+   // Make a copy so we can modify it
+   size_t size = strlen(dirs) + 1;
+   char buffer[size];
+   memcpy(buffer, dirs, size);
+   char *ptr = buffer;
+   char *dir;
+   while ((dir = rsStringSplit(&ptr, ':')) != NULL) {
+      configLoadFile(config, dir);
+   }
+
+   // User config
+   const char *home = getenv("XDG_CONFIG_HOME");
+   if (home == NULL) {
+      home = "~/.config";
+   }
+   configLoadFile(config, home);
+
+   // Relative config
+   configLoadFile(config, ".");
 }

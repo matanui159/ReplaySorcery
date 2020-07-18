@@ -10,6 +10,7 @@ set(sources
    src/util/buffer.c
    src/util/circle.c
    src/util/path.c
+   src/util/string.c
    src/util/frame.c
    src/system/system.c
    src/system/framerate.c
@@ -35,6 +36,8 @@ target_c_flag(${binary} -Wpedantic HAVE_PEDANTIC_WARN)
 target_c_flag(${binary} -Wconversion HAVE_CONVERSION_WARN)
 target_c_flag(${binary} -Wstrict-prototypes HAVE_STRICT_PROTOTYPES_WARN)
 target_c_flag(${binary} -Wmissing-prototypes HAVE_MISSING_PROTOTYPES_WARN)
+option(HAVE_ERROR_WARN "Enable -Werror flag" OFF)
+target_c_flag(${binary} -Werror HAVE_ERROR_WARN)
 
 find_package(X11 REQUIRED)
 if (NOT X11_FOUND OR NOT X11_Xutil_FOUND OR NOT X11_XShm_FOUND)

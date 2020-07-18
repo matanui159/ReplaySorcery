@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
    RSSystem system;
    RSCompress compress;
    RSBufferCircle circle;
-   rsConfigDefaults(&config);
+   rsConfigLoad(&config);
    rsXlibSystemCreate(&system, &config);
    rsCompressCreate(&compress, &config);
    size_t capacity = (size_t)(config.duration * config.framerate);

@@ -16,7 +16,6 @@ typedef struct RSConfig {
    int compressQuality;
 } RSConfig;
 
-void rsConfigDefaults(RSConfig *config);
-void rsConfigSet(RSConfig *config, const char *key, const char *value);
+void rsConfigLoad(RSConfig *config);
 
 #endif
