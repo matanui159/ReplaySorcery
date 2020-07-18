@@ -1,6 +1,21 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+/*
+ * Copyright (C) 2020  Joshua Minter
+ *
+ * This file is part of ReplaySorcery.
+ *
+ * ReplaySorcery is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * ReplaySorcery is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #include "compress.h"
 #include "config.h"
@@ -43,6 +58,10 @@ int main(int argc, char *argv[]) {
    signal(SIGFPE, mainSignal);
    signal(SIGINT, mainSignal);
    signal(SIGTERM, mainSignal);
+   rsLog("ReplaySorcery  Copyright (C) 2020  Joshua Minter");
+   rsLog("This program comes with ABSOLUTELY NO WARRANTY.");
+   rsLog("This is free software, and you are welcome to redistribute it");
+   rsLog("under certain conditions; see COPYING for details.");
 
    RSConfig config;
    RSSystem system;
