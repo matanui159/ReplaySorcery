@@ -48,7 +48,7 @@ void rsPathAppend(RSBuffer *path, const char *value) {
    }
 }
 
-void rsPathAppendDated(RSBuffer *path, const char* value) {
+void rsPathAppendDated(RSBuffer *path, const char *value) {
    time_t timeNum = time(NULL);
    struct tm *timeObj = localtime(&timeNum);
    size_t size = PATH_DATED_MIN;

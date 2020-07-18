@@ -126,7 +126,10 @@ bool rsXlibSystemCreate(RSSystem *system, const RSConfig *config) {
       int screen = DefaultScreen(extra->display);
 
       // Create the shared image
-      extra->sharedFrame = XShmCreateImage(extra->display, DefaultVisual(extra->display, screen), (unsigned)DefaultDepth(extra->display, screen), ZPixmap, NULL, &extra->sharedInfo, (unsigned)config->width, (unsigned)config->height);
+      extra->sharedFrame = XShmCreateImage(
+          extra->display, DefaultVisual(extra->display, screen),
+          (unsigned)DefaultDepth(extra->display, screen), ZPixmap, NULL,
+          &extra->sharedInfo, (unsigned)config->width, (unsigned)config->height);
 
       // Create the shared memory ID
       extra->sharedInfo.shmid = shmget(
