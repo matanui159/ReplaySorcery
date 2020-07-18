@@ -17,4 +17,4 @@ jobs:
       - name: Format code
         run: make -C bin clang-format
       - name: Check formatting and ignores
-        run: git diff --exit-code
+        run: git diff --color --exit-code
