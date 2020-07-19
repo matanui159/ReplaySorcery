@@ -15,7 +15,7 @@ jobs:
       - name: Configure code
         run: cmake -B bin -DRS_WARN_ERROR=ON
       - name: Build code
-        run: make -C bin
+        run: make -C bin VERBOSE=1
       - name: Format code
         run: make -C bin clang-format
       - name: Check formatting and ignores
