@@ -17,6 +17,7 @@ set(sources
    src/system/xlib.c
    src/config.c
    src/compress.c
+   src/mp4.c
    src/main.c
 )
 
@@ -52,7 +53,9 @@ target_link_libraries(${binary} PRIVATE ${X11_LIBRARIES})
 ExternalProject_Add(backtrace
    STEP_TARGETS backtrace
    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dep/libbacktrace"
-   CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR>
+   CONFIGURE_COMMAND <SOURCE_DIR>/configure
+      --prefix=<INSTALL_DIR>
+      CFLAGS=-O3
 )
 add_dependencies(${binary} backtrace)
 ExternalProject_Get_Property(backtrace INSTALL_DIR)
@@ -64,10 +67,21 @@ set(WITH_TURBOJPEG OFF CACHE BOOL "")
 add_subdirectory(dep/libjpeg-turbo)
 target_link_libraries(${binary} PRIVATE jpeg-static)
 
-# set(ENABLE_WEBMINFO OFF CACHE BOOL "")
-# set(ENABLE_WEBMTS OFF CACHE BOOL "")
-# add_subdirectory(dep/libwebm)
-# target_link_libraries(${binary} PRIVATE webm)
+ExternalProject_Add(x264
+   STEP_TARGETS x264
+   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dep/x264"
+   CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR>
+      --disable-cli
+      --enable-static
+      --extra-cflags=-O3
+)
+add_dependencies(${binary} x264)
+ExternalProject_Get_Property(x264 INSTALL_DIR)
+target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
+target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libx264.a")
+
+target_include_directories(${binary} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/dep/minimp4")
+set_property(SOURCE src/mp4.c PROPERTY COMPILE_FLAGS -w)
 
 add_custom_target(clang-format
    COMMAND clang-format -i ${sources}

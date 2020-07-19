@@ -5,7 +5,10 @@
          "name": "Linux",
          "cStandard": "c99",
          "includePath": [
-            "${workspaceFolder}/bin/backtrace-prefix/include"
+            "${workspaceFolder}/bin/backtrace-prefix/include",
+            "${workspaceFolder}/dep/libjpeg-turbo",
+            "${workspaceFolder}/bin/x264-prefix/include",
+            "${workspaceFolder}/dep/minimp4"
          ],
          "defines": [
             "_GNU_SOURCE"
