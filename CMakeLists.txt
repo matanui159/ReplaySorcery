@@ -44,7 +44,6 @@ target_c_flag(${binary} -Werror RS_WARN_ERROR)
 option(RS_PROFILE "Enable code profiling" OFF)
 target_c_flag(${binary} -pg RS_PROFILE)
 
-target_link_libraries(${binary} PRIVATE m)
 find_package(Threads REQUIRED)
 target_link_libraries(${binary} PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 
@@ -85,6 +84,7 @@ add_dependencies(${binary} x264)
 ExternalProject_Get_Property(x264 INSTALL_DIR)
 target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
 target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libx264.a")
+target_link_libraries(${binary} PRIVATE m)
 
 target_include_directories(${binary} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/dep/minimp4")
 set_property(SOURCE src/mp4.c PROPERTY COMPILE_FLAGS -w)
