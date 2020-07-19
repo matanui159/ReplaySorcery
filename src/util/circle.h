@@ -32,6 +32,6 @@ typedef struct RSBufferCircle {
 void rsBufferCircleCreate(RSBufferCircle *circle, size_t capacity);
 void rsBufferCircleDestroy(RSBufferCircle *circle);
 RSBuffer *rsBufferCircleNext(RSBufferCircle *circle);
-void rsBufferCircleExtract(RSBufferCircle *circle, RSBuffer *target);
+void rsBufferCircleExtract(const RSBufferCircle *circle, RSBuffer *target);
 
 #endif

@@ -32,14 +32,21 @@ static void compressErrorExit(struct jpeg_common_struct *jpeg) {
    rsError("JPEG error: %s", error);
 }
 
-static void compressDestinationGrow(RSCompressDestination *dest) {
-   dest->jpeg.next_output_byte = rsBufferAutoGrow(dest->buffer, &dest->size);
-   dest->jpeg.free_in_buffer = dest->size;
+static void compressErrorCreate(struct jpeg_error_mgr *error) {
+   jpeg_std_error(error);
+   error->output_message = compressOutputMessage;
+   error->error_exit = compressErrorExit;
+}
+
+static boolean compressDestinationEmpty(struct jpeg_compress_struct *jpeg) {
+   RSCompressDestination *dest = (RSCompressDestination *)jpeg->dest;
+   dest->jpeg.next_output_byte =
+       rsBufferAutoGrow(dest->buffer, &dest->jpeg.free_in_buffer);
+   return true;
 }
 
 static void compressDestinationInit(struct jpeg_compress_struct *jpeg) {
-   RSCompressDestination *dest = (RSCompressDestination *)jpeg->dest;
-   compressDestinationGrow(dest);
+   compressDestinationEmpty(jpeg);
 }
 
 static void compressDestinationTerm(struct jpeg_compress_struct *jpeg) {
@@ -47,19 +54,38 @@ static void compressDestinationTerm(struct jpeg_compress_struct *jpeg) {
    rsBufferShrink(dest->buffer, dest->jpeg.free_in_buffer);
 }
 
-static boolean compressDestinationEmpty(struct jpeg_compress_struct *jpeg) {
-   RSCompressDestination *dest = (RSCompressDestination *)jpeg->dest;
-   compressDestinationGrow(dest);
+static void decompressSourceInit(struct jpeg_decompress_struct *jpeg) {
+   RSDecompressSource *source = (RSDecompressSource *)jpeg->src;
+   source->filled = false;
+}
+
+static void decompressSourceTerm(struct jpeg_decompress_struct *jpeg) {
+   (void)jpeg;
+   return;
+}
+
+static boolean decompressSourceFill(struct jpeg_decompress_struct *jpeg) {
+   RSDecompressSource *source = (RSDecompressSource *)jpeg->src;
+   if (source->filled) {
+      return true;
+   }
+   source->jpeg.next_input_byte = (uint8_t *)source->buffer->data;
+   source->jpeg.bytes_in_buffer = source->buffer->size;
+   source->filled = true;
    return true;
 }
 
+static void decompressSourceSkip(struct jpeg_decompress_struct *jpeg, long size) {
+   jpeg->src->next_input_byte += size;
+   jpeg->src->bytes_in_buffer -= (size_t)size;
+}
+
 void rsCompressCreate(RSCompress *compress, const RSConfig *config) {
-   compress->jpeg.err = jpeg_std_error(&compress->error);
-   compress->error.output_message = compressOutputMessage;
-   compress->error.error_exit = compressErrorExit;
+   compressErrorCreate(&compress->error);
+   compress->jpeg.err = &compress->error;
    jpeg_create_compress(&compress->jpeg);
 
-   compress->jpeg.dest = (struct jpeg_destination_mgr *)&compress->dest;
+   compress->jpeg.dest = &compress->dest.jpeg;
    compress->dest.jpeg.init_destination = compressDestinationInit;
    compress->dest.jpeg.term_destination = compressDestinationTerm;
    compress->dest.jpeg.empty_output_buffer = compressDestinationEmpty;
@@ -88,4 +114,45 @@ void rsCompress(RSCompress *compress, RSBuffer *buffer, const RSFrame *frame) {
    jpeg_start_compress(&compress->jpeg, true);
    jpeg_write_scanlines(&compress->jpeg, (uint8_t **)scanlines, (unsigned)frame->height);
    jpeg_finish_compress(&compress->jpeg);
+}
+
+void rsDecompressCreate(RSDecompress *decompress) {
+   compressErrorCreate(&decompress->error);
+   decompress->jpeg.err = &decompress->error;
+   jpeg_create_decompress(&decompress->jpeg);
+
+   decompress->jpeg.src = &decompress->source.jpeg;
+   decompress->source.jpeg.init_source = decompressSourceInit;
+   decompress->source.jpeg.term_source = decompressSourceTerm;
+   decompress->source.jpeg.fill_input_buffer = decompressSourceFill;
+   decompress->source.jpeg.skip_input_data = decompressSourceSkip;
+   decompress->source.jpeg.resync_to_restart = jpeg_resync_to_restart;
+}
+
+void rsDecompressDestroy(RSDecompress *decompress) {
+   jpeg_destroy_decompress(&decompress->jpeg);
+}
+
+void rsDecompress(RSDecompress *decompress, RSFrame *frame, const RSBuffer *buffer) {
+   if (buffer != NULL) {
+      decompress->source.buffer = buffer;
+      if (decompress->source.filled) {
+         decompress->source.filled = false;
+         decompressSourceFill(&decompress->jpeg);
+      }
+   }
+   uint8_t *scanlines[frame->height];
+   scanlines[0] = frame->data;
+   for (size_t i = 1; i < frame->height; ++i) {
+      scanlines[i] = scanlines[i - 1] + frame->strideY;
+   }
+
+   jpeg_read_header(&decompress->jpeg, true);
+   decompress->jpeg.out_color_space = JCS_YCbCr;
+   jpeg_start_decompress(&decompress->jpeg);
+   while (decompress->jpeg.output_scanline < frame->height) {
+      jpeg_read_scanlines(&decompress->jpeg, scanlines + decompress->jpeg.output_scanline,
+                          (unsigned)frame->height);
+   }
+   jpeg_finish_decompress(&decompress->jpeg);
 }

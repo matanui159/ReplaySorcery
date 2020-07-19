@@ -7,7 +7,7 @@
          "request": "launch",
          "program": "${workspaceFolder}/bin/replay-sorcery",
          "cwd": "${workspaceFolder}",
-         "preLaunchTask": "Ninja"
+         "preLaunchTask": "Make"
       }
    ]
 }

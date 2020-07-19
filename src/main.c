@@ -19,6 +19,7 @@
 
 #include "compress.h"
 #include "config.h"
+#include "output.h"
 #include "std.h"
 #include "system/xlib.h"
 #include "util/circle.h"
@@ -67,6 +68,7 @@ int main(int argc, char *argv[]) {
    RSSystem system;
    RSCompress compress;
    RSBufferCircle circle;
+   RSOutput output = {0};
    rsConfigLoad(&config);
    rsXlibSystemCreate(&system, &config);
    rsCompressCreate(&compress, &config);
@@ -79,11 +81,15 @@ int main(int argc, char *argv[]) {
       rsCompress(&compress, rsBufferCircleNext(&circle), &frame);
       rsFrameDestroy(&frame);
       if (rsSystemWantsSave(&system)) {
-         // TODO: save
+         rsOutputDestroy(&output);
+         rsOutputCreate(&output, &config);
+         rsOutput(&output, &circle);
       }
    }
 
+   rsOutputDestroy(&output);
    rsBufferCircleDestroy(&circle);
    rsCompressDestroy(&compress);
    rsSystemDestroy(&system);
+   rsConfigDestroy(&config);
 }

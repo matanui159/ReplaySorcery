@@ -52,7 +52,7 @@ RSBuffer *rsBufferCircleNext(RSBufferCircle *circle) {
    return buffer;
 }
 
-void rsBufferCircleExtract(RSBufferCircle *circle, RSBuffer *target) {
+void rsBufferCircleExtract(const RSBufferCircle *circle, RSBuffer *target) {
    for (size_t i = 0; i < circle->size; ++i) {
       size_t index = (circle->offset + i) % circle->capacity;
       RSBuffer *buffer = &circle->buffers[index];

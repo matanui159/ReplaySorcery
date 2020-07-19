@@ -28,7 +28,6 @@
 typedef struct RSCompressDestination {
    struct jpeg_destination_mgr jpeg;
    RSBuffer *buffer;
-   size_t size;
 } RSCompressDestination;
 
 typedef struct RSCompress {
@@ -37,8 +36,23 @@ typedef struct RSCompress {
    struct jpeg_error_mgr error;
 } RSCompress;
 
+typedef struct RSDecompressSource {
+   struct jpeg_source_mgr jpeg;
+   const RSBuffer *buffer;
+   bool filled;
+} RSDecompressSource;
+
+typedef struct RSDecompress {
+   struct jpeg_decompress_struct jpeg;
+   RSDecompressSource source;
+   struct jpeg_error_mgr error;
+} RSDecompress;
+
 void rsCompressCreate(RSCompress *compress, const RSConfig *config);
 void rsCompressDestroy(RSCompress *compress);
 void rsCompress(RSCompress *compress, RSBuffer *buffer, const RSFrame *frame);
+void rsDecompressCreate(RSDecompress *decompress);
+void rsDecompressDestroy(RSDecompress *decompress);
+void rsDecompress(RSDecompress *decompress, RSFrame *frame, const RSBuffer *buffer);
 
 #endif

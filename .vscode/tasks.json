@@ -2,9 +2,9 @@
    "version": "2.0.0",
    "tasks": [
       {
-         "label": "Ninja",
+         "label": "Make",
          "type": "shell",
-         "command": "ninja -C bin"
+         "command": "make -C bin"
       }
    ]
 }

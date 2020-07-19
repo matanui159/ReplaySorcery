@@ -17,22 +17,24 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_CONFIG_H
-#define RS_CONFIG_H
+#ifndef RS_OUTPUT_H
+#define RS_OUTPUT_H
 #include "std.h"
+#include "util/buffer.h"
+#include "util/circle.h"
+#include "config.h"
+#include <pthread.h>
 
-typedef struct RSConfig {
-   int offsetX;
-   int offsetY;
-   int width;
-   int height;
-   int framerate;
-   int duration;
-   int compressQuality;
-   char *outputFile;
-} RSConfig;
+typedef struct RSOutput {
+   RSConfig config;
+   FILE *file;
+   RSBuffer frames;
+   size_t frameCount;
+   pthread_t thread;
+} RSOutput;
 
-void rsConfigLoad(RSConfig *config);
-void rsConfigDestroy(RSConfig *config);
+void rsOutputCreate(RSOutput *output, const RSConfig *config);
+void rsOutputDestroy(RSOutput *output);
+void rsOutput(RSOutput *output, const RSBufferCircle *frames);
 
 #endif

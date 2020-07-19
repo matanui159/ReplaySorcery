@@ -24,6 +24,18 @@ static void frameDestroy(RSFrame *frame) {
    rsMemoryDestroy(frame->data);
 }
 
+static void frameConvertChroma(const RSFrame *frame, RSFrame *chroma, size_t offset) {
+   for (size_t y = 0; y < chroma->height; ++y) {
+      for (size_t x = 0; x < chroma->width; ++x) {
+         uint8_t c0 = rsFrameGet(frame, x * 2, y * 2)[offset];
+         uint8_t c1 = rsFrameGet(frame, x * 2 + 1, y * 2)[offset];
+         uint8_t c2 = rsFrameGet(frame, x * 2, y * 2 + 1)[offset];
+         uint8_t c3 = rsFrameGet(frame, x * 2 + 1, y * 2 + 1)[offset];
+         *rsFrameGet(chroma, x, y) = (uint8_t)((c0 + c1 + c2 + c3) / 4);
+      }
+   }
+}
+
 void rsFrameCreate(RSFrame *frame, size_t width, size_t height, size_t strideX) {
    frame->strideY = width * strideX;
    frame->data = rsMemoryCreate(frame->strideY * height);
@@ -36,4 +48,16 @@ void rsFrameCreate(RSFrame *frame, size_t width, size_t height, size_t strideX) 
 void rsFrameDestroy(RSFrame *frame) {
    frame->destroy(frame);
    rsMemoryClear(frame, sizeof(RSFrame));
+}
+
+void rsFrameConvertI420(const RSFrame *frame, RSFrame *yFrame, RSFrame *uFrame,
+                        RSFrame *vFrame) {
+   // TODO: this is very slow
+   for (size_t y = 0; y < yFrame->height; ++y) {
+      for (size_t x = 0; x < yFrame->width; ++x) {
+         *rsFrameGet(yFrame, x, y) = *rsFrameGet(frame, x, y);
+      }
+   }
+   frameConvertChroma(frame, uFrame, 1);
+   frameConvertChroma(frame, vFrame, 2);
 }

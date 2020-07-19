@@ -18,6 +18,7 @@ set(sources
    src/config.c
    src/compress.c
    src/mp4.c
+   src/output.c
    src/main.c
 )
 
@@ -42,6 +43,10 @@ option(RS_WARN_ERROR "Fail on compiler warning" OFF)
 target_c_flag(${binary} -Werror RS_WARN_ERROR)
 option(RS_PROFILE "Enable code profiling" OFF)
 target_c_flag(${binary} -pg RS_PROFILE)
+
+target_link_libraries(${binary} PRIVATE m)
+find_package(Threads REQUIRED)
+target_link_libraries(${binary} PRIVATE ${CMAKE_THREAD_LIBS_INIT})
 
 find_package(X11 REQUIRED)
 if (NOT X11_FOUND OR NOT X11_Xutil_FOUND OR NOT X11_XShm_FOUND)
@@ -73,6 +78,7 @@ ExternalProject_Add(x264
    CONFIGURE_COMMAND <SOURCE_DIR>/configure --prefix=<INSTALL_DIR>
       --disable-cli
       --enable-static
+      --disable-opencl
       --extra-cflags=-O3
 )
 add_dependencies(${binary} x264)

@@ -20,6 +20,7 @@
 #include "config.h"
 #include "util/buffer.h"
 #include "util/log.h"
+#include "util/memory.h"
 #include "util/path.h"
 #include "util/string.h"
 #include <ctype.h>
@@ -48,6 +49,14 @@ static void configInt(void *param, const char *value) {
    *num = (int)ret;
 }
 
+static void configString(void *param, const char *value) {
+   char **str = param;
+   rsMemoryDestroy(*str);
+   size_t size = strlen(value) + 1;
+   *str = rsMemoryCreate(size);
+   memcpy(*str, value, size);
+}
+
 static const ConfigParam configParams[] = {
     CONFIG_PARAM(offsetX, configInt, "0"),
     CONFIG_PARAM(offsetY, configInt, "0"),
@@ -55,7 +64,8 @@ static const ConfigParam configParams[] = {
     CONFIG_PARAM(height, configInt, "1080"),
     CONFIG_PARAM(framerate, configInt, "30"),
     CONFIG_PARAM(duration, configInt, "30"),
-    CONFIG_PARAM(compressQuality, configInt, "70")};
+    CONFIG_PARAM(compressQuality, configInt, "70"),
+    CONFIG_PARAM(outputFile, configString, "~/Videos/%F_%H-%M-%S.mp4")};
 
 #define CONFIG_PARAMS_SIZE (sizeof(configParams) / sizeof(ConfigParam))
 
@@ -125,6 +135,7 @@ static void configLoadFile(RSConfig *config, const char *dir) {
 
 void rsConfigLoad(RSConfig *config) {
    // Load defaults
+   rsMemoryClear(config, sizeof(RSConfig));
    for (size_t i = 0; i < CONFIG_PARAMS_SIZE; ++i) {
       configSet(config, configParams[i].key, configParams[i].def);
    }
@@ -153,4 +164,9 @@ void rsConfigLoad(RSConfig *config) {
 
    // Relative config
    configLoadFile(config, ".");
+}
+
+void rsConfigDestroy(RSConfig *config) {
+   rsMemoryDestroy(config->outputFile);
+   rsMemoryClear(config, sizeof(RSConfig));
 }
