@@ -67,7 +67,8 @@ void rsCompressCreate(RSCompress *compress, const RSConfig *config) {
    compress->jpeg.input_components = 4;
    compress->jpeg.in_color_space = JCS_EXT_BGRX;
    jpeg_set_defaults(&compress->jpeg);
-   jpeg_set_quality(&compress->jpeg, config->compressQuality, true);
+   jpeg_set_quality(&compress->jpeg, config->compressQuality, false);
+   compress->jpeg.dct_method = JDCT_IFAST;
 }
 
 void rsCompressDestroy(RSCompress *compress) {
