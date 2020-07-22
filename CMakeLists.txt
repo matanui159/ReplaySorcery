@@ -104,3 +104,8 @@ add_custom_target(clang-format
    SOURCES ${sources}
    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )
+
+install(TARGETS ${binary} DESTINATION bin)
+set(service replay-sorcery.service)
+configure_file(${service}.in ${service})
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${service}" DESTINATION /usr/lib/systemd/user)
