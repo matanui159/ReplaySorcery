@@ -27,6 +27,7 @@
       vfprintf(file, fmt, args);                                                         \
       va_end(args);                                                                      \
       fputc('\n', file);                                                                 \
+      fflush(file);                                                                      \
    } while (0)
 
 static void backtraceError(void *data, const char *error, int code) {

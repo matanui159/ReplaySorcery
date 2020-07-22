@@ -59,8 +59,6 @@ int main(int argc, char *argv[]) {
    signal(SIGFPE, mainSignal);
    signal(SIGINT, mainSignal);
    signal(SIGTERM, mainSignal);
-   setbuf(stdout, NULL);
-   setbuf(stderr, NULL);
    rsLog("ReplaySorcery  Copyright (C) 2020  Joshua Minter");
    rsLog("This program comes with ABSOLUTELY NO WARRANTY.");
    rsLog("This is free software, and you are welcome to redistribute it");
