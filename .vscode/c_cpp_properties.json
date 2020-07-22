@@ -6,7 +6,7 @@
          "cStandard": "c99",
          "includePath": [
             "${workspaceFolder}/bin/backtrace-prefix/include",
-            "${workspaceFolder}/dep/libjpeg-turbo",
+            "${workspaceFolder}/bin/jpeg-prefix/include",
             "${workspaceFolder}/bin/x264-prefix/include",
             "${workspaceFolder}/dep/minimp4"
          ],
