@@ -22,6 +22,7 @@ Thus, this program _does_ use JPEG (specifically `libjpeg-turbo`) for encoding f
 ## Building
 This project needs `cmake`, `make` and `nasm` (used by x264) for compiling. All dependencies (other than X11 development files) are built as part of the binary and statically linked in. Don't @ me it makes distribution easier.
 ```
+$ git submodule update --init
 $ cmake -B bin
 $ make -C bin
 $ sudo make -C bin install
