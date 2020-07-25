@@ -46,12 +46,12 @@ void rsFrameConvertI420(const RSFrame *restrict frame, RSFrame *restrict yFrame,
                         RSFrame *restrict uFrame, RSFrame *restrict vFrame) {
    // We can assume frame is divisible by 2 due to check done in `config.c`
 
-   for(size_t y = 0; y < frame->height; y += 2) {
+   for (size_t y = 0; y < frame->height; y += 2) {
       uint16_t uRow[frame->width];
       uint16_t vRow[frame->width];
 
       // Copy the first Y-row and add together the top half of the U and V pixels
-      for(size_t x = 0; x < frame->width; x += 2) {
+      for (size_t x = 0; x < frame->width; x += 2) {
          const uint8_t *restrict leftPixel = FRAME_GET(frame, x, y);
          const uint8_t *restrict rightPixel = FRAME_GET(frame, x + 1, y);
          *FRAME_GET(yFrame, x, y) = leftPixel[0];
@@ -61,7 +61,7 @@ void rsFrameConvertI420(const RSFrame *restrict frame, RSFrame *restrict yFrame,
       }
 
       // Copy the second Y-row and calculate the full U and V pixels
-      for(size_t x = 0; x < frame->width; x += 2) {
+      for (size_t x = 0; x < frame->width; x += 2) {
          const uint8_t *restrict leftPixel = FRAME_GET(frame, x, y + 1);
          const uint8_t *restrict rightPixel = FRAME_GET(frame, x + 1, y + 1);
          *FRAME_GET(yFrame, x, y + 1) = leftPixel[0];
