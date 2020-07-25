@@ -13,7 +13,7 @@ jobs:
       - name: Install nasm
         run: sudo apt-get install -y nasm
       - name: Configure code
-        run: cmake -B bin -DRS_WARN_ERROR=ON
+        run: cmake -B bin -DCMAKE_BUILD_TYPE=Release -DRS_WARN_ERROR=ON
       - name: Build code
         run: make -C bin
       - name: Format code

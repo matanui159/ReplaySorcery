@@ -69,7 +69,6 @@ outputFile = ~/Videos/ReplaySorcery/%F_%H-%M-%S.mp4
 
 # Issues
 - Code is a bit of a mess <_<
-- The routine to convert JPEG's interleaved YUV to YUV420p for x264 is very slow and a huge bottleneck
 
 # TODO
 - Document code better
