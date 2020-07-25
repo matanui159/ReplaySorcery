@@ -18,22 +18,30 @@
  */
 
 #include "frame.h"
+#include "log.h"
 #include "memory.h"
+
+#define FRAME_GET(frame, x, y)                                                           \
+   ((frame)->data + (y) * (frame)->strideY + (x) * (frame)->strideX)
+
+#define FRAME_REPEAT4(init, cond, next, body)                                            \
+   for (init; cond;) {                                                                   \
+      do                                                                                 \
+         body while (false);                                                             \
+      next;                                                                              \
+      do                                                                                 \
+         body while (false);                                                             \
+      next;                                                                              \
+      do                                                                                 \
+         body while (false);                                                             \
+      next;                                                                              \
+      do                                                                                 \
+         body while (false);                                                             \
+      next;                                                                              \
+   }
 
 static void frameDestroy(RSFrame *frame) {
    rsMemoryDestroy(frame->data);
-}
-
-static void frameConvertChroma(const RSFrame *frame, RSFrame *chroma, size_t offset) {
-   for (size_t y = 0; y < chroma->height; ++y) {
-      for (size_t x = 0; x < chroma->width; ++x) {
-         uint8_t c0 = rsFrameGet(frame, x * 2, y * 2)[offset];
-         uint8_t c1 = rsFrameGet(frame, x * 2 + 1, y * 2)[offset];
-         uint8_t c2 = rsFrameGet(frame, x * 2, y * 2 + 1)[offset];
-         uint8_t c3 = rsFrameGet(frame, x * 2 + 1, y * 2 + 1)[offset];
-         *rsFrameGet(chroma, x, y) = (uint8_t)((c0 + c1 + c2 + c3) / 4);
-      }
-   }
 }
 
 void rsFrameCreate(RSFrame *frame, size_t width, size_t height, size_t strideX) {
@@ -50,14 +58,37 @@ void rsFrameDestroy(RSFrame *frame) {
    rsMemoryClear(frame, sizeof(RSFrame));
 }
 
-void rsFrameConvertI420(const RSFrame *frame, RSFrame *yFrame, RSFrame *uFrame,
-                        RSFrame *vFrame) {
-   // TODO: this is very slow
-   for (size_t y = 0; y < yFrame->height; ++y) {
-      for (size_t x = 0; x < yFrame->width; ++x) {
-         *rsFrameGet(yFrame, x, y) = *rsFrameGet(frame, x, y);
-      }
+void rsFrameConvertI420(const RSFrame *restrict frame, RSFrame *restrict yFrame,
+                        RSFrame *restrict uFrame, RSFrame *restrict vFrame) {
+   if (frame->width % 8 != 0 || frame->height % 8 != 0) {
+      rsError(
+          "Due to optimization reasons, only frame sizes divisable by 8 are supported");
    }
-   frameConvertChroma(frame, uFrame, 1);
-   frameConvertChroma(frame, vFrame, 2);
+
+   FRAME_REPEAT4(size_t y = 0, y < frame->height, y += 2, {
+      uint16_t uRow[frame->width];
+      uint16_t vRow[frame->width];
+
+      // Copy the first Y-row and add together the top half of the U and V pixels
+      FRAME_REPEAT4(size_t x = 0, x < frame->width, x += 2, {
+         const uint8_t *restrict leftPixel = FRAME_GET(frame, x, y);
+         const uint8_t *restrict rightPixel = FRAME_GET(frame, x + 1, y);
+         *FRAME_GET(yFrame, x, y) = leftPixel[0];
+         *FRAME_GET(yFrame, x + 1, y) = rightPixel[0];
+         uRow[x >> 1] = (uint16_t)(leftPixel[1] + rightPixel[1]);
+         vRow[x >> 1] = (uint16_t)(leftPixel[2] + rightPixel[2]);
+      })
+
+      // Copy the second Y-row and calculate the full U and V pixels
+      FRAME_REPEAT4(size_t x = 0, x < frame->width, x += 2, {
+         const uint8_t *restrict leftPixel = FRAME_GET(frame, x, y + 1);
+         const uint8_t *restrict rightPixel = FRAME_GET(frame, x + 1, y + 1);
+         *FRAME_GET(yFrame, x, y + 1) = leftPixel[0];
+         *FRAME_GET(yFrame, x + 1, y + 1) = rightPixel[0];
+         uint8_t uPixel = (uint8_t)((uRow[x >> 1] + leftPixel[1] + rightPixel[1]) >> 2);
+         uint8_t vPixel = (uint8_t)((vRow[x >> 1] + leftPixel[2] + rightPixel[2]) >> 2);
+         *FRAME_GET(uFrame, x >> 1, y >> 1) = uPixel;
+         *FRAME_GET(vFrame, x >> 1, y >> 1) = vPixel;
+      })
+   })
 }

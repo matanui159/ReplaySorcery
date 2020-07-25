@@ -35,8 +35,4 @@ void rsFrameCreate(RSFrame *frame, size_t width, size_t height, size_t strideX);
 void rsFrameDestroy(RSFrame *frame);
 void rsFrameConvertI420(const RSFrame *frame, RSFrame *yFrame, RSFrame *uFrame, RSFrame *vFrame);
 
-static inline uint8_t *rsFrameGet(const RSFrame *frame, size_t x, size_t y) {
-   return frame->data + y * frame->strideY + x * frame->strideX;
-}
-
 #endif
