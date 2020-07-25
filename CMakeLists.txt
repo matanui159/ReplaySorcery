@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(ReplaySorcery VERSION 0.2.2)
+project(ReplaySorcery VERSION 0.2.3)
 include(CheckCCompilerFlag)
 include(ExternalProject)
 
@@ -125,6 +125,6 @@ add_custom_target(clang-format
 install(TARGETS ${binary} DESTINATION bin)
 set(service replay-sorcery.service)
 # We cannot use CMAKE_INSTALL_PREFIX since the default is /usr/local
-option(RS_SYSTEMD_DIR "Where to install the systemd service" /usr/lib/systemd/user)
+set(RS_SYSTEMD_DIR /usr/lib/systemd/user CACHE STRING "Where to install the systemd service")
 configure_file(${service}.in ${service})
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${service}" DESTINATION "${RS_SYSTEMD_DIR}")
