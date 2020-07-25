@@ -62,7 +62,6 @@ static void xlibSystemDestroy(RSSystem *system) {
       XDestroyImage(extra->sharedFrame);
       XShmDetach(extra->display, &extra->sharedInfo);
       shmdt(extra->sharedInfo.shmaddr);
-      shmctl(extra->sharedInfo.shmid, IPC_RMID, NULL);
    }
    XCloseDisplay(extra->display);
    rsMemoryDestroy(extra);
@@ -167,6 +166,9 @@ bool rsXlibSystemCreate(RSSystem *system, const RSConfig *config) {
       extra->sharedFrame->data = extra->sharedInfo.shmaddr;
       extra->sharedInfo.readOnly = false;
       XShmAttach(extra->display, &extra->sharedInfo);
+
+      // We do not need the shared memory ID anymore
+      shmctl(extra->sharedInfo.shmid, IPC_RMID, NULL);
    } else {
       rsLog("X11 shared memory not supported");
       extra->sharedFrame = NULL;
