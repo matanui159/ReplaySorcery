@@ -23,7 +23,7 @@ Thus, this program _does_ use JPEG (specifically `libjpeg-turbo`) for encoding f
 This project needs `cmake`, `make` and `nasm` (used by x264) for compiling. All dependencies (other than X11 development files) are built as part of the binary and statically linked in. Don't @ me it makes distribution easier.
 ```
 $ git submodule update --init
-$ cmake -B bin
+$ cmake -B bin -DCMAKE_BUILD_TYPE=Release
 $ make -C bin
 $ sudo make -C bin install
 ```
@@ -84,5 +84,3 @@ outputFile = ~/Videos/ReplaySorcery/%F_%H-%M-%S.mp4
   - Add sound effect for when it saves
   - Add configuration option for changing hotkey
   - Allow downscaling before saving
-  - Add configuration option for changing scaler options
-  - Improve performance of scaler, potentially using swscale from FFmpeg
