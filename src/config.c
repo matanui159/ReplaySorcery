@@ -167,6 +167,10 @@ void rsConfigLoad(RSConfig *config) {
 
    // Relative config
    configLoadFile(config, ".");
+
+   if (config->width % 8 != 0 || config->height % 8 != 0) {
+      rsError("Only frame sizes divisable by 2 are supported");
+   }
 }
 
 void rsConfigDestroy(RSConfig *config) {
