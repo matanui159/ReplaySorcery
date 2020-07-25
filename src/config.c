@@ -122,7 +122,9 @@ static void configLoadFile(RSConfig *config, const char *dir) {
    size_t size = (size_t)ftell(file);
    fseek(file, 0, SEEK_SET);
    char buffer[size + 1];
-   fread(buffer, size, 1, file);
+   if (fread(buffer, size, 1, file) <= 0) {
+      rsError("Failed to read from config file");
+   }
    fclose(file);
    buffer[size] = '\0';
 
