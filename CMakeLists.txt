@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(ReplaySorcery VERSION 0.2.1)
+project(ReplaySorcery VERSION 0.2.2)
 include(CheckCCompilerFlag)
 include(ExternalProject)
 
@@ -78,7 +78,7 @@ ExternalProject_Add(jpeg
 )
 add_dependencies(${binary} jpeg)
 ExternalProject_Get_Property(jpeg INSTALL_DIR)
-target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/install")
+target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
 target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libjpeg.a")
 
 ExternalProject_Add(x264
