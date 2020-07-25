@@ -135,6 +135,7 @@ static void configLoadFile(RSConfig *config, const char *dir) {
 
 void rsConfigLoad(RSConfig *config) {
    // Load defaults
+   rsLog("Loading defaults...");
    rsMemoryClear(config, sizeof(RSConfig));
    for (size_t i = 0; i < CONFIG_PARAMS_SIZE; ++i) {
       configSet(config, configParams[i].key, configParams[i].def);

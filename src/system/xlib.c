@@ -38,10 +38,16 @@ typedef struct XlibSystemExtra {
    XImage *sharedFrame;
 } XlibSystemExtra;
 
+static uint8_t xlibIgnore = Success;
+
 static int xlibSystemError(Display *display, XErrorEvent *event) {
    char error[1024];
    XGetErrorText(display, event->error_code, error, sizeof(error));
-   rsError("X11 error: %s", error);
+   if (xlibIgnore != Success && event->error_code == xlibIgnore) {
+      rsLog("X11 warning: %s", error);
+   } else {
+      rsError("X11 error: %s", error);
+   }
    return 0;
 }
 
@@ -74,15 +80,19 @@ static void xlibSystemCreateFrame(RSFrame *frame, RSSystem *system) {
    rsFramerateSleep(&extra->frameTime, extra->config.framerate);
    XImage *image;
    if (extra->sharedFrame == NULL) {
+      // Ignore failure like shared images, create blank image if failed
       image = XGetImage(extra->display, extra->rootWindow, extra->config.offsetY,
                         extra->config.offsetY, (unsigned)extra->config.width,
                         (unsigned)extra->config.height, AllPlanes, ZPixmap);
       frame->extra = image;
    } else {
+      // This sometimes returns BadMatch (Invalid parameter) during suspension or sleep
+      xlibIgnore = BadMatch;
       XShmGetImage(extra->display, extra->rootWindow, extra->sharedFrame,
                    (int)extra->config.offsetX, (int)extra->config.offsetY, AllPlanes);
       image = extra->sharedFrame;
       frame->extra = NULL;
+      xlibIgnore = Success;
    }
 
    if (image->depth != 24 || image->bits_per_pixel != 32 ||
