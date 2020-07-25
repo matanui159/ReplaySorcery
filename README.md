@@ -7,7 +7,7 @@ I wanted something like this for Linux...
 I got tired waiting for someone else to do it.
 
 ## What is wrong with OBS?
-Alot of people online suggest using OBS's replay buffer feature. However this requires opening OBS and start recording. I do not know when something will happen that I want to share. Might not even happen while playing a game. I just want something in the background (like a `systemd` service) so that whenever something happens I can record it.
+A lot of people online suggest using OBS's replay buffer feature. However this requires opening OBS and start recording. I do not know when something will happen that I want to share. Might not even happen while playing a game. I just want something in the background (like a `systemd` service) so that whenever something happens I can record it.
 
 ## Why JPEG? Why not hardware-accelerated encoding?
 You might notice that this uses JPEG to encode frames. Initially the plan was to use hardware-accelerated encoding. However, since there is currently no way to grab frames directly on the GPU, sending frames to the GPU and encoded packets back became a huge bottleneck that limited me to no more than ~40-50 FPS and lagged basically any game I tried playing. I changed plan of attack based on the idea that:
