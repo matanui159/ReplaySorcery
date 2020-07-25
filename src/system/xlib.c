@@ -165,6 +165,7 @@ bool rsXlibSystemCreate(RSSystem *system, const RSConfig *config) {
       // Attach the shared memory
       extra->sharedInfo.shmaddr = shmat(extra->sharedInfo.shmid, NULL, 0);
       extra->sharedFrame->data = extra->sharedInfo.shmaddr;
+      extra->sharedInfo.readOnly = false;
       XShmAttach(extra->display, &extra->sharedInfo);
    } else {
       rsLog("X11 shared memory not supported");
