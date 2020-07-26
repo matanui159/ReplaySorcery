@@ -21,7 +21,9 @@ Thus, this program _does_ use JPEG (specifically `libjpeg-turbo`) for encoding f
 # Documentation
 ## Installing
 ### Arch
-[Sergey A.](https://github.com/murlakatamenka) has setup an AUR package called [replay-sorcery-git](https://aur.archlinux.org/packages/replay-sorcery-git).
+There is an official AUR package that gets updated from the CI (thanks to [Bennett Hardwick](https://github.com/bennetthardwick)): [replay-sorcery](https://aur.archlinux.org/packages/replay-sorcery).
+
+[Sergey A.](https://github.com/murlakatamenka) has also setup a `-git` AUR package: [replay-sorcery-git](https://aur.archlinux.org/packages/replay-sorcery-git).
 
 ## Building from Source
 This project needs `cmake`, `make` and `nasm` (used by x264) for compiling. All dependencies (other than X11 development files) are built as part of the binary and statically linked in. Don't @ me it makes distribution easier.
