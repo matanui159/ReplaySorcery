@@ -26,10 +26,11 @@ prepare() {
 
 build() {
   cd "\${pkgname}" || exit 1
-  cmake -B build \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/usr \
-    -DRS_SYSTEMD_DIR=/usr/lib/systemd/user
+  cmake -B build \\
+    -DCMAKE_BUILD_TYPE=Release \\
+    -DCMAKE_INSTALL_PREFIX=/usr \\
+    -DRS_SYSTEMD_DIR=/usr/lib/systemd/user \\
+    -DRS_CONFIG_DIR=/etc/xdg
   make -C build
 }
 
