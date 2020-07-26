@@ -52,16 +52,18 @@ The config files use the [XDG base directory specification](https://specificatio
 - `./replay-sorcery.conf`
 
 The configuration files themselves are simple `<key> = <value> # <optional comment>` pairs. The available options are:
-| Key               | Description                                                                                                   | Default                                  |
-| ----------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| `offsetX`         | This, along with `offsetY`, `width` and `height` specify the rectangle of the display to read frames from.    | 0                                        |
-| `offsetY`         | See `offsetX`                                                                                                 | 0                                        |
-| `width`           | See `offsetX`                                                                                                 | 1920                                     |
-| `height`          | See `offsetX`                                                                                                 | 1080                                     |
-| `framerate`       | The framerate in which to record frames.                                                                      | 30                                       |
-| `duration`        | The duration to record when saving, in seconds.                                                               | 30                                       |
-| `compressQuality` | A value from 0-100 specifying the quality to use for JPEG compression                                         | 70                                       |
-| `outputFile`      | The output file path to save to. Uses [strftime](https://en.cppreference.com/w/c/chrono/strftime) formatting. | `~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4` |
+| Key                 | Description                                                                                                   | Default                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `offsetX`           | This, along with `offsetY`, `width` and `height` specify the rectangle of the display to read frames from.    | 0                                          |
+| `offsetY`           | See `offsetX`                                                                                                 | 0                                          |
+| `width`             | See `offsetX`                                                                                                 | 1920                                       |
+| `height`            | See `offsetX`                                                                                                 | 1080                                       |
+| `framerate`         | The framerate in which to record frames.                                                                      | 30                                         |
+| `duration`          | The duration to record when saving, in seconds.                                                               | 30                                         |
+| `compressQuality`   | A value from 0-100 specifying the quality to use for JPEG compression                                         | 70                                         |
+| `outputFile`        | The output file path to save to. Uses [strftime](https://en.cppreference.com/w/c/chrono/strftime) formatting. | `~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4`   |
+| `preOutputCommand`  | A command to run before generating the output video. Can be empty for no command.                             | <empty string>                             |
+| `postOutputCommand` | A command to run after generating the output video.                                                           | `notify-send ReplaySorcery :Video saved!"` |
 
 As an example configuration, here is the configuration I use (my primary monitor is a 1440p monitor which is to the right of a 1080p monitor):
 ```

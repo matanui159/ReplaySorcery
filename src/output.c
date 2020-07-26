@@ -46,8 +46,21 @@ static void outputNals(mp4_h26x_writer_t *track, x264_nal_t *nals, int nalCount,
    }
 }
 
+static void outputCommand(const char *command) {
+   if (*command == '\0') {
+      // Ignore empty strings
+      return;
+   }
+   rsLog("Running command: %s", command);
+   int ret = system(command);
+   if (ret != 0) {
+      rsLog("Warning: command returned non-zero exit code (%i): %s", ret, command);
+   }
+}
+
 static void *outputThread(void *data) {
    RSOutput *output = data;
+   outputCommand(output->config.preOutputCommand);
 
    RSDecompress decompress;
    rsDecompressCreate(&decompress);
@@ -125,6 +138,8 @@ static void *outputThread(void *data) {
    rsFrameDestroy(&frame);
    rsDecompressDestroy(&decompress);
    rsBufferDestroy(&output->frames);
+
+   outputCommand(output->config.postOutputCommand);
    return NULL;
 }
 
