@@ -74,26 +74,7 @@ static void xlibSystemFrameDestroy(RSFrame *frame) {
    }
 }
 
-static void xlibSystemCreateFrame(RSFrame *frame, RSSystem *system) {
-   XlibSystemExtra *extra = system->extra;
-   rsFramerateSleep(&extra->frameTime, extra->config.framerate);
-   XImage *image;
-   if (extra->sharedFrame == NULL) {
-      // Ignore failure like shared images, create blank image if failed
-      image = XGetImage(extra->display, extra->rootWindow, extra->config.offsetY,
-                        extra->config.offsetY, (unsigned)extra->config.width,
-                        (unsigned)extra->config.height, AllPlanes, ZPixmap);
-      frame->extra = image;
-   } else {
-      // This sometimes returns BadMatch (Invalid parameter) during suspension or sleep
-      xlibIgnore = BadMatch;
-      XShmGetImage(extra->display, extra->rootWindow, extra->sharedFrame,
-                   (int)extra->config.offsetX, (int)extra->config.offsetY, AllPlanes);
-      image = extra->sharedFrame;
-      frame->extra = NULL;
-      xlibIgnore = Success;
-   }
-
+static void xlibSystemFrameImage(RSFrame *frame, XImage *image) {
    if (image->depth != 24 || image->bits_per_pixel != 32 ||
        image->byte_order != LSBFirst) {
       rsError("Only BGRX X11 images are supported");
@@ -104,6 +85,35 @@ static void xlibSystemCreateFrame(RSFrame *frame, RSSystem *system) {
    frame->strideX = 4;
    frame->strideY = (size_t)image->bytes_per_line;
    frame->destroy = xlibSystemFrameDestroy;
+}
+
+static void xlibSystemFrameCreate(RSFrame *frame, RSSystem *system) {
+   XlibSystemExtra *extra = system->extra;
+   rsFramerateSleep(&extra->frameTime, extra->config.framerate);
+   // This sometimes returns BadMatch (Invalid parameter) during suspension or sleep
+   xlibIgnore = BadMatch;
+   if (extra->sharedFrame == NULL) {
+      // Create a new image by getting it from X11
+      XImage *image = XGetImage(extra->display, extra->rootWindow, extra->config.offsetX,
+                        extra->config.offsetY, (unsigned)extra->config.width,
+                        (unsigned)extra->config.height, AllPlanes, ZPixmap);
+      if (image == NULL) {
+         // Something went wrong but the error was ignored (see above), create a blank
+         // frame
+         rsFrameCreate(frame, (size_t)extra->config.width, (size_t)extra->config.height, 4);
+      } else {
+         xlibSystemFrameImage(frame, image);
+         frame->extra = image;
+      }
+   } else {
+      // Use shared memory to access the next frame
+      XShmGetImage(extra->display, extra->rootWindow, extra->sharedFrame,
+                   (int)extra->config.offsetX, (int)extra->config.offsetY, AllPlanes);
+      xlibSystemFrameImage(frame, extra->sharedFrame);
+      // We set this to null so the destructor does not free the image
+      frame->extra = NULL;
+   }
+   xlibIgnore = Success;
 }
 
 static bool xlibSystemWantsSave(RSSystem *system) {
@@ -129,6 +139,7 @@ bool rsXlibSystemCreate(RSSystem *system, const RSConfig *config) {
       return false;
    }
    XSetErrorHandler(xlibSystemError);
+   XSynchronize(extra->display, true);
    rsLog("X11 vendor: %s %i.%i.%i", ServerVendor(extra->display),
          ProtocolVersion(extra->display), ProtocolRevision(extra->display),
          VendorRelease(extra->display));
@@ -176,7 +187,7 @@ bool rsXlibSystemCreate(RSSystem *system, const RSConfig *config) {
 
    clock_gettime(CLOCK_MONOTONIC, &extra->frameTime);
    system->destroy = xlibSystemDestroy;
-   system->frameCreate = xlibSystemCreateFrame;
+   system->frameCreate = xlibSystemFrameCreate;
    system->wantsSave = xlibSystemWantsSave;
    return true;
 }
