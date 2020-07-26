@@ -1,0 +1,24 @@
+name: Deploy Arch
+
+on:
+  release:
+    types: [released]
+
+jobs:
+  aur-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Generate PKGBUILD
+        run: ./pkg/archlinux/create-pkgbuild.sh "${{ github.event.release.tag_name }}" > ./pkg/archlinux/PKGBUILD
+
+      - name: Publish AUR package
+        uses: KSXGitHub/github-actions-deploy-aur@master
+
+        with:
+          pkgname: replay-sorcery
+          pkgbuild: pkg/archlinux/PKGBUILD
+          commit_username: matanui159
+          commit_email: josh@minteronline.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: Update AUR package
