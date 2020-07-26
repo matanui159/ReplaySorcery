@@ -3,8 +3,8 @@
 VERSION=$1
 
 if [ ! "${VERSION?}" ]; then
-    echo "Usage: create-pkgbuild.sh {version}"
-    exit 1
+   echo "Usage: create-pkgbuild.sh {version}"
+   exit 1
 fi
 
 cat <<- EOF
@@ -20,22 +20,20 @@ source=("\${pkgname}::git+\${url}.git#tag=\${pkgver}")
 sha256sums=("SKIP")
 
 prepare() {
-  mkdir -p "\${pkgname}/build"
-  git -C "\${pkgname}" submodule update --init --recursive --depth=1
+   mkdir -p "\${pkgname}/build"
+   git -C "\${pkgname}" submodule update --init --recursive --depth=1
 }
 
 build() {
-  cd "\${pkgname}" || exit 1
-  cmake -B build \\
-    -DCMAKE_BUILD_TYPE=Release \\
-    -DCMAKE_INSTALL_PREFIX=/usr \\
-    -DRS_SYSTEMD_DIR=/usr/lib/systemd/user \\
-    -DRS_CONFIG_DIR=/etc/xdg
-  make -C build
+   cd "\${pkgname}" || exit 1
+   cmake -B build \\
+      -DCMAKE_BUILD_TYPE=Release \\
+      -DCMAKE_INSTALL_PREFIX=/usr
+   make -C build
 }
 
 package() {
-  cd "\${pkgname}" || exit 1
-  make -C build DESTDIR=\${pkgdir} install
+   cd "\${pkgname}" || exit 1
+   make -C build DESTDIR=\${pkgdir} install
 }
 EOF
