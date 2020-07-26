@@ -128,3 +128,6 @@ set(service replay-sorcery.service)
 set(RS_SYSTEMD_DIR /usr/lib/systemd/user CACHE STRING "Where to install the systemd service")
 configure_file(${service}.in ${service})
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${service}" DESTINATION "${RS_SYSTEMD_DIR}")
+# Similar for here since we need to use the XDG path /etc/xdg
+set(RS_CONFIG_DIR /etc/xdg CACHE STRING "Where to install the default config")
+install(FILES replay-sorcery.default.conf DESTINATION "${RS_CONFIG_DIR}" RENAME replay-sorcery.conf)

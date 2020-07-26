@@ -57,6 +57,7 @@ static void configString(void *param, const char *value) {
    memcpy(*str, value, size);
 }
 
+// Remember to update `replay-sorcery.default.conf`
 static const ConfigParam configParams[] = {
     CONFIG_PARAM(offsetX, configInt, "0"),
     CONFIG_PARAM(offsetY, configInt, "0"),
