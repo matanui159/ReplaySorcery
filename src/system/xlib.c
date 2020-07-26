@@ -95,12 +95,13 @@ static void xlibSystemFrameCreate(RSFrame *frame, RSSystem *system) {
    if (extra->sharedFrame == NULL) {
       // Create a new image by getting it from X11
       XImage *image = XGetImage(extra->display, extra->rootWindow, extra->config.offsetX,
-                        extra->config.offsetY, (unsigned)extra->config.width,
-                        (unsigned)extra->config.height, AllPlanes, ZPixmap);
+                                extra->config.offsetY, (unsigned)extra->config.width,
+                                (unsigned)extra->config.height, AllPlanes, ZPixmap);
       if (image == NULL) {
          // Something went wrong but the error was ignored (see above), create a blank
          // frame
-         rsFrameCreate(frame, (size_t)extra->config.width, (size_t)extra->config.height, 4);
+         rsFrameCreate(frame, (size_t)extra->config.width, (size_t)extra->config.height,
+                       4);
       } else {
          xlibSystemFrameImage(frame, image);
          frame->extra = image;
