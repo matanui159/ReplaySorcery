@@ -75,6 +75,11 @@ height = 1440
 outputFile = ~/Videos/ReplaySorcery/%F_%H-%M-%S.mp4
 ```
 
+Note that if the geometry is not correctly defined (using `offsetX`, `offsetY`, `width` and `height`) and not in line with the actual layout of your monitors, the following warning may start appearing in the log output and potentially increase memory consumption over time [#10](https://github.com/matanui159/ReplaySorcery/issues/10):
+````
+X11 warning: BadMatch (invalid parameter attributes)
+````
+
 # Issues
 - Code is a bit of a mess <_<
 
