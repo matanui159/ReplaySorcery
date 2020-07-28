@@ -27,8 +27,8 @@
 #include <errno.h>
 #include <limits.h>
 
-static bool rsConfigLoadFile(RSConfig *config, const char *fn);
-static bool rsConfigLoadDir(RSConfig *config, const char *dirs);
+static void rsConfigLoadFile(RSConfig *config, const char *fn);
+static void rsConfigLoadDir(RSConfig *config, const char *dirs);
 static void rsConfigParseLine(RSConfig *config, char *line);
 static void rsConfigParseFile(RSConfig *config, FILE *f);
 static void configInt(void *param, const char *value);
@@ -66,40 +66,23 @@ static const ConfigParam configParams[] = {
 
 void rsConfigLoad(RSConfig *config) {
    rsConfigSetDefaults(config);
-   char *extra_buffer = 0;
    char *dirs = getenv("XDG_CONFIG_DIRS");
    if (dirs == NULL) {
-      dirs = "/etc/xdg";
-   }
-   if (rsConfigLoadDir(config, dirs)) {
-      return;
-   }
-   dirs = getenv("XDG_CONFIG_HOME");
-   if (dirs == NULL) {
-      //~/... will not work for fopen
-      dirs = getenv("HOME");
-      if (dirs == NULL) {
-         // not even home is set... just try to load from /etc/replay-sorcery.conf
-         dirs = "/etc/replay-sorcery.conf";
-         rsConfigLoadDir(config, dirs);
-         return;
-      }
-      // add $HOME/.config
-      const char *dotconf = "/.config";
-      size_t homelen = strlen(dirs);
-      // totallen = home + : + home + dotconf + null
-      size_t totallen = homelen * 2 + strlen(dotconf) + 2;
-      extra_buffer = rsMemoryCreate(totallen);
-      memcpy(extra_buffer, dirs, homelen);
-      extra_buffer[homelen] = ':';
-      memcpy(extra_buffer + homelen + 1, dirs, homelen);
-      strcpy(extra_buffer + homelen * 2 + 1, dotconf);
-      dirs = extra_buffer;
+      dirs = "/etc/xdg/";
    }
    rsConfigLoadDir(config, dirs);
-   if (extra_buffer) {
-      rsMemoryDestroy(extra_buffer);
+
+   dirs = getenv("XDG_CONFIG_HOME");
+   if (dirs == NULL) {
+      dirs = "~/.config";
    }
+   rsConfigLoadDir(config, dirs);
+
+   dirs = getenv("HOME");
+   if (dirs == NULL) {
+      dirs = "/etc/";
+   }
+   rsConfigLoadDir(config, dirs);
 }
 
 void rsConfigDestroy(RSConfig *config) {
@@ -109,37 +92,36 @@ void rsConfigDestroy(RSConfig *config) {
    rsMemoryDestroy(config->postOutputCommand);
 }
 
-static bool rsConfigLoadDir(RSConfig *config, const char *dirs) {
-   bool loaded = false;
+static void rsConfigLoadDir(RSConfig *config, const char *dirs) {
+   char *home = getenv("HOME");
+   size_t hlen = strlen(home);
+
    size_t size = strlen(dirs) + 1;
    char *buffer = rsMemoryCreate(size);
    memcpy(buffer, dirs, size);
-   char *pch = strtok(buffer, ":");
+
+   char *saveptr = 0;
+   char *pch = strtok_r(buffer, ":", &saveptr);
    while (pch != NULL) {
-      size_t sizedir = strlen(pch);
-      char *bufferdir = rsMemoryCreate(sizedir + strlen(CONFIG_NAME) + 1);
-      memcpy(bufferdir, pch, sizedir);
-      strcpy(bufferdir + sizedir, CONFIG_NAME);
-      loaded = rsConfigLoadFile(config, bufferdir);
-      rsMemoryDestroy(bufferdir);
-      if (loaded) {
-         break;
-      }
-      pch = strtok(NULL, ":");
+      char *goodpath = rsMemoryCreate(strlen(pch) + hlen + strlen(CONFIG_NAME));
+      rsPathFixHome(goodpath, pch, home);
+      strcat(goodpath, CONFIG_NAME);
+      rsConfigLoadFile(config, goodpath);
+      pch = strtok_r(NULL, ":", &saveptr);
+      rsMemoryDestroy(goodpath);
    }
    rsMemoryDestroy(buffer);
-   return loaded;
 }
 
-static bool rsConfigLoadFile(RSConfig *config, const char *fn) {
+static void rsConfigLoadFile(RSConfig *config, const char *fn) {
    FILE *f = fopen(fn, "r");
    if (!f) {
-      return false;
+      return;
    }
    rsLog("Loading config file: %s", fn);
    rsConfigParseFile(config, f);
    fclose(f);
-   return true;
+   return;
 }
 
 static void rsConfigParseLine(RSConfig *config, char *line) {

@@ -25,5 +25,6 @@
 void rsPathClear(RSBuffer *path);
 void rsPathAppend(RSBuffer *path, const char *value);
 void rsPathAppendDated(RSBuffer *path, const char* value);
+void rsPathFixHome(char* dst, const char* dir, const char* home);
 
 #endif

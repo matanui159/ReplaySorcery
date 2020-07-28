@@ -82,3 +82,14 @@ void rsPathAppendDated(RSBuffer *path, const char *value) {
       size *= 2;
    }
 }
+
+void rsPathFixHome(char* dst, const char* dir, const char* home) {
+	if (dir[0] == '~' && dir[1] == '/') {
+		strcat(dst, home);
+		strcat(dst, "/");
+		strcat(dst, dir+2);
+	}
+	else {
+		strcat(dst, dir);
+	}
+}
