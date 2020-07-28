@@ -27,7 +27,16 @@
 #include <errno.h>
 #include <limits.h>
 
-#define CONFIG_NAME "replay-sorcery.conf"
+static bool rsConfigLoadFile(RSConfig *config, const char *fn);
+static bool rsConfigLoadDir(RSConfig *config, const char *dirs);
+static void rsConfigParseLine(RSConfig *config, char *line);
+static bool rsConfigParseFile(RSConfig *config, FILE *f);
+static void configInt(void *param, const char *value);
+static void configString(void *param, const char *value);
+static void configSet(RSConfig *config, const char *key, const char *value);
+static void rsConfigSetDefaults(RSConfig *config);
+
+#define CONFIG_NAME "/replay-sorcery.conf"
 
 typedef struct ConfigParam {
    const char *key;
@@ -38,6 +47,134 @@ typedef struct ConfigParam {
 
 #define CONFIG_PARAM(key, set, def)                                                      \
    { #key, offsetof(RSConfig, key), set, def }
+
+// Remember to update `replay-sorcery.default.conf`
+static const ConfigParam configParams[] = {
+    CONFIG_PARAM(offsetX, configInt, "0"),
+    CONFIG_PARAM(offsetY, configInt, "0"),
+    CONFIG_PARAM(width, configInt, "1920"),
+    CONFIG_PARAM(height, configInt, "1080"),
+    CONFIG_PARAM(framerate, configInt, "30"),
+    CONFIG_PARAM(duration, configInt, "30"),
+    CONFIG_PARAM(compressQuality, configInt, "70"),
+    CONFIG_PARAM(outputFile, configString, "~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4"),
+    CONFIG_PARAM(preOutputCommand, configString, ""),
+    CONFIG_PARAM(postOutputCommand, configString,
+                 "notify-send ReplaySorcery \"Video saved!\"")};
+
+#define CONFIG_PARAMS_SIZE (sizeof(configParams) / sizeof(ConfigParam))
+
+void rsConfigLoad(RSConfig *config) {
+   rsConfigSetDefaults(config);
+   char *extra_buffer = 0;
+   char *dirs = getenv("XDG_CONFIG_DIRS");
+   if (dirs == NULL) {
+      dirs = "/etc/xdg";
+   }
+   if (rsConfigLoadDir(config, dirs)) {
+      return;
+   }
+   dirs = getenv("XDG_CONFIG_HOME");
+   if (dirs == NULL) {
+      //~/... will not work for fopen
+      dirs = getenv("HOME");
+      if (dirs == NULL) {
+         // not even home is set... just try to load from /etc/replay-sorcery.conf
+         dirs = "/etc/replay-sorcery.conf";
+         rsConfigLoadDir(config, dirs);
+         return;
+      }
+      // add $HOME/.config
+      const char *dotconf = "/.config";
+      size_t homelen = strlen(dirs);
+      // totallen = home + : + home + dotconf + null
+      size_t totallen = homelen * 2 + strlen(dotconf) + 2;
+      extra_buffer = rsMemoryCreate(totallen);
+      memcpy(extra_buffer, dirs, homelen);
+      extra_buffer[homelen] = ':';
+      memcpy(extra_buffer + homelen + 1, dirs, homelen);
+      strcpy(extra_buffer + homelen * 2 + 1, dotconf);
+      dirs = extra_buffer;
+   }
+   rsConfigLoadDir(config, dirs);
+   if (extra_buffer) {
+      rsMemoryDestroy(extra_buffer);
+   }
+}
+
+void rsConfigDestroy(RSConfig *config) {
+   rsMemoryDestroy(config->outputFile);
+}
+
+static bool rsConfigLoadDir(RSConfig *config, const char *dirs) {
+   rsLog(dirs);
+   bool loaded = false;
+   size_t size = strlen(dirs) + 1;
+   char *buffer = rsMemoryCreate(size);
+   memcpy(buffer, dirs, size);
+   char *pch = strtok(buffer, ":");
+   while (pch != NULL) {
+      size_t sizedir = strlen(pch);
+      char *bufferdir = rsMemoryCreate(sizedir + strlen(CONFIG_NAME) + 1);
+      memcpy(bufferdir, pch, sizedir);
+      strcpy(bufferdir + sizedir, CONFIG_NAME);
+      loaded = rsConfigLoadFile(config, bufferdir);
+      rsMemoryDestroy(bufferdir);
+      if (loaded) {
+         break;
+      }
+      pch = strtok(NULL, ":");
+   }
+   rsMemoryDestroy(buffer);
+   return loaded;
+}
+
+static bool rsConfigLoadFile(RSConfig *config, const char *fn) {
+   FILE *f = fopen(fn, "r");
+   if (!f) {
+      return false;
+   }
+   rsLog("Trying to load %s", fn);
+   bool ok = rsConfigParseFile(config, f);
+   fclose(f);
+   return ok;
+}
+
+static void rsConfigParseLine(RSConfig *config, char *line) {
+   rsLog(line);
+   // remove comments (#) and newlines (\n)
+   char *found = strchr(line, '#');
+   if (found != NULL) {
+      *found = '\0';
+   }
+   found = strchr(line, '\n');
+   if (found != NULL) {
+      *found = '\0';
+   }
+   found = strchr(line, '=');
+   if (found == NULL) {
+      rsError(
+          "Failed to load config line, format is <key> = <value> # <optional comment>");
+   }
+   *found = '\0';
+   char *key = rsStringTrimEnd(line);
+   char *value = rsStringTrimStart(found + 1);
+   configSet(config, key, value);
+   line[0] = '\0';
+}
+
+static bool rsConfigParseFile(RSConfig *config, FILE *f) {
+   bool ok = true;
+   char linebuf[1024 * 4];
+   while (!feof(f)) {
+      fgets(linebuf, sizeof(linebuf), f);
+      if (linebuf[0] == 0 || linebuf[0] == '#' || linebuf[0] == '\n') {
+         continue;
+      }
+      rsConfigParseLine(config, linebuf);
+   }
+   return ok;
+}
 
 static void configInt(void *param, const char *value) {
    int *num = param;
@@ -57,22 +194,6 @@ static void configString(void *param, const char *value) {
    memcpy(*str, value, size);
 }
 
-// Remember to update `replay-sorcery.default.conf`
-static const ConfigParam configParams[] = {
-    CONFIG_PARAM(offsetX, configInt, "0"),
-    CONFIG_PARAM(offsetY, configInt, "0"),
-    CONFIG_PARAM(width, configInt, "1920"),
-    CONFIG_PARAM(height, configInt, "1080"),
-    CONFIG_PARAM(framerate, configInt, "30"),
-    CONFIG_PARAM(duration, configInt, "30"),
-    CONFIG_PARAM(compressQuality, configInt, "70"),
-    CONFIG_PARAM(outputFile, configString, "~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4"),
-    CONFIG_PARAM(preOutputCommand, configString, ""),
-    CONFIG_PARAM(postOutputCommand, configString,
-                 "notify-send ReplaySorcery \"Video saved!\"")};
-
-#define CONFIG_PARAMS_SIZE (sizeof(configParams) / sizeof(ConfigParam))
-
 static void configSet(RSConfig *config, const char *key, const char *value) {
    rsLog("Setting config key '%s' to '%s'...", key, value);
    for (size_t i = 0; i < CONFIG_PARAMS_SIZE; ++i) {
@@ -85,99 +206,10 @@ static void configSet(RSConfig *config, const char *key, const char *value) {
    rsLog("Config key '%s' does not exist", key);
 }
 
-static void configLoadLine(RSConfig *config, char *line) {
-   line = rsStringTrimEnd(rsStringTrimStart(line));
-   // Remove comment
-   char *comment = strchr(line, '#');
-   if (comment != NULL) {
-      *comment = '\0';
-   }
-   if (*line == '\0') {
-      return;
-   }
-
-   char *eq = strchr(line, '=');
-   if (eq == NULL) {
-      rsError(
-          "Failed to load config line, format is <key> = <value> # <optional comment>");
-   }
-   *eq = '\0';
-   char *key = rsStringTrimEnd(line);
-   char *value = rsStringTrimStart(eq + 1);
-   configSet(config, key, value);
-}
-
-static void configLoadFile(RSConfig *config, const char *dir) {
-   RSBuffer path;
-   rsBufferCreate(&path);
-   rsPathAppend(&path, dir);
-   rsPathAppend(&path, CONFIG_NAME);
-
-   rsLog("Loading config file '%s'...", path.data);
-   FILE *file = fopen(path.data, "r");
-   rsBufferDestroy(&path);
-   if (file == NULL) {
-      rsLog("Failed to open config file: %s", strerror(errno));
-      return;
-   }
-
-   // Read the whole file
-   fseek(file, 0, SEEK_END);
-   size_t size = (size_t)ftell(file);
-   fseek(file, 0, SEEK_SET);
-   char buffer[size + 1];
-   if (fread(buffer, size, 1, file) <= 0) {
-      rsError("Failed to read from config file");
-   }
-   fclose(file);
-   buffer[size] = '\0';
-
-   char *ptr = buffer;
-   char *line;
-   while ((line = rsStringSplit(&ptr, '\n')) != NULL) {
-      configLoadLine(config, line);
-   }
-}
-
-void rsConfigLoad(RSConfig *config) {
-   // Load defaults
+static void rsConfigSetDefaults(RSConfig *config) {
    rsLog("Loading defaults...");
    rsMemoryClear(config, sizeof(RSConfig));
    for (size_t i = 0; i < CONFIG_PARAMS_SIZE; ++i) {
       configSet(config, configParams[i].key, configParams[i].def);
    }
-
-   // Global configs
-   const char *dirs = getenv("XDG_CONFIG_DIRS");
-   if (dirs == NULL) {
-      dirs = "/etc/xdg";
-   }
-   // Make a copy so we can modify it
-   size_t size = strlen(dirs) + 1;
-   char buffer[size];
-   memcpy(buffer, dirs, size);
-   char *ptr = buffer;
-   char *dir;
-   while ((dir = rsStringSplit(&ptr, ':')) != NULL) {
-      configLoadFile(config, dir);
-   }
-
-   // User config
-   const char *home = getenv("XDG_CONFIG_HOME");
-   if (home == NULL) {
-      home = "~/.config";
-   }
-   configLoadFile(config, home);
-
-   // Relative config
-   configLoadFile(config, ".");
-
-   if (config->width % 2 != 0 || config->height % 2 != 0) {
-      rsError("Only frame sizes divisable by 2 are supported");
-   }
-}
-
-void rsConfigDestroy(RSConfig *config) {
-   rsMemoryDestroy(config->outputFile);
-   rsMemoryClear(config, sizeof(RSConfig));
 }
