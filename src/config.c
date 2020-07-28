@@ -30,7 +30,7 @@
 static bool rsConfigLoadFile(RSConfig *config, const char *fn);
 static bool rsConfigLoadDir(RSConfig *config, const char *dirs);
 static void rsConfigParseLine(RSConfig *config, char *line);
-static bool rsConfigParseFile(RSConfig *config, FILE *f);
+static void rsConfigParseFile(RSConfig *config, FILE *f);
 static void configInt(void *param, const char *value);
 static void configString(void *param, const char *value);
 static void configSet(RSConfig *config, const char *key, const char *value);
@@ -103,11 +103,13 @@ void rsConfigLoad(RSConfig *config) {
 }
 
 void rsConfigDestroy(RSConfig *config) {
+
    rsMemoryDestroy(config->outputFile);
+   rsMemoryDestroy(config->preOutputCommand);
+   rsMemoryDestroy(config->postOutputCommand);
 }
 
 static bool rsConfigLoadDir(RSConfig *config, const char *dirs) {
-   rsLog(dirs);
    bool loaded = false;
    size_t size = strlen(dirs) + 1;
    char *buffer = rsMemoryCreate(size);
@@ -134,14 +136,13 @@ static bool rsConfigLoadFile(RSConfig *config, const char *fn) {
    if (!f) {
       return false;
    }
-   rsLog("Trying to load %s", fn);
-   bool ok = rsConfigParseFile(config, f);
+   rsLog("Loading config file: %s", fn);
+   rsConfigParseFile(config, f);
    fclose(f);
-   return ok;
+   return true;
 }
 
 static void rsConfigParseLine(RSConfig *config, char *line) {
-   rsLog(line);
    // remove comments (#) and newlines (\n)
    char *found = strchr(line, '#');
    if (found != NULL) {
@@ -163,8 +164,7 @@ static void rsConfigParseLine(RSConfig *config, char *line) {
    line[0] = '\0';
 }
 
-static bool rsConfigParseFile(RSConfig *config, FILE *f) {
-   bool ok = true;
+static void rsConfigParseFile(RSConfig *config, FILE *f) {
    char linebuf[1024 * 4];
    while (!feof(f)) {
       fgets(linebuf, sizeof(linebuf), f);
@@ -173,7 +173,6 @@ static bool rsConfigParseFile(RSConfig *config, FILE *f) {
       }
       rsConfigParseLine(config, linebuf);
    }
-   return ok;
 }
 
 static void configInt(void *param, const char *value) {

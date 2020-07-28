@@ -60,7 +60,7 @@ static void outputCommand(const char *command) {
 
 static void *outputThread(void *data) {
    RSOutput *output = data;
-   outputCommand(output->config.preOutputCommand);
+   outputCommand(output->config->preOutputCommand);
 
    RSDecompress decompress;
    rsDecompressCreate(&decompress);
@@ -70,13 +70,13 @@ static void *outputThread(void *data) {
    x264_param_default(&params);
    x264_param_default_preset(&params, "ultrafast", NULL);
    x264_param_apply_profile(&params, "baseline");
-   params.i_width = output->config.width;
-   params.i_height = output->config.height;
+   params.i_width = output->config->width;
+   params.i_height = output->config->height;
    params.i_csp = X264_CSP_I420;
    params.i_frame_total = (int)output->frameCount;
    params.i_timebase_num = 1;
    params.i_timebase_den = OUTPUT_TIMEBASE;
-   params.i_fps_num = (uint32_t)output->config.framerate;
+   params.i_fps_num = (uint32_t)output->config->framerate;
    params.i_fps_den = 1;
    params.b_repeat_headers = false;
    x264_t *x264 = x264_encoder_open(&params);
@@ -86,10 +86,12 @@ static void *outputThread(void *data) {
       rsError("Failed to create MP4 muxer");
    }
    mp4_h26x_writer_t track;
-   mp4_h26x_write_init(&track, muxer, output->config.width, output->config.height, false);
+   mp4_h26x_write_init(&track, muxer, output->config->width, output->config->height,
+                       false);
 
    RSFrame frame, yFrame, uFrame, vFrame;
-   rsFrameCreate(&frame, (size_t)output->config.width, (size_t)output->config.height, 3);
+   rsFrameCreate(&frame, (size_t)output->config->width, (size_t)output->config->height,
+                 3);
    rsFrameCreate(&yFrame, frame.width, frame.height, 1);
    rsFrameCreate(&uFrame, frame.width / 2, frame.height / 2, 1);
    rsFrameCreate(&vFrame, frame.width / 2, frame.height / 2, 1);
@@ -103,7 +105,7 @@ static void *outputThread(void *data) {
    inPic.img.i_stride[1] = (int)uFrame.strideY;
    inPic.img.plane[2] = vFrame.data;
    inPic.img.i_stride[2] = (int)vFrame.strideY;
-   unsigned duration = (unsigned)(OUTPUT_TIMEBASE / output->config.framerate);
+   unsigned duration = (unsigned)(OUTPUT_TIMEBASE / output->config->framerate);
 
    x264_nal_t *nals;
    int nalCount;
@@ -139,12 +141,12 @@ static void *outputThread(void *data) {
    rsDecompressDestroy(&decompress);
    rsBufferDestroy(&output->frames);
 
-   outputCommand(output->config.postOutputCommand);
+   outputCommand(output->config->postOutputCommand);
    return NULL;
 }
 
 void rsOutputCreate(RSOutput *output, const RSConfig *config) {
-   output->config = *config;
+   output->config = config;
    RSBuffer path;
    rsBufferCreate(&path);
    rsPathAppendDated(&path, config->outputFile);
