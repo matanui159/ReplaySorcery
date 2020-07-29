@@ -79,6 +79,9 @@ These four options work together to specify the rectangle of the display to grab
 ### `compressQuality`
 A value from 1-100 to specify the JPEG compression quality. Don't be afraid to lower this value for higher resolutions. The quality loss isn't that noticable most of the time and it greatly reduces the memory usage. Default is 70.
 
+### `keyCombo`
+The key combo to use. Must be a series of modifiers followed by an X11 key name, all seperated by `+`. Due to limitations with `XStringToKeysym`, the keys are case sensitive. Valid modifiers are `Ctrl`, `Shift`, `Alt`, and `Super`. Default is `Ctrl+Super+R`.
+
 ### `outputFile`
 The path to output the videos to. Can use [`strftime`](https://en.cppreference.com/w/c/chrono/strftime) formatting. If you care about folder organization it is probably a good idea to make ReplaySorcery output into a subfolder inside `Videos`, for example `~/Videos/ReplaySorcery/%F_%H-%M-%S.mp4`. This is not the default since currently ReplaySorcery cannot create folders and thus you have to make sure the folder exists before hand. Default is `~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4`.
 
@@ -86,7 +89,8 @@ The path to output the videos to. Can use [`strftime`](https://en.cppreference.c
 These options can be used to run commands before or after outputting a video, for instance generating notifications, playing sounds or running post processing. Failures from these commands do not stop ReplaySorcery. The default is setup to show a notification when the output is finished, but it requires `libnotify` to be installed. Default is an empty string and `notify-send ReplaySorcery "Video saved!"` respectively.
 
 # Issues
-- Code is a bit of a mess <_<
+- Does not track frame timing properly so if there is lag or dropped frames the output will be played back faster.
+- Can be a bit resource hungry at times (in particular memory)
 
 # TODO
 - Document code better
