@@ -26,7 +26,7 @@
 #include <pthread.h>
 
 typedef struct RSOutput {
-   RSConfig config;
+   const RSConfig *config;
    FILE *file;
    RSBuffer frames;
    size_t frameCount;

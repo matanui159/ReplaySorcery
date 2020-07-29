@@ -30,7 +30,7 @@
 #include <time.h>
 
 typedef struct XlibSystemExtra {
-   RSConfig config;
+   const RSConfig *config;
    Display *display;
    Window rootWindow;
    struct timespec frameTime;
@@ -89,18 +89,18 @@ static void xlibSystemFrameImage(RSFrame *frame, XImage *image) {
 
 static void xlibSystemFrameCreate(RSFrame *frame, RSSystem *system) {
    XlibSystemExtra *extra = system->extra;
-   rsFramerateSleep(&extra->frameTime, extra->config.framerate);
+   rsFramerateSleep(&extra->frameTime, extra->config->framerate);
    // This sometimes returns BadMatch (Invalid parameter) during suspension or sleep
    xlibIgnore = BadMatch;
    if (extra->sharedFrame == NULL) {
       // Create a new image by getting it from X11
-      XImage *image = XGetImage(extra->display, extra->rootWindow, extra->config.offsetX,
-                                extra->config.offsetY, (unsigned)extra->config.width,
-                                (unsigned)extra->config.height, AllPlanes, ZPixmap);
+      XImage *image = XGetImage(extra->display, extra->rootWindow, extra->config->offsetX,
+                                extra->config->offsetY, (unsigned)extra->config->width,
+                                (unsigned)extra->config->height, AllPlanes, ZPixmap);
       if (image == NULL) {
          // Something went wrong but the error was ignored (see above), create a blank
          // frame
-         rsFrameCreate(frame, (size_t)extra->config.width, (size_t)extra->config.height,
+         rsFrameCreate(frame, (size_t)extra->config->width, (size_t)extra->config->height,
                        4);
       } else {
          xlibSystemFrameImage(frame, image);
@@ -109,7 +109,7 @@ static void xlibSystemFrameCreate(RSFrame *frame, RSSystem *system) {
    } else {
       // Use shared memory to access the next frame
       XShmGetImage(extra->display, extra->rootWindow, extra->sharedFrame,
-                   (int)extra->config.offsetX, (int)extra->config.offsetY, AllPlanes);
+                   (int)extra->config->offsetX, (int)extra->config->offsetY, AllPlanes);
       xlibSystemFrameImage(frame, extra->sharedFrame);
       // We set this to null so the destructor does not free the image
       frame->extra = NULL;
@@ -130,10 +130,10 @@ static bool xlibSystemWantsSave(RSSystem *system) {
    return save;
 }
 
-bool rsXlibSystemCreate(RSSystem *system, const RSConfig *config) {
+bool rsXlibSystemCreate(RSSystem *system, RSConfig *config) {
    system->extra = rsMemoryCreate(sizeof(XlibSystemExtra));
    XlibSystemExtra *extra = system->extra;
-   extra->config = *config;
+   extra->config = config;
    extra->display = XOpenDisplay(NULL);
    if (extra->display == NULL) {
       rsLog("Failed to open X11 display");
@@ -145,6 +145,22 @@ bool rsXlibSystemCreate(RSSystem *system, const RSConfig *config) {
          ProtocolVersion(extra->display), ProtocolRevision(extra->display),
          VendorRelease(extra->display));
    extra->rootWindow = DefaultRootWindow(extra->display);
+
+   Screen *screen = DefaultScreenOfDisplay(extra->display);
+   int width = WidthOfScreen(screen);
+   int height = HeightOfScreen(screen);
+   // Handle automatic variables
+   if (config->width == RS_CONFIG_AUTO) {
+      config->width = width - config->offsetX;
+   }
+   if (config->height == RS_CONFIG_AUTO) {
+      config->height = height - config->offsetY;
+   }
+   // Make sure the recording rectangle fits on the screen
+   if (config->offsetX + config->width > width ||
+       config->offsetY + config->height > height) {
+      rsError("Recording rectangle does not fit X11 screen");
+   }
 
    int key = XKeysymToKeycode(extra->display, XK_R);
    // Ctrl and Super (Mod4) keys
@@ -159,13 +175,11 @@ bool rsXlibSystemCreate(RSSystem *system, const RSConfig *config) {
    bool shared = XShmQueryVersion(extra->display, &major, &minor, &pixmap);
    if (shared) {
       rsLog("X11 shared memory version: %i.%i", major, minor);
-      int screen = DefaultScreen(extra->display);
-
       // Create the shared image
       extra->sharedFrame = XShmCreateImage(
-          extra->display, DefaultVisual(extra->display, screen),
-          (unsigned)DefaultDepth(extra->display, screen), ZPixmap, NULL,
-          &extra->sharedInfo, (unsigned)config->width, (unsigned)config->height);
+          extra->display, DefaultVisualOfScreen(screen),
+          (unsigned)DefaultDepthOfScreen(screen), ZPixmap, NULL, &extra->sharedInfo,
+          (unsigned)config->width, (unsigned)config->height);
 
       // Create the shared memory ID
       extra->sharedInfo.shmid = shmget(

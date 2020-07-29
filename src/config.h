@@ -21,6 +21,8 @@
 #define RS_CONFIG_H
 #include "std.h"
 
+#define RS_CONFIG_AUTO -1
+
 typedef struct RSConfig {
    int offsetX;
    int offsetY;

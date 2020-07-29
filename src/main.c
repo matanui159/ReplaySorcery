@@ -70,6 +70,7 @@ int main(int argc, char *argv[]) {
    RSBufferCircle circle;
    RSOutput output = {0};
    rsConfigLoad(&config);
+   // We have to call this one first since it might change the config width/height
    rsXlibSystemCreate(&system, &config);
    rsCompressCreate(&compress, &config);
    size_t capacity = (size_t)(config.duration * config.framerate);

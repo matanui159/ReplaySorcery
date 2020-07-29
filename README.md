@@ -57,9 +57,9 @@ The configuration files themselves are simple `<key> = <value> # <optional comme
 | Key                 | Description                                                                                                   | Default                                    |
 | ------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
 | `offsetX`           | This, along with `offsetY`, `width` and `height` specify the rectangle of the display to read frames from.    | 0                                          |
-| `offsetY`           | See `offsetX`                                                                                                 | 0                                          |
-| `width`             | See `offsetX`                                                                                                 | 1920                                       |
-| `height`            | See `offsetX`                                                                                                 | 1080                                       |
+| `offsetY`           | See `offsetX`.                                                                                                | 0                                          |
+| `width`             | See `offsetX`. Set to `auto` to grab the whole display.                                                       | auto                                       |
+| `height`            | See `offsetX`. Set to `auto` to grab the whole display.                                                       | auto                                       |
 | `framerate`         | The framerate in which to record frames.                                                                      | 30                                         |
 | `duration`          | The duration to record when saving, in seconds.                                                               | 30                                         |
 | `compressQuality`   | A value from 0-100 specifying the quality to use for JPEG compression                                         | 70                                         |

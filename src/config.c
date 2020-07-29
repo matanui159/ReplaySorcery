@@ -59,6 +59,10 @@ static void configPos(void *param, const char *value) {
 
 static void configSize(void *param, const char *value) {
    int *num = param;
+   if (strcmp(value, "auto") == 0) {
+      *num = RS_CONFIG_AUTO;
+      return;
+   }
    configInt(num, value);
    if (*num < 2 || *num % 2 != 0) {
       rsError("Config value '%s' must be positive and divisible by 2", value);
@@ -77,8 +81,8 @@ static void configString(void *param, const char *value) {
 static const ConfigParam configParams[] = {
     CONFIG_PARAM(offsetX, configPos, "0"),
     CONFIG_PARAM(offsetY, configPos, "0"),
-    CONFIG_PARAM(width, configSize, "1920"),
-    CONFIG_PARAM(height, configSize, "1080"),
+    CONFIG_PARAM(width, configSize, "auto"),
+    CONFIG_PARAM(height, configSize, "auto"),
     CONFIG_PARAM(framerate, configPos, "30"),
     CONFIG_PARAM(duration, configPos, "30"),
     CONFIG_PARAM(compressQuality, configPos, "70"),
@@ -193,7 +197,7 @@ void rsConfigDestroy(RSConfig *config) {
    // Destroy all strings (config options using `configString`)
    for (size_t i = 0; i < CONFIG_PARAMS_SIZE; ++i) {
       if (configParams[i].set == configString) {
-         void **param = (void**)((char *)config + configParams[i].offset);
+         void **param = (void **)((char *)config + configParams[i].offset);
          rsMemoryDestroy(*param);
       }
    }

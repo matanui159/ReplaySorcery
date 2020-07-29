@@ -23,6 +23,6 @@
 #include "../std.h"
 #include "system.h"
 
-bool rsXlibSystemCreate(RSSystem *system, const RSConfig *config);
+bool rsXlibSystemCreate(RSSystem *system, RSConfig *config);
 
 #endif
