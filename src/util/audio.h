@@ -57,7 +57,7 @@ void rsAudioEncoderDestroy(RSAudioEncoder* audioenc);
 
 int rsAudioCreate(RSAudio *audio, const RSConfig *config);
 void rsAudioDestroy(RSAudio *audio);
-void rsAudioReadSamples(RSAudio *audio);
+void *rsAudioThread(void *data);
 
 
 #endif

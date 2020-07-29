@@ -21,9 +21,13 @@
 #include "log.h"
 #include "memory.h"
 
+static void rsAudioReadSamples(RSAudio *audio);
 static void rsAudioPrepareEncoder(RSAudio *audio, const RSConfig* config);
 static void rsAudioPrepareEncoder(RSAudio *audio, const RSConfig* config);
 static void rsAudioEncoderPrepareFrame(RSAudioEncoder *audioenc);
+
+extern sig_atomic_t mainRunning;
+extern sig_atomic_t wantToSave;
 
 int rsAudioCreate(RSAudio *audio, const RSConfig *config) {
    int error;
@@ -53,19 +57,6 @@ int rsAudioCreate(RSAudio *audio, const RSConfig *config) {
    return 1;
 }
 
-void rsAudioReadSamples(RSAudio *audio) {
-   int error;
-   int ret = pa_simple_read(audio->pa_api, audio->data + audio->index, audio->sizebatch,
-                        &error);
-   if (ret < 0) {
-      rsError("PulseAudio: pa_simple_read() failed: %s", pa_strerror(error));
-      return;
-   }
-   audio->index += audio->sizebatch;
-   if (audio->index >= audio->size) {
-      audio->index -= audio->size;
-   }
-}
 
 void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSAudio *audio, size_t rewindframes) {
 	*audioenc = audio->audioenc;
@@ -134,6 +125,28 @@ void rsAudioEncodeFrame(RSAudioEncoder *audioenc, uint8_t *out, int *num_of_byte
    }
    *num_of_bytes = oargs.numOutBytes;
    *num_of_samples = iargs.numInSamples;
+}
+
+void *rsAudioThread(void *data) {
+   RSAudio *audio = (RSAudio *)data;
+   while (!wantToSave && mainRunning) {
+      rsAudioReadSamples(audio);
+   }
+   return 0;
+}
+
+static void rsAudioReadSamples(RSAudio *audio) {
+   int error;
+   int ret = pa_simple_read(audio->pa_api, audio->data + audio->index, audio->sizebatch,
+                        &error);
+   if (ret < 0) {
+      rsError("PulseAudio: pa_simple_read() failed: %s", pa_strerror(error));
+      return;
+   }
+   audio->index += audio->sizebatch;
+   if (audio->index >= audio->size) {
+      audio->index -= audio->size;
+   }
 }
 
 static void rsAudioPrepareEncoder(RSAudio *audio, const RSConfig* config) {

@@ -27,8 +27,8 @@
 #include "util/log.h"
 #include <signal.h>
 
-static sig_atomic_t mainRunning = true;
-static sig_atomic_t want_to_save = false;
+sig_atomic_t mainRunning = true;
+sig_atomic_t wantToSave = false;
 
 static void mainSignal(int signal) {
    const char *error = NULL;
@@ -53,37 +53,6 @@ static void mainSignal(int signal) {
    }
 }
 
-typedef struct thread_video_data {
-   RSConfig *config;
-   RSSystem *system;
-   RSCompress *compress;
-   RSBufferCircle *circle;
-} thread_video_data;
-
-typedef struct thread_audio_data {
-   RSAudio *audio;
-} thread_audio_data;
-
-void *thread_video(void *data) {
-   want_to_save = false;
-   thread_video_data *vd = (thread_video_data *)data;
-   while (!rsSystemWantsSave(vd->system)) {
-      RSFrame frame = {0};
-      rsSystemFrameCreate(&frame, vd->system);
-      rsCompress(vd->compress, rsBufferCircleNext(vd->circle), &frame);
-      rsFrameDestroy(&frame);
-   }
-   want_to_save = true;
-   return 0;
-}
-
-void *thread_audio(void *data) {
-   thread_audio_data *ad = (thread_audio_data *)data;
-   while (!want_to_save) {
-      rsAudioReadSamples(ad->audio);
-   }
-   return 0;
-}
 
 int main(int argc, char *argv[]) {
    (void)argc;
@@ -98,38 +67,42 @@ int main(int argc, char *argv[]) {
    rsLog("This is free software, and you are welcome to redistribute it");
    rsLog("under certain conditions; see COPYING for details.");
 
+   pthread_t athread;
+   
    RSConfig config;
    RSSystem system;
    RSCompress compress;
    RSBufferCircle circle;
    RSOutput output = {0};
+   RSAudio audio;
    rsConfigLoad(&config);
    // We have to call this one first since it might change the config width/height
    rsXlibSystemCreate(&system, &config);
    rsCompressCreate(&compress, &config);
    size_t capacity = (size_t)(config.duration * config.framerate);
    rsBufferCircleCreate(&circle, capacity);
-
-   RSAudio audio;
    rsAudioCreate(&audio, &config);
 
-   pthread_t vthread;
-   pthread_t athread;
 
-   thread_video_data vtd = {
-       .config = &config, .system = &system, .compress = &compress, .circle = &circle};
-
-   thread_audio_data atd = {.audio = &audio};
-
-   while (mainRunning) {
-      pthread_create(&vthread, NULL, &thread_video, &vtd);
-      pthread_create(&athread, NULL, &thread_audio, &atd);
-
-      pthread_join(vthread, NULL);
+   for (;;) {
+      pthread_create(&athread, NULL, &rsAudioThread, &audio);
+      while (!rsSystemWantsSave(&system) && mainRunning) {
+      	RSFrame frame = {0};
+      	rsSystemFrameCreate(&frame, &system);
+      	rsCompress(&compress, rsBufferCircleNext(&circle), &frame);
+      	rsFrameDestroy(&frame);
+      }
+      wantToSave = true;
       pthread_join(athread, NULL);
+
+      if (!mainRunning) {
+      	break;
+      }
+      
       rsOutputDestroy(&output);
       rsOutputCreate(&output, &config, &audio);
       rsOutput(&output, &circle);
+      wantToSave = false;
    }
 
    rsOutputDestroy(&output);

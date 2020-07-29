@@ -142,7 +142,7 @@ static void *outputThread(void *data) {
       x264_encoder_encode(x264, &nals, &nalCount, &inPic, &outPic);
       outputNals(&track, nals, nalCount, duration);
       
-      ts += OUTPUT_TIMEBASE / output->config.framerate;
+      ts += OUTPUT_TIMEBASE / output->config->framerate;
       while (ats < ts) {
          uint8_t buf[2048*10];
 	 int num_of_bytes = 0;
