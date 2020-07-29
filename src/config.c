@@ -61,7 +61,7 @@ static void configSize(void *param, const char *value) {
    int *num = param;
    configInt(num, value);
    if (*num < 2 || *num % 2 != 0) {
-      rsError("Config value '%s' must be positive and divisible by 2");
+      rsError("Config value '%s' must be positive and divisible by 2", value);
    }
 }
 
