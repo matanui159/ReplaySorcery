@@ -21,6 +21,8 @@
 #define RS_UTIL_STRING_H
 #include "../std.h"
 
+char *rsStringClone(const char *str);
+char *rsStringTrim(char *str);
 char *rsStringTrimStart(char *str);
 char *rsStringTrimEnd(char *str);
 char *rsStringSplit(char **str, char c);

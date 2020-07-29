@@ -20,6 +20,7 @@
 #include "xlib.h"
 #include "../util/log.h"
 #include "../util/memory.h"
+#include "../util/string.h"
 #include "framerate.h"
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -162,9 +163,33 @@ bool rsXlibSystemCreate(RSSystem *system, RSConfig *config) {
       rsError("Recording rectangle does not fit X11 screen");
    }
 
-   int key = XKeysymToKeycode(extra->display, XK_R);
-   // Ctrl and Super (Mod4) keys
-   unsigned mods = ControlMask | Mod4Mask;
+   // Figure out the key and mods to use
+   int key = 0;
+   unsigned mods = 0;
+   char *keyCombo = rsStringClone(config->keyCombo);
+   char *keyString;
+   while ((keyString = rsStringSplit(&keyCombo, '+'))) {
+      keyString = rsStringTrim(keyString);
+      if (keyCombo == NULL) {
+         // This is the last split so it must be the key
+         KeySym symbol = XStringToKeysym(keyString);
+         if (symbol == NoSymbol) {
+            rsError("Unknown key name '%s'", keyString);
+         }
+         key = XKeysymToKeycode(extra->display, symbol);
+      } else if (strcmp(keyString, "Ctrl") == 0) {
+         mods |= ControlMask;
+      } else if (strcmp(keyString, "Shift") == 0) {
+         mods |= ShiftMask;
+      } else if (strcmp(keyString, "Alt") == 0) {
+         mods |= Mod1Mask;
+      } else if (strcmp(keyString, "Super") == 0) {
+         mods |= Mod4Mask;
+      } else {
+         rsError("Unknown key modifier name '%s'", keyString);
+      }
+   }
+   rsMemoryDestroy(keyCombo);
    xlibSystemGrabKey(extra, key, mods);
    // Also need to register when Capslock or Numlock (Mod2) is enabled
    xlibSystemGrabKey(extra, key, mods | LockMask);

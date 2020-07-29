@@ -72,9 +72,7 @@ static void configSize(void *param, const char *value) {
 static void configString(void *param, const char *value) {
    char **str = param;
    rsMemoryDestroy(*str);
-   size_t size = strlen(value) + 1;
-   *str = rsMemoryCreate(size);
-   memcpy(*str, value, size);
+   *str = rsStringClone(value);
 }
 
 // Remember to update `replay-sorcery.default.conf`
@@ -86,6 +84,7 @@ static const ConfigParam configParams[] = {
     CONFIG_PARAM(framerate, configPos, "30"),
     CONFIG_PARAM(duration, configPos, "30"),
     CONFIG_PARAM(compressQuality, configPos, "70"),
+    CONFIG_PARAM(keyCombo, configString, "Ctrl+Shift+R"),
     CONFIG_PARAM(outputFile, configString, "~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4"),
     CONFIG_PARAM(preOutputCommand, configString, ""),
     CONFIG_PARAM(postOutputCommand, configString,
@@ -106,12 +105,12 @@ static void configSet(RSConfig *config, const char *key, const char *value) {
 }
 
 static void configLoadLine(RSConfig *config, char *line) {
-   line = rsStringTrimEnd(rsStringTrimStart(line));
    // Remove comment
    char *comment = strchr(line, '#');
    if (comment != NULL) {
       *comment = '\0';
    }
+   line = rsStringTrim(line);
    if (*line == '\0') {
       return;
    }
@@ -172,15 +171,12 @@ void rsConfigLoad(RSConfig *config) {
    if (dirs == NULL) {
       dirs = "/etc/xdg";
    }
-   // Make a copy so we can modify it
-   size_t size = strlen(dirs) + 1;
-   char buffer[size];
-   memcpy(buffer, dirs, size);
-   char *ptr = buffer;
+   char *dirsClone = rsStringClone(dirs);
    char *dir;
-   while ((dir = rsStringSplit(&ptr, ':')) != NULL) {
+   while ((dir = rsStringSplit(&dirsClone, ':')) != NULL) {
       configLoadFile(config, dir);
    }
+   rsMemoryDestroy(dirsClone);
 
    // User config
    const char *home = getenv("XDG_CONFIG_HOME");
@@ -197,7 +193,7 @@ void rsConfigDestroy(RSConfig *config) {
    // Destroy all strings (config options using `configString`)
    for (size_t i = 0; i < CONFIG_PARAMS_SIZE; ++i) {
       if (configParams[i].set == configString) {
-         void **param = (void **)((char *)config + configParams[i].offset);
+         char **param = (char **)((char *)config + configParams[i].offset);
          rsMemoryDestroy(*param);
       }
    }

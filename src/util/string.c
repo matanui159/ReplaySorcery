@@ -21,6 +21,17 @@
 #include "memory.h"
 #include <ctype.h>
 
+char *rsStringClone(const char *str) {
+   size_t size = strlen(str) + 1;
+   char *clone = rsMemoryCreate(size);
+   memcpy(clone, str, size);
+   return clone;
+}
+
+char *rsStringTrim(char *str) {
+   return rsStringTrimEnd(rsStringTrimStart(str));
+}
+
 char *rsStringTrimStart(char *str) {
    while (isspace(*str)) {
       ++str;

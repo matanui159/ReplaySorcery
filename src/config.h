@@ -31,6 +31,7 @@ typedef struct RSConfig {
    int framerate;
    int duration;
    int compressQuality;
+   char *keyCombo;
    char *outputFile;
    char *preOutputCommand;
    char *postOutputCommand;
