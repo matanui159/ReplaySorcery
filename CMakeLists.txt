@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(ReplaySorcery VERSION 0.2.5)
+project(ReplaySorcery VERSION 0.2.6)
 include(CheckCCompilerFlag)
 include(ExternalProject)
 
