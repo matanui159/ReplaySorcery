@@ -20,7 +20,7 @@
 #ifndef RS_UTIL_AUDIO_H
 #define RS_UTIL_AUDIO_H
 
-#include "../config.h"
+#include "config.h"
 #include <fdk-aac/aacenc_lib.h>
 #include <pulse/error.h>
 #include <pulse/simple.h>

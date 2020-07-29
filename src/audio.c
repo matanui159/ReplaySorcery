@@ -18,8 +18,8 @@
  */
 
 #include "audio.h"
-#include "log.h"
-#include "memory.h"
+#include "util/log.h"
+#include "util/memory.h"
 
 static void rsAudioReadSamples(RSAudio *audio);
 static void rsAudioPrepareEncoder(RSAudio *audio, const RSConfig* config);
@@ -49,7 +49,7 @@ int rsAudioCreate(RSAudio *audio, const RSConfig *config) {
 
    audio->sizebatch = size_per_frame;
    audio->size = size_total;
-   audio->data = rsMemoryCreate(size_total);//malloc(size_total);
+   audio->data = rsMemoryCreate(size_total);
    audio->index = 0;
    audio->channels = config->audioChannels;
    audio->bitrate = config->audioBitrate;

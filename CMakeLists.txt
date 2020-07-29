@@ -12,10 +12,10 @@ set(sources
    src/util/path.c
    src/util/string.c
    src/util/frame.c
-   src/util/audio.c
    src/system/system.c
    src/system/framerate.c
    src/system/xlib.c
+   src/audio.c
    src/config.c
    src/compress.c
    src/mp4.c
@@ -34,6 +34,7 @@ set(headers
    src/system/system.h
    src/system/framerate.h
    src/system/xlib.h
+   src/audio.h
    src/config.h
    src/compress.h
    src/output.h

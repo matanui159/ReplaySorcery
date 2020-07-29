@@ -19,9 +19,9 @@
 
 #ifndef RS_OUTPUT_H
 #define RS_OUTPUT_H
+#include "audio.h"
 #include "config.h"
 #include "std.h"
-#include "util/audio.h"
 #include "util/buffer.h"
 #include "util/circle.h"
 #include <pthread.h>

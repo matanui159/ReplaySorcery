@@ -17,12 +17,12 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "audio.h"
 #include "compress.h"
 #include "config.h"
 #include "output.h"
 #include "std.h"
 #include "system/xlib.h"
-#include "util/audio.h"
 #include "util/circle.h"
 #include "util/log.h"
 #include <signal.h>
