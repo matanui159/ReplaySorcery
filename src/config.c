@@ -49,6 +49,22 @@ static void configInt(void *param, const char *value) {
    *num = (int)ret;
 }
 
+static void configPos(void *param, const char *value) {
+   int *num = param;
+   configInt(num, value);
+   if (*num < 0) {
+      rsError("Config value '%s' must be positive", value);
+   }
+}
+
+static void configSize(void *param, const char *value) {
+   int *num = param;
+   configInt(num, value);
+   if (*num < 2 || *num % 2 != 0) {
+      rsError("Config value '%s' must be positive and divisible by 2");
+   }
+}
+
 static void configString(void *param, const char *value) {
    char **str = param;
    rsMemoryDestroy(*str);
@@ -59,13 +75,13 @@ static void configString(void *param, const char *value) {
 
 // Remember to update `replay-sorcery.default.conf`
 static const ConfigParam configParams[] = {
-    CONFIG_PARAM(offsetX, configInt, "0"),
-    CONFIG_PARAM(offsetY, configInt, "0"),
-    CONFIG_PARAM(width, configInt, "1920"),
-    CONFIG_PARAM(height, configInt, "1080"),
-    CONFIG_PARAM(framerate, configInt, "30"),
-    CONFIG_PARAM(duration, configInt, "30"),
-    CONFIG_PARAM(compressQuality, configInt, "70"),
+    CONFIG_PARAM(offsetX, configPos, "0"),
+    CONFIG_PARAM(offsetY, configPos, "0"),
+    CONFIG_PARAM(width, configSize, "1920"),
+    CONFIG_PARAM(height, configSize, "1080"),
+    CONFIG_PARAM(framerate, configPos, "30"),
+    CONFIG_PARAM(duration, configPos, "30"),
+    CONFIG_PARAM(compressQuality, configPos, "70"),
     CONFIG_PARAM(outputFile, configString, "~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4"),
     CONFIG_PARAM(preOutputCommand, configString, ""),
     CONFIG_PARAM(postOutputCommand, configString,
@@ -171,13 +187,15 @@ void rsConfigLoad(RSConfig *config) {
 
    // Relative config
    configLoadFile(config, ".");
-
-   if (config->width % 2 != 0 || config->height % 2 != 0) {
-      rsError("Only frame sizes divisable by 2 are supported");
-   }
 }
 
 void rsConfigDestroy(RSConfig *config) {
-   rsMemoryDestroy(config->outputFile);
+   // Destroy all strings (config options using `configString`)
+   for (size_t i = 0; i < CONFIG_PARAMS_SIZE; ++i) {
+      if (configParams[i].set == configString) {
+         void **param = (void**)((char *)config + configParams[i].offset);
+         rsMemoryDestroy(*param);
+      }
+   }
    rsMemoryClear(config, sizeof(RSConfig));
 }
