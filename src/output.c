@@ -106,7 +106,7 @@ static void *outputThread(void *data) {
    MP4E_set_dsi(muxer, audio_track_id, audioenc.aac_info.confBuf, audioenc.aac_info.confSize);
    int64_t ts = 0;
    int64_t ats = 0;
-   //int64_t bts = OUTPUT_TIMEBASE / output->config->audioSamplerate;
+   int64_t tsinc = (OUTPUT_TIMEBASE / output->config->audioSamplerate) / output->config->audioChannels;
    int samples_count = 0;
 
    RSFrame frame, yFrame, uFrame, vFrame;
@@ -143,7 +143,7 @@ static void *outputThread(void *data) {
       x264_encoder_encode(x264, &nals, &nalCount, &inPic, &outPic);
       outputNals(&track, nals, nalCount, duration);
       
-      ts += OUTPUT_TIMEBASE / output->config->framerate;
+      ts += (OUTPUT_TIMEBASE / output->config->framerate) * output->config->audioChannels;
       while (ats < ts) {
          uint8_t buf[2048*10];
 	 int num_of_bytes = 0;
@@ -152,8 +152,8 @@ static void *outputThread(void *data) {
          samples_count += num_of_samples;
          ats = (int64_t)samples_count * OUTPUT_TIMEBASE / output->config->audioSamplerate;
          if (MP4E_STATUS_OK != MP4E_put_sample(muxer, audio_track_id, buf, num_of_bytes,
-                                               num_of_samples * OUTPUT_TIMEBASE / output->config->audioSamplerate,
-                                               MP4E_SAMPLE_RANDOM_ACCESS)) {
+                (num_of_samples / output->config->audioChannels) * OUTPUT_TIMEBASE / output->config->audioSamplerate,
+                MP4E_SAMPLE_RANDOM_ACCESS)) {
             rsError("MP4E_put_sample failed\n");
          }
       }
