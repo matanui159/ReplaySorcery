@@ -20,6 +20,7 @@
 #include "compress.h"
 #include "config.h"
 #include "output.h"
+#include "audio.h"
 #include "std.h"
 #include "system/xlib.h"
 #include "util/circle.h"
@@ -69,12 +70,14 @@ int main(int argc, char *argv[]) {
    RSCompress compress;
    RSBufferCircle circle;
    RSOutput output = {0};
+   RSAudio audio;
    rsConfigLoad(&config);
    // We have to call this one first since it might change the config width/height
    rsXlibSystemCreate(&system, &config);
    rsCompressCreate(&compress, &config);
    size_t capacity = (size_t)(config.duration * config.framerate);
    rsBufferCircleCreate(&circle, capacity);
+   rsAudioCreate(&audio, &config);
 
    while (mainRunning) {
       RSFrame frame;
@@ -82,8 +85,9 @@ int main(int argc, char *argv[]) {
       rsCompress(&compress, rsBufferCircleNext(&circle), &frame);
       rsFrameDestroy(&frame);
       if (rsSystemWantsSave(&system)) {
+      rsLog("kek");
          rsOutputDestroy(&output);
-         rsOutputCreate(&output, &config);
+         rsOutputCreate(&output, &config, &audio);
          rsOutput(&output, &circle);
       }
    }

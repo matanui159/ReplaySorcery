@@ -15,6 +15,7 @@ set(sources
    src/system/system.c
    src/system/framerate.c
    src/system/xlib.c
+   src/audio.c
    src/config.c
    src/compress.c
    src/mp4.c
@@ -33,6 +34,7 @@ set(headers
    src/system/system.h
    src/system/framerate.h
    src/system/xlib.h
+   src/audio.h
    src/config.h
    src/compress.h
    src/output.h
@@ -125,6 +127,9 @@ add_dependencies(${binary} x264)
 ExternalProject_Get_Property(x264 INSTALL_DIR)
 target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
 target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libx264.a" m)
+
+# sdl2 for audio
+target_link_libraries(${binary} PRIVATE SDL2 fdk-aac)
 
 # Minimp4 header-only git submodule
 target_include_directories(${binary} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/dep/minimp4")

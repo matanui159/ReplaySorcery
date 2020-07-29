@@ -20,6 +20,7 @@
 #ifndef RS_OUTPUT_H
 #define RS_OUTPUT_H
 #include "config.h"
+#include "audio.h"
 #include "std.h"
 #include "util/buffer.h"
 #include "util/circle.h"
@@ -27,13 +28,14 @@
 
 typedef struct RSOutput {
    const RSConfig *config;
+   RSAudio *audio;
    FILE *file;
    RSBuffer frames;
    size_t frameCount;
    pthread_t thread;
 } RSOutput;
 
-void rsOutputCreate(RSOutput *output, const RSConfig *config);
+void rsOutputCreate(RSOutput *output, const RSConfig *config, RSAudio *audio);
 void rsOutputDestroy(RSOutput *output);
 void rsOutput(RSOutput *output, const RSBufferCircle *frames);
 

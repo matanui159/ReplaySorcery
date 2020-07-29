@@ -89,6 +89,25 @@ static void *outputThread(void *data) {
    mp4_h26x_write_init(&track, muxer, output->config->width, output->config->height,
                        false);
 
+   //setup for audio encoding
+   RSAudioEncoder audioenc;
+   rsAudioEncoderCreate(&audioenc, output->audio, output->frameCount);
+   MP4E_track_t tr;
+   tr.track_media_kind = e_audio;
+   tr.language[0] = 'u';
+   tr.language[1] = 'n';
+   tr.language[2] = 'd';
+   tr.language[3] = 0;
+   tr.object_type_indication = MP4_OBJECT_TYPE_AUDIO_ISO_IEC_14496_3;
+   tr.time_scale = OUTPUT_TIMEBASE;
+   tr.default_duration = 0;
+   tr.u.a.channelcount = output->audio->channels;
+   int audio_track_id = MP4E_add_track(muxer, &tr);
+   MP4E_set_dsi(muxer, audio_track_id, audioenc.aac_info.confBuf, audioenc.aac_info.confSize);
+   int64_t ts = 0;
+   int64_t ats = 0;
+   int samples_count = 0;
+   
    RSFrame frame, yFrame, uFrame, vFrame;
    rsFrameCreate(&frame, (size_t)output->config->width, (size_t)output->config->height,
                  3);
@@ -122,6 +141,21 @@ static void *outputThread(void *data) {
       inPic.i_pts = (int64_t)(duration * i);
       x264_encoder_encode(x264, &nals, &nalCount, &inPic, &outPic);
       outputNals(&track, nals, nalCount, duration);
+      
+      ts += OUTPUT_TIMEBASE / output->config->framerate;
+      while (ats < ts) {
+         uint8_t buf[2048*10];
+	 int num_of_bytes = 0;
+	 int num_of_samples = 0;
+         rsAudioEncodeFrame(&audioenc, buf, &num_of_bytes, &num_of_samples);
+         samples_count += num_of_samples;
+         ats = (int64_t)samples_count * OUTPUT_TIMEBASE / AUDIO_RATE;
+         if (MP4E_STATUS_OK != MP4E_put_sample(muxer, audio_track_id, buf, num_of_bytes,
+                                               num_of_samples * OUTPUT_TIMEBASE / AUDIO_RATE,
+                                               MP4E_SAMPLE_RANDOM_ACCESS)) {
+            rsError("MP4E_put_sample failed\n");
+         }
+      }
    }
    while (x264_encoder_delayed_frames(x264) > 0) {
       x264_encoder_encode(x264, &nals, &nalCount, NULL, &outPic);
@@ -140,13 +174,15 @@ static void *outputThread(void *data) {
    rsFrameDestroy(&frame);
    rsDecompressDestroy(&decompress);
    rsBufferDestroy(&output->frames);
+   rsAudioEncoderDestroy(&audioenc);
 
    outputCommand(output->config->postOutputCommand);
    return NULL;
 }
 
-void rsOutputCreate(RSOutput *output, const RSConfig *config) {
+void rsOutputCreate(RSOutput *output, const RSConfig *config, RSAudio *audio) {
    output->config = config;
+   output->audio = audio;
    RSBuffer path;
    rsBufferCreate(&path);
    rsPathAppendDated(&path, config->outputFile);
