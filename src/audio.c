@@ -46,13 +46,10 @@ int rsAudioCreate(RSAudio *audio, const RSConfig *config) {
    size_t size_1s = pa_bytes_per_second(&ss);
    size_t size_per_frame = size_1s / (unsigned)config->framerate;
    size_t size_total = size_1s * (unsigned)config->duration;
-
    audio->sizebatch = size_per_frame;
    audio->size = size_total;
    audio->data = rsMemoryCreate(size_total);
    audio->index = 0;
-   audio->channels = config->audioChannels;
-   audio->bitrate = config->audioBitrate;
    rsAudioPrepareEncoder(audio, config);
    return 1;
 }
@@ -106,7 +103,7 @@ void rsAudioEncodeFrame(RSAudioEncoder *audioenc, uint8_t *out, int *num_of_byte
    int oidentifiers = OUT_BITSTREAM_DATA;
    int oelsizes = 1;
 
-   iargs.numInSamples = audioenc->aac_info.frameLength * AUDIO_CHANNELS;
+   iargs.numInSamples = audioenc->samples_per_frame;
    ibuf.numBufs = 1;
    ibuf.bufs = &iptr;
    ibuf.bufferIdentifiers = &iidentifiers;
@@ -150,20 +147,23 @@ static void rsAudioReadSamples(RSAudio *audio) {
 }
 
 static void rsAudioPrepareEncoder(RSAudio *audio, const RSConfig* config) {
-   aacEncOpen(&(audio->audioenc.aac_enc), 0, 0);
-   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_TRANSMUX, 0);
-   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_AFTERBURNER, 1);
-   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_BITRATE, AUDIO_BITRATE);
-   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_SAMPLERATE, AUDIO_RATE);
-   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_CHANNELMODE, config->audioChannels);
-   aacEncEncode(audio->audioenc.aac_enc, NULL, NULL, NULL, NULL);
-   aacEncInfo(audio->audioenc.aac_enc, &(audio->audioenc.aac_info));
+   RSAudioEncoder* audioenc = &audio->audioenc;
+   
+   aacEncOpen(&(audioenc->aac_enc), 0, 0);
+   aacEncoder_SetParam(audioenc->aac_enc, AACENC_TRANSMUX, 0);
+   aacEncoder_SetParam(audioenc->aac_enc, AACENC_AFTERBURNER, 1);
+   aacEncoder_SetParam(audioenc->aac_enc, AACENC_BITRATE, config->audioBitrate);
+   aacEncoder_SetParam(audioenc->aac_enc, AACENC_SAMPLERATE, config->audioSamplerate);
+   aacEncoder_SetParam(audioenc->aac_enc, AACENC_CHANNELMODE, config->audioChannels);
+   aacEncEncode(audioenc->aac_enc, NULL, NULL, NULL, NULL);
+   aacEncInfo(audioenc->aac_enc, &(audio->audioenc.aac_info));
 
-   audio->audioenc.data = 0;
-   audio->audioenc.frame = 0;
-   audio->audioenc.size = audio->size;
-   audio->audioenc.frame_size = audio->audioenc.aac_info.frameLength * audio->channels * sizeof(uint16_t);
-   audio->audioenc.index = 0;
+   audioenc->data = 0;
+   audioenc->frame = 0;
+   audioenc->index = 0;
+   audioenc->size = audio->size;
+   audioenc->samples_per_frame = audioenc->aac_info.frameLength * config->audioChannels;
+   audioenc->frame_size = audioenc->samples_per_frame * sizeof(uint16_t);
 }
 
 static void rsAudioEncoderPrepareFrame(RSAudioEncoder *audioenc) {

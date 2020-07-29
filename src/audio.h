@@ -25,25 +25,20 @@
 #include <pulse/error.h>
 #include <pulse/simple.h>
 
-#define AUDIO_RATE 44100
-#define AUDIO_CHANNELS 1
-#define AUDIO_BITRATE 96000
-
 typedef struct RSAudioEncoder {
    HANDLE_AACENCODER aac_enc;
    AACENC_InfoStruct aac_info;
    uint8_t *data;
    uint8_t *frame;
    size_t size;
-   size_t frame_size;
    size_t index;
+   size_t frame_size;
+   size_t samples_per_frame;
 } RSAudioEncoder;
 
 
 typedef struct RSAudio {
    pa_simple *pa_api;
-   uint32_t bitrate;
-   uint8_t channels;
    uint8_t *data;
    size_t size;
    size_t index;
