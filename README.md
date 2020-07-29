@@ -53,27 +53,37 @@ The config files use the [XDG base directory specification](https://specificatio
 - `~/.config/replay-sorcery.conf`
 - `./replay-sorcery.conf`
 
-The configuration files themselves are simple `<key> = <value> # <optional comment>` pairs. The available options are:
-| Key                 | Description                                                                                                   | Default                                    |
-| ------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| `offsetX`           | This, along with `offsetY`, `width` and `height` specify the rectangle of the display to read frames from.    | 0                                          |
-| `offsetY`           | See `offsetX`.                                                                                                | 0                                          |
-| `width`             | See `offsetX`. Set to `auto` to grab the whole display.                                                       | auto                                       |
-| `height`            | See `offsetX`. Set to `auto` to grab the whole display.                                                       | auto                                       |
-| `framerate`         | The framerate in which to record frames.                                                                      | 30                                         |
-| `duration`          | The duration to record when saving, in seconds.                                                               | 30                                         |
-| `compressQuality`   | A value from 0-100 specifying the quality to use for JPEG compression. This value greatly affects memory usage. | 70                                       |
-| `outputFile`        | The output file path to save to. Uses [strftime](https://en.cppreference.com/w/c/chrono/strftime) formatting. | `~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4`   |
-| `preOutputCommand`  | A command to run before generating the output video. Can be empty for no command.                             | <empty string>                             |
-| `postOutputCommand` | A command to run after generating the output video.                                                           | `notify-send ReplaySorcery :Video saved!"` |
+The configuration files themselves are simple `<key> = <value> # <optional comment>` pairs. An example config could be:
 
-As an example configuration, here is the configuration I use (my primary monitor is a 1440p monitor which is to the right of a 1080p monitor):
 ```
-offsetX = 1920
+# 1440p monitor...
 width = 2560
 height = 1440
+
+# ...to the right of a 1080p monitor
+offsetX = 1920
+
+# Reduce memory usage
+compressQuality = 50
+
+# Output files into their own folder
 outputFile = ~/Videos/ReplaySorcery/%F_%H-%M-%S.mp4
 ```
+
+### `offsetX`, `offsetY`, `width`, and `height`
+These four options work together to specify the rectangle of the display to grab frames from. This allows you to select which monitor to read from or potentially just read part of a monitor. `width` and `height` can be set to `auto` to specify the whole screen. Default is 0, 0, `auto`, and `auto` respectively.
+
+### `framerate` and `duration`
+`framerate` is the framerate to record at while `duration` is the maximum duration of the replay buffer in seconds, before it starts to overwrite itself. Together they create the maximum size of the replay buffer (`framerate * duration`). Default is 30 and 30 respectively.
+
+### `compressQuality`
+A value from 1-100 to specify the JPEG compression quality. Don't be afraid to lower this value for higher resolutions. The quality loss isn't that noticable most of the time and it greatly reduces the memory usage. Default is 70.
+
+### `outputFile`
+The path to output the videos to. Can use [`strftime`](https://en.cppreference.com/w/c/chrono/strftime) formatting. If you care about folder organization it is probably a good idea to make ReplaySorcery output into a subfolder inside `Videos`, for example `~/Videos/ReplaySorcery/%F_%H-%M-%S.mp4`. This is not the default since currently ReplaySorcery cannot create folders and thus you have to make sure the folder exists before hand. Default is `~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4`.
+
+### `preOutputCommand` and `postOutputCommand`
+These options can be used to run commands before or after outputting a video, for instance generating notifications, playing sounds or running post processing. Failures from these commands do not stop ReplaySorcery. The default is setup to show a notification when the output is finished, but it requires `libnotify` to be installed. Default is an empty string and `notify-send ReplaySorcery "Video saved!"` respectively.
 
 # Issues
 - Code is a bit of a mess <_<
