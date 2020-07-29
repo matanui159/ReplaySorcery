@@ -16,7 +16,7 @@ You might notice that this uses JPEG to encode frames. Initially the plan was to
 - the inital encoding of the frames can be cheap and is more a form a memory-compression
 - turns out that an image format from 1992 is very easy for modern computers
 
-Thus, this program _does_ use JPEG (specifically `libjpeg-turbo`) for encoding frames, but then switches to `x264` when you want to save it.
+Thus, this program _does_ use JPEG (specifically `libjpeg-turbo`) for encoding frames, but then switches to `x264` when you want to save it. The compressed frames are stored temporarily in memory inside a circle buffer which will automatically grow and shrink depending on the compressability of the frames, while also allowing space for future growth without many resizes.
 
 # Documentation
 ## Installing
@@ -62,7 +62,7 @@ The configuration files themselves are simple `<key> = <value> # <optional comme
 | `height`            | See `offsetX`. Set to `auto` to grab the whole display.                                                       | auto                                       |
 | `framerate`         | The framerate in which to record frames.                                                                      | 30                                         |
 | `duration`          | The duration to record when saving, in seconds.                                                               | 30                                         |
-| `compressQuality`   | A value from 0-100 specifying the quality to use for JPEG compression                                         | 70                                         |
+| `compressQuality`   | A value from 0-100 specifying the quality to use for JPEG compression. This value greatly affects memory usage. | 70                                       |
 | `outputFile`        | The output file path to save to. Uses [strftime](https://en.cppreference.com/w/c/chrono/strftime) formatting. | `~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4`   |
 | `preOutputCommand`  | A command to run before generating the output video. Can be empty for no command.                             | <empty string>                             |
 | `postOutputCommand` | A command to run after generating the output video.                                                           | `notify-send ReplaySorcery :Video saved!"` |
