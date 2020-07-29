@@ -21,7 +21,7 @@
 #define RS_UTIL_LOG_H
 #include "../std.h"
 
-void rsLog(const char* fmt, ...);
-void rsError(const char* fmt, ...);
+void rsLog(const char *fmt, ...);
+void rsError(const char *fmt, ...);
 
 #endif

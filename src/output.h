@@ -19,10 +19,10 @@
 
 #ifndef RS_OUTPUT_H
 #define RS_OUTPUT_H
+#include "config.h"
 #include "std.h"
 #include "util/buffer.h"
 #include "util/circle.h"
-#include "config.h"
 #include <pthread.h>
 
 typedef struct RSOutput {

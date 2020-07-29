@@ -33,6 +33,7 @@ typedef struct RSFrame {
 
 void rsFrameCreate(RSFrame *frame, size_t width, size_t height, size_t strideX);
 void rsFrameDestroy(RSFrame *frame);
-void rsFrameConvertI420(const RSFrame *frame, RSFrame *yFrame, RSFrame *uFrame, RSFrame *vFrame);
+void rsFrameConvertI420(const RSFrame *frame, RSFrame *yFrame, RSFrame *uFrame,
+                        RSFrame *vFrame);
 
 #endif

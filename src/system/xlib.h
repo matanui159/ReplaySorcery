@@ -19,8 +19,8 @@
 
 #ifndef RS_SYSTEM_XCB_H
 #define RS_SYSTEM_XCB_H
-#include "../std.h"
 #include "../config.h"
+#include "../std.h"
 #include "system.h"
 
 bool rsXlibSystemCreate(RSSystem *system, const RSConfig *config);

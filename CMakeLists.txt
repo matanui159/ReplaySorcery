@@ -21,6 +21,22 @@ set(sources
    src/output.c
    src/main.c
 )
+set(headers
+   src/std.h
+   src/util/log.h
+   src/util/memory.h
+   src/util/buffer.h
+   src/util/circle.h
+   src/util/path.h
+   src/util/string.h
+   src/util/frame.h
+   src/system/system.h
+   src/system/framerate.h
+   src/system/xlib.h
+   src/config.h
+   src/compress.h
+   src/output.h
+)
 
 add_executable(${binary} ${sources})
 set_property(TARGET ${binary} PROPERTY C_STANDARD 99)
@@ -116,7 +132,7 @@ set_property(SOURCE src/mp4.c PROPERTY COMPILE_FLAGS -w)
 
 # Clang format target to make formatting easy
 add_custom_target(clang-format
-   COMMAND clang-format -i ${sources}
+   COMMAND clang-format -i ${sources} ${headers}
    SOURCES ${sources}
    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )

@@ -19,10 +19,10 @@
 
 #ifndef RS_COMPRESS_H
 #define RS_COMPRESS_H
+#include "config.h"
 #include "std.h"
 #include "util/buffer.h"
 #include "util/frame.h"
-#include "config.h"
 #include <jpeglib.h>
 
 typedef struct RSCompressDestination {
