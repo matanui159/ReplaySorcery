@@ -38,15 +38,19 @@ int rsAudioCreate(RSAudio* audio, const RSConfig *config) {
 		return 0;
 	}
 	size_t size_1s = pa_bytes_per_second(&ss);
+	size_t size_per_frame = size_1s / config->framerate;
 	size_t size_total = size_1s * config->duration;
-	audio->one_second_size = size_1s;
+
+	audio->frame_size = size_per_frame;
 	audio->size = size_total;
-	audio->data = malloc(size_total + 1024);
-	if (!audio->data) {
+	audio->data = malloc(size_total);
+	audio->encoder_data = malloc(size_total);
+	if (!audio->data || !audio->encoder_data) {
 		printf("audio malloc failed\n");
 		exit(1);
 	}
 	audio->index = 0;
+	audio->encoder_index = 0;
 	rsAudioPrepareEncoder(audio);
 	return 1;
 }
@@ -64,32 +68,27 @@ static void rsAudioPrepareEncoder(RSAudio* audio) {
 
 static void rsAudioGetSampleData(RSAudio* audio, uint8_t* dst, size_t size) {
 	size_t first_copy_size = size;
-	size_t end_of_data = audio->index + size;
-	int diff = audio->size - first_copy_size;
+	size_t end_of_data = audio->encoder_index + size;
+	int diff = audio->size - end_of_data;
 	if (diff >= 0) {
-		memcpy(dst, audio->data + audio->index, first_copy_size);
-		audio->index += first_copy_size;
+		memcpy(dst, audio->encoder_data + audio->encoder_index, first_copy_size);
+		audio->encoder_index += first_copy_size;
 		return;
 	}
 	first_copy_size += diff;
-	memcpy(dst, audio->data + audio->index, first_copy_size);
-	memcpy(dst + first_copy_size, audio->data, -diff);
-	audio->index = -diff;
+	memcpy(dst, audio->encoder_data + audio->encoder_index, first_copy_size);
+	memcpy(dst + first_copy_size, audio->encoder_data, -diff);
+	audio->encoder_index = -diff;
 }
 
 void rsAudioRewindBuffer(RSAudio* audio, int frames, int framerate) {
-	//TODO
-	(void)frames;
-	(void)framerate;
-	audio->index = 0;
-}
-
-static size_t rsAudioNextSampleIndex(RSAudio* audio, size_t samples_size) {
-	size_t new_index = audio->index + samples_size*audio->one_second_size;
-	if (audio->index >= audio->size) {
-		audio->index -= audio->size;
+	memcpy(audio->encoder_data, audio->data, audio->size);
+	size_t rewind_bytes = frames * audio->frame_size;
+	if (rewind_bytes <= audio->index) {
+		audio->encoder_index = audio->index - rewind_bytes;
+		return;
 	}
-	return new_index;
+	audio->encoder_index = audio->size - (rewind_bytes - audio->index);
 }
 
 void rsAudioDestroy(RSAudio* audio) {
@@ -99,19 +98,22 @@ void rsAudioDestroy(RSAudio* audio) {
 	if (audio->data) {
 		free(audio->data);
 	}
+	if (audio->encoder_data) {
+		free(audio->encoder_data);
+	}
 }
 
 void rsAudioGrabSample(RSAudio* audio) {
 	int ret;
 	int error;
 	ret = pa_simple_read(audio->pa_api, audio->data+audio->index,
-			audio->one_second_size, &error);
+			audio->frame_size, &error);
 	if (ret < 0)
 	{
 		rsError("PulseAudio: pa_simple_read() failed: %s\n", pa_strerror(error));
 		return;
 	}
-	audio->index += audio->one_second_size;
+	audio->index += audio->frame_size;
 	if (audio->index >= audio->size)
 	{
 		audio->index -= audio->size;

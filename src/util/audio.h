@@ -35,9 +35,11 @@ typedef struct RSAudio {
 	AACENC_InfoStruct aac_info;
 	
 	uint8_t *data;
+	uint8_t *encoder_data;
 	size_t size;
 	size_t index;
-	size_t one_second_size;
+	size_t frame_size;
+	size_t encoder_index;
 } RSAudio;
 
 

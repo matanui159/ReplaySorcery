@@ -135,12 +135,11 @@ int main(int argc, char *argv[]) {
 
 	pthread_join(vthread, NULL);
 	pthread_join(athread, NULL);
-
 	rsOutputDestroy(&output);
 	rsOutputCreate(&output, &config, &audio);
 	rsOutput(&output, &circle);
 	//this will block till encoding is done
-	rsOutputDestroy(&output);
+	//rsOutputDestroy(&output);
    }
 
    rsOutputDestroy(&output);
