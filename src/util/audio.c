@@ -18,143 +18,153 @@
  */
 
 #include "audio.h"
+#include "log.h"
+#include "memory.h"
 
-static void rsAudioPrepareEncoder(RSAudio* audio);
-static void rsAudioGetSampleData(RSAudio* audio, uint8_t* dst, size_t size);
+static void rsAudioPrepareEncoder(RSAudio *audio, const RSConfig* config);
+static void rsAudioPrepareEncoder(RSAudio *audio, const RSConfig* config);
+static void rsAudioEncoderPrepareFrame(RSAudioEncoder *audioenc);
 
-int rsAudioCreate(RSAudio* audio, const RSConfig *config) {
-	int ret = 1;
-	int error;
-	static const pa_sample_spec ss = {
-		.format = PA_SAMPLE_S16LE,
-		.rate = AUDIO_RATE,
-		.channels = AUDIO_CHANNELS
-	};
-	audio->pa_api = pa_simple_new(NULL, "Replay Sorcerer", PA_STREAM_RECORD, NULL, "record", &ss,
-			NULL, NULL, &error);
-	
-	if (!audio->pa_api) {
-		rsError("PulseAudio: pa_simple_new() failed: %s\n", pa_strerror(error));
-		return 0;
-	}
-	size_t size_1s = pa_bytes_per_second(&ss);
-	size_t size_per_frame = size_1s / config->framerate;
-	size_t size_total = size_1s * config->duration;
+int rsAudioCreate(RSAudio *audio, const RSConfig *config) {
+   int error;
+   const pa_sample_spec ss = {
+       .format = PA_SAMPLE_S16LE, 
+       .rate = (unsigned)config->audioSamplerate, 
+       .channels = (unsigned char)config->audioChannels
+   };
+   audio->pa_api = pa_simple_new(NULL, "Replay Sorcery", PA_STREAM_RECORD, NULL,
+                                 "record", &ss, NULL, NULL, &error);
 
-	audio->frame_size = size_per_frame;
-	audio->size = size_total;
-	audio->data = malloc(size_total);
-	audio->encoder_data = malloc(size_total);
-	if (!audio->data || !audio->encoder_data) {
-		printf("audio malloc failed\n");
-		exit(1);
-	}
-	audio->index = 0;
-	audio->encoder_index = 0;
-	rsAudioPrepareEncoder(audio);
-	return 1;
+   if (!audio->pa_api) {
+      rsError("PulseAudio: pa_simple_new() failed: %s\n", pa_strerror(error));
+      return 0;
+   }
+   size_t size_1s = pa_bytes_per_second(&ss);
+   size_t size_per_frame = size_1s / (unsigned)config->framerate;
+   size_t size_total = size_1s * (unsigned)config->duration;
+
+   audio->sizebatch = size_per_frame;
+   audio->size = size_total;
+   audio->data = malloc(size_total);
+   audio->index = 0;
+   audio->channels = config->audioChannels;
+   audio->bitrate = config->audioBitrate;
+   rsAudioPrepareEncoder(audio, config);
+   return 1;
 }
 
-static void rsAudioPrepareEncoder(RSAudio* audio) {
-	aacEncOpen(&(audio->aac_enc), 0, 0);
-	aacEncoder_SetParam(audio->aac_enc, AACENC_TRANSMUX, 0);
-	aacEncoder_SetParam(audio->aac_enc, AACENC_AFTERBURNER, 1);
-	aacEncoder_SetParam(audio->aac_enc, AACENC_BITRATE, AUDIO_BITRATE);
-	aacEncoder_SetParam(audio->aac_enc, AACENC_SAMPLERATE, AUDIO_RATE);
-	aacEncoder_SetParam(audio->aac_enc, AACENC_CHANNELMODE, MODE_1);
-	aacEncEncode(audio->aac_enc, NULL, NULL, NULL, NULL);
-	aacEncInfo(audio->aac_enc, &(audio->aac_info));
+void rsAudioReadSamples(RSAudio *audio) {
+   int error;
+   int ret = pa_simple_read(audio->pa_api, audio->data + audio->index, audio->sizebatch,
+                        &error);
+   if (ret < 0) {
+      rsError("PulseAudio: pa_simple_read() failed: %s", pa_strerror(error));
+      return;
+   }
+   audio->index += audio->sizebatch;
+   if (audio->index >= audio->size) {
+      audio->index -= audio->size;
+   }
 }
 
-static void rsAudioGetSampleData(RSAudio* audio, uint8_t* dst, size_t size) {
-	size_t first_copy_size = size;
-	size_t end_of_data = audio->encoder_index + size;
-	int diff = audio->size - end_of_data;
-	if (diff >= 0) {
-		memcpy(dst, audio->encoder_data + audio->encoder_index, first_copy_size);
-		audio->encoder_index += first_copy_size;
-		return;
-	}
-	first_copy_size += diff;
-	memcpy(dst, audio->encoder_data + audio->encoder_index, first_copy_size);
-	memcpy(dst + first_copy_size, audio->encoder_data, -diff);
-	audio->encoder_index = -diff;
-}
-
-void rsAudioRewindBuffer(RSAudio* audio, int frames, int framerate) {
-	memcpy(audio->encoder_data, audio->data, audio->size);
-	size_t rewind_bytes = frames * audio->frame_size;
+void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSAudio *audio, size_t rewindframes) {
+	*audioenc = audio->audioenc;
+	audioenc->data = malloc(audioenc->size);
+	audioenc->frame = malloc(audioenc->frame_size); 
+	memcpy(audioenc->data, audio->data, audio->size);
+	size_t rewind_bytes = rewindframes * audio->sizebatch;
 	if (rewind_bytes <= audio->index) {
-		audio->encoder_index = audio->index - rewind_bytes;
+		audioenc->index = audio->index - rewind_bytes;
 		return;
 	}
-	audio->encoder_index = audio->size - (rewind_bytes - audio->index);
+	audioenc->index = audio->size - (rewind_bytes - audio->index);
 }
 
-void rsAudioDestroy(RSAudio* audio) {
-	if (audio->pa_api) {
-		pa_simple_free(audio->pa_api);
-	}
-	if (audio->data) {
-		free(audio->data);
-	}
-	if (audio->encoder_data) {
-		free(audio->encoder_data);
-	}
+void rsAudioDestroy(RSAudio *audio) {
+   if (audio->pa_api) {
+      pa_simple_free(audio->pa_api);
+   }
+   if (audio->data) {
+      free(audio->data);
+   }
 }
 
-void rsAudioGrabSample(RSAudio* audio) {
-	int ret;
-	int error;
-	ret = pa_simple_read(audio->pa_api, audio->data+audio->index,
-			audio->frame_size, &error);
-	if (ret < 0)
-	{
-		rsError("PulseAudio: pa_simple_read() failed: %s\n", pa_strerror(error));
-		return;
+void rsAudioEncoderDestroy(RSAudioEncoder* audioenc) {
+	if (audioenc->data) {
+		rsMemoryDestroy(audioenc->data);
 	}
-	audio->index += audio->frame_size;
-	if (audio->index >= audio->size)
-	{
-		audio->index -= audio->size;
+	if (audioenc->frame) {
+		rsMemoryDestroy(audioenc->frame);
 	}
 }
 
-int rsAudioEncode(RSAudio* audio, uint8_t *out_buffer, size_t out_buffer_size) {
-	AACENC_BufDesc in_buf = {0}, out_buf = {0};
-	AACENC_InArgs in_args = {0};
-	AACENC_OutArgs out_args = {0};
+void rsAudioEncodeFrame(RSAudioEncoder *audioenc, uint8_t *out, int *num_of_bytes, int *num_of_samples) {
+   AACENC_BufDesc ibuf = {0};
+   AACENC_BufDesc obuf = {0};
+   AACENC_InArgs iargs = {0};
+   AACENC_OutArgs oargs = {0};
 
-	uint8_t src_buffer[1024*8];
-	size_t in_bufsizes=audio->aac_info.frameLength * AUDIO_CHANNELS *2;
-	rsAudioGetSampleData(audio, src_buffer, in_bufsizes);
+   rsAudioEncoderPrepareFrame(audioenc);
+   void *iptr = audioenc->frame;
+   void *optr = out;
 
-	void *in_ptr = src_buffer;
-	void *out_ptr = out_buffer;
+   int ibufsizes = audioenc->frame_size;
+   int iidentifiers = IN_AUDIO_DATA;
+   int ielsizes = 2;
+   int obufsizes = 2048;
+   int oidentifiers = OUT_BITSTREAM_DATA;
+   int oelsizes = 1;
 
-	int in_identifiers = IN_AUDIO_DATA;
-	int in_elsizes = 2;
-	int out_bufsizes = out_buffer_size;
-	int out_identifiers = OUT_BITSTREAM_DATA;
-	int out_elsizes = 1;
+   iargs.numInSamples = audioenc->aac_info.frameLength * AUDIO_CHANNELS;
+   ibuf.numBufs = 1;
+   ibuf.bufs = &iptr;
+   ibuf.bufferIdentifiers = &iidentifiers;
+   ibuf.bufSizes = &ibufsizes;
+   ibuf.bufElSizes = &ielsizes;
 
-	in_args.numInSamples = audio->aac_info.frameLength * AUDIO_CHANNELS;
-	printf("%d\n", in_args.numInSamples);
-	in_buf.numBufs = 1;
-	in_buf.bufs = &in_ptr;
-	in_buf.bufferIdentifiers = &in_identifiers;
-	in_buf.bufSizes = &in_bufsizes;
-	in_buf.bufElSizes = &in_elsizes;
+   obuf.numBufs = 1;
+   obuf.bufs = &optr;
+   obuf.bufferIdentifiers = &oidentifiers;
+   obuf.bufSizes = &obufsizes;
+   obuf.bufElSizes = &oelsizes;
 
-	out_buf.numBufs = 1;
-	out_buf.bufs = &out_ptr;
-	out_buf.bufferIdentifiers = &out_identifiers;
-	out_buf.bufSizes = &out_bufsizes;
-	out_buf.bufElSizes = &out_elsizes;
-
-	if (AACENC_OK != aacEncEncode(audio->aac_enc, &in_buf, &out_buf, &in_args, &out_args)) {
-		rsError("AAC: aac encode failed\n");
-		exit(1);
-	}
-	return out_args.numOutBytes;
+   if (AACENC_OK !=
+       aacEncEncode(audioenc->aac_enc, &ibuf, &obuf, &iargs, &oargs)) {
+      rsLog("AAC: aac encode failed");
+   }
+   *num_of_bytes = oargs.numOutBytes;
+   *num_of_samples = iargs.numInSamples;
 }
+
+static void rsAudioPrepareEncoder(RSAudio *audio, const RSConfig* config) {
+   aacEncOpen(&(audio->audioenc.aac_enc), 0, 0);
+   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_TRANSMUX, 0);
+   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_AFTERBURNER, 1);
+   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_BITRATE, AUDIO_BITRATE);
+   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_SAMPLERATE, AUDIO_RATE);
+   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_CHANNELMODE, config->audioChannels);
+   aacEncEncode(audio->audioenc.aac_enc, NULL, NULL, NULL, NULL);
+   aacEncInfo(audio->audioenc.aac_enc, &(audio->audioenc.aac_info));
+
+   audio->audioenc.data = 0;
+   audio->audioenc.frame = 0;
+   audio->audioenc.size = audio->size;
+   audio->audioenc.frame_size = audio->audioenc.aac_info.frameLength * audio->channels * sizeof(uint16_t);
+   audio->audioenc.index = 0;
+}
+
+static void rsAudioEncoderPrepareFrame(RSAudioEncoder *audioenc) {
+   int32_t first_copy_size = audioenc->frame_size;
+   int32_t end_of_data = audioenc->index + audioenc->frame_size;
+   int diff = audioenc->size - end_of_data;
+   if (diff >= 0) {
+      memcpy(audioenc->frame, audioenc->data + audioenc->index, first_copy_size);
+      audioenc->index += first_copy_size;
+      return;
+   }
+   first_copy_size += diff;
+   memcpy(audioenc->frame, audioenc->data + audioenc->index, first_copy_size);
+   memcpy(audioenc->frame + first_copy_size, audioenc->data, -diff);
+   audioenc->index = -diff;
+}
+

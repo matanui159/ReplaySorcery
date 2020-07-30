@@ -127,6 +127,8 @@ void rsDecompressCreate(RSDecompress *decompress) {
    decompress->source.jpeg.fill_input_buffer = decompressSourceFill;
    decompress->source.jpeg.skip_input_data = decompressSourceSkip;
    decompress->source.jpeg.resync_to_restart = jpeg_resync_to_restart;
+   decompress->source.filled = false;
+   decompress->source.jpeg.bytes_in_buffer = 0;
 }
 
 void rsDecompressDestroy(RSDecompress *decompress) {

@@ -88,7 +88,10 @@ static const ConfigParam configParams[] = {
     CONFIG_PARAM(outputFile, configString, "~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4"),
     CONFIG_PARAM(preOutputCommand, configString, ""),
     CONFIG_PARAM(postOutputCommand, configString,
-                 "notify-send ReplaySorcery \"Video saved!\"")};
+                 "notify-send ReplaySorcery \"Video saved!\""),
+    CONFIG_PARAM(audioChannels, configInt, "1"),
+    CONFIG_PARAM(audioSamplerate, configInt, "44100"),
+    CONFIG_PARAM(audioBitrate, configInt, "96000")};
 
 #define CONFIG_PARAMS_SIZE (sizeof(configParams) / sizeof(ConfigParam))
 

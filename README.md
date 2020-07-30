@@ -1,5 +1,16 @@
 # WIP audio recording
-works, but its still buggy and ugly
+single channel, 44100Hz sample rate, 96kb bitrate works fine
+2 channels produce audio out of sync and faster. Probably some
+error in calculations... to be investigated.
+##Very strange problem with rsMemoryCreate
+this function keeps on returning me invalid malloc pointers
+even when I single step through the code, on one step :
+return mem;
+it is valid, next stop, back in the caller function, it's wrong...
+Been pulling my hair all day trying to figure it out, but can't.
+Weirdly enough just calling malloc yourself works fine... And a lot of 
+the code uses rsMemoryCreate, so the function cannot be buggy... It's so simple anyway
+STRANGE !
 
 # ReplaySorcery
 ## An open-source, instant-replay solution for Linux.
