@@ -103,10 +103,9 @@ static void *outputThread(void *data) {
    tr.default_duration = 0;
    tr.u.a.channelcount = output->config->audioChannels;
    int audio_track_id = MP4E_add_track(muxer, &tr);
-   MP4E_set_dsi(muxer, audio_track_id, audioenc.aac_info.confBuf, audioenc.aac_info.confSize);
+   MP4E_set_dsi(muxer, audio_track_id, audioenc.aac_info.confBuf, (int)audioenc.aac_info.confSize);
    int64_t ts = 0;
    int64_t ats = 0;
-   int64_t tsinc = (OUTPUT_TIMEBASE / output->config->audioSamplerate) / output->config->audioChannels;
    int samples_count = 0;
 
    RSFrame frame, yFrame, uFrame, vFrame;

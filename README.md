@@ -1,6 +1,3 @@
-# WIP audio recording
-single channel, 44100Hz sample rate, 96kb bitrate works fine. 2 channels produce audio out of sync and faster. Probably some error in calculations... to be investigated.
-
 # ReplaySorcery
 ## An open-source, instant-replay solution for Linux.
 Back when I used to use windows I used AMD ReLive alot. It, and the nVidia version ShadowPlay Instant Replay, will constantly record the screen without using too much computer resources and at the press of a keycombo will save the last 30 seconds.
