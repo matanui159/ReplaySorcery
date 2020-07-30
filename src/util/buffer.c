@@ -69,6 +69,7 @@ void rsBufferShrink(RSBuffer *buffer, size_t size) {
       } while (bufferShouldShrink(buffer));
       void *data = rsMemoryCreate(buffer->capacity);
       memcpy(data, buffer->data, buffer->size);
+      rsMemoryDestroy(buffer->data);
       buffer->data = data;
    }
 }
