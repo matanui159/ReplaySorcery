@@ -45,7 +45,7 @@ int rsAudioCreate(RSAudio *audio, const RSConfig *config) {
 
    audio->sizebatch = size_per_frame;
    audio->size = size_total;
-   audio->data = malloc(size_total);
+   audio->data = rsMemoryCreate(size_total);//malloc(size_total);
    audio->index = 0;
    audio->channels = config->audioChannels;
    audio->bitrate = config->audioBitrate;
@@ -69,8 +69,8 @@ void rsAudioReadSamples(RSAudio *audio) {
 
 void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSAudio *audio, size_t rewindframes) {
 	*audioenc = audio->audioenc;
-	audioenc->data = malloc(audioenc->size);
-	audioenc->frame = malloc(audioenc->frame_size); 
+	audioenc->data = rsMemoryCreate(audioenc->size);
+	audioenc->frame = rsMemoryCreate(audioenc->frame_size); 
 	memcpy(audioenc->data, audio->data, audio->size);
 	size_t rewind_bytes = rewindframes * audio->sizebatch;
 	if (rewind_bytes <= audio->index) {
