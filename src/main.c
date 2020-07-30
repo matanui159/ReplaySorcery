@@ -83,7 +83,6 @@ int main(int argc, char *argv[]) {
    rsBufferCircleCreate(&circle, capacity);
    rsAudioCreate(&audio, &config);
 
-
    for (;;) {
       pthread_create(&athread, NULL, &rsAudioThread, &audio);
       while (!rsSystemWantsSave(&system) && mainRunning) {

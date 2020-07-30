@@ -17,8 +17,8 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_UTIL_AUDIO_H
-#define RS_UTIL_AUDIO_H
+#ifndef RS_AUDIO_H
+#define RS_AUDIO_H
 
 #include "config.h"
 #include <fdk-aac/aacenc_lib.h>
@@ -53,7 +53,6 @@ void rsAudioEncoderDestroy(RSAudioEncoder* audioenc);
 int rsAudioCreate(RSAudio *audio, RSConfig *config);
 void rsAudioDestroy(RSAudio *audio);
 void *rsAudioThread(void *data);
-
 
 #endif
 
