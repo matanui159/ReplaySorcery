@@ -1,3 +1,6 @@
+# WIP audio recording
+works, but it's out of sync yet
+
 # ReplaySorcery
 ## An open-source, instant-replay solution for Linux.
 Back when I used to use windows I used AMD ReLive alot. It, and the nVidia version ShadowPlay Instant Replay, will constantly record the screen without using too much computer resources and at the press of a keycombo will save the last 30 seconds.

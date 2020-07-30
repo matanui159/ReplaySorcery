@@ -75,7 +75,6 @@ static void configString(void *param, const char *value) {
    *str = rsStringClone(value);
 }
 
-// Remember to update `replay-sorcery.default.conf`
 static const ConfigParam configParams[] = {
     CONFIG_PARAM(offsetX, configPos, "0"),
     CONFIG_PARAM(offsetY, configPos, "0"),

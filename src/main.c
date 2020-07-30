@@ -24,6 +24,7 @@
 #include "system/xlib.h"
 #include "util/circle.h"
 #include "util/log.h"
+#include "util/audio.h"
 #include <signal.h>
 
 static sig_atomic_t mainRunning = true;
@@ -51,6 +52,39 @@ static void mainSignal(int signal) {
    }
 }
 
+int want_to_save = 0;
+typedef struct video_data {
+	RSConfig* config;
+	RSSystem* system;
+	RSCompress* compress;
+	RSBufferCircle* circle;
+} video_data;
+
+void* video_thread(void* data) {
+	want_to_save = 0;
+	video_data* vd = (video_data*)data;
+	while (!rsSystemWantsSave(vd->system)) {
+		RSFrame frame;
+		rsSystemFrameCreate(&frame, vd->system);
+		rsCompress(vd->compress, rsBufferCircleNext(vd->circle), &frame);
+		rsFrameDestroy(&frame);
+
+	}
+	want_to_save = 1;
+	return 0;
+}
+
+
+void* audio_thread(void* data) {
+	while (!want_to_save) {
+		RSAudio* audio = (RSAudio*)data;
+		rsAudioGrabSample(audio);
+		usleep(10000);
+	}
+	return 0;
+}
+
+
 int main(int argc, char *argv[]) {
    (void)argc;
    (void)argv;
@@ -64,10 +98,10 @@ int main(int argc, char *argv[]) {
    rsLog("This is free software, and you are welcome to redistribute it");
    rsLog("under certain conditions; see COPYING for details.");
 
-   RSConfig config;
-   RSSystem system;
-   RSCompress compress;
-   RSBufferCircle circle;
+   RSConfig config = {0};
+   RSSystem system = {0};
+   RSCompress compress = {0};
+   RSBufferCircle circle = {0};
    RSOutput output = {0};
    rsConfigLoad(&config);
    // We have to call this one first since it might change the config width/height
@@ -76,21 +110,33 @@ int main(int argc, char *argv[]) {
    size_t capacity = (size_t)(config.duration * config.framerate);
    rsBufferCircleCreate(&circle, capacity);
 
-   while (mainRunning) {
-      RSFrame frame;
-      rsSystemFrameCreate(&frame, &system);
-      rsCompress(&compress, rsBufferCircleNext(&circle), &frame);
-      rsFrameDestroy(&frame);
-      if (rsSystemWantsSave(&system)) {
-         rsOutputDestroy(&output);
-         rsOutputCreate(&output, &config);
-         rsOutput(&output, &circle);
-      }
-   }
+	video_data dt = {
+		.config = &config,
+		.system = &system,
+		.compress = &compress,
+		.circle = &circle
+	};
+	pthread_t vthread;
+	pthread_t athread;
+
+   	while (mainRunning) {
+		pthread_create(&vthread, NULL, &video_thread, &dt);
+		pthread_create(&athread, NULL, audio_thread, &audio);
+		
+	//video_thread(&dt);
+		pthread_join(vthread, NULL);
+		pthread_join(athread, NULL);
+		rsOutputDestroy(&output);
+         	rsOutputCreate(&output, &config);
+         	rsOutput(&output, &circle);
+
+		usleep(999999999);
+      	}
 
    rsOutputDestroy(&output);
    rsBufferCircleDestroy(&circle);
    rsCompressDestroy(&compress);
    rsSystemDestroy(&system);
    rsConfigDestroy(&config);
+   rsAudioDestroy(&audio);
 }

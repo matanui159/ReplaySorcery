@@ -117,6 +117,7 @@ void rsCompress(RSCompress *compress, RSBuffer *buffer, const RSFrame *frame) {
 }
 
 void rsDecompressCreate(RSDecompress *decompress) {
+	memset(decompress, 0, sizeof(*decompress));
    compressErrorCreate(&decompress->error);
    decompress->jpeg.err = &decompress->error;
    jpeg_create_decompress(&decompress->jpeg);
@@ -127,6 +128,9 @@ void rsDecompressCreate(RSDecompress *decompress) {
    decompress->source.jpeg.fill_input_buffer = decompressSourceFill;
    decompress->source.jpeg.skip_input_data = decompressSourceSkip;
    decompress->source.jpeg.resync_to_restart = jpeg_resync_to_restart;
+   //decompress->source.jpeg.next_input_byte = 0;
+   //decompress->source.jpeg.bytes_in_buffer = 0;
+   //decompress->source.filled = true;
 }
 
 void rsDecompressDestroy(RSDecompress *decompress) {

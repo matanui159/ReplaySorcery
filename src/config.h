@@ -33,8 +33,6 @@ typedef struct RSConfig {
    int compressQuality;
    char *keyCombo;
    char *outputFile;
-   char *preOutputCommand;
-   char *postOutputCommand;
 } RSConfig;
 
 void rsConfigLoad(RSConfig *config);
