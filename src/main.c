@@ -28,6 +28,7 @@
 #include <signal.h>
 
 static sig_atomic_t mainRunning = true;
+static sig_atomic_t want_to_save = false;
 
 static void mainSignal(int signal) {
    const char *error = NULL;
@@ -52,38 +53,39 @@ static void mainSignal(int signal) {
    }
 }
 
-int want_to_save = 0;
-typedef struct video_data {
+typedef struct thread_video_data {
 	RSConfig* config;
 	RSSystem* system;
 	RSCompress* compress;
 	RSBufferCircle* circle;
-} video_data;
+} thread_video_data;
 
-void* video_thread(void* data) {
-	want_to_save = 0;
-	video_data* vd = (video_data*)data;
+typedef struct thread_audio_data {
+	RSAudio* audio;
+} thread_audio_data;
+
+void* thread_video(void* data) {
+	want_to_save = false;
+	thread_video_data* vd = (thread_video_data*)data;
 	while (!rsSystemWantsSave(vd->system)) {
-		RSFrame frame;
+		RSFrame frame = {0};
 		rsSystemFrameCreate(&frame, vd->system);
 		rsCompress(vd->compress, rsBufferCircleNext(vd->circle), &frame);
 		rsFrameDestroy(&frame);
 
 	}
-	want_to_save = 1;
+	want_to_save = true;
 	return 0;
 }
 
-
-void* audio_thread(void* data) {
-	while (!want_to_save) {
-		RSAudio* audio = (RSAudio*)data;
-		rsAudioGrabSample(audio);
-		usleep(10000);
+void* thread_audio(void* data) {
+	thread_audio_data *ad = (thread_audio_data*)data;
+	while (!want_to_save){
+		//this function blocks till it reads 1s of audio
+		rsAudioGrabSample(ad->audio);
 	}
 	return 0;
 }
-
 
 int main(int argc, char *argv[]) {
    (void)argc;
@@ -98,10 +100,10 @@ int main(int argc, char *argv[]) {
    rsLog("This is free software, and you are welcome to redistribute it");
    rsLog("under certain conditions; see COPYING for details.");
 
-   RSConfig config = {0};
-   RSSystem system = {0};
-   RSCompress compress = {0};
-   RSBufferCircle circle = {0};
+   RSConfig config;
+   RSSystem system;
+   RSCompress compress;
+   RSBufferCircle circle;
    RSOutput output = {0};
    rsConfigLoad(&config);
    // We have to call this one first since it might change the config width/height
@@ -110,33 +112,41 @@ int main(int argc, char *argv[]) {
    size_t capacity = (size_t)(config.duration * config.framerate);
    rsBufferCircleCreate(&circle, capacity);
 
-	video_data dt = {
-		.config = &config,
-		.system = &system,
-		.compress = &compress,
-		.circle = &circle
-	};
-	pthread_t vthread;
-	pthread_t athread;
+   RSAudio audio;
+   rsAudioCreate(&audio, &config);
 
-   	while (mainRunning) {
-		pthread_create(&vthread, NULL, &video_thread, &dt);
-		pthread_create(&athread, NULL, audio_thread, &audio);
-		
-	//video_thread(&dt);
-		pthread_join(vthread, NULL);
-		pthread_join(athread, NULL);
-		rsOutputDestroy(&output);
-         	rsOutputCreate(&output, &config);
-         	rsOutput(&output, &circle);
+   pthread_t vthread;
+   pthread_t athread;
 
-		usleep(999999999);
-      	}
+   thread_video_data vtd = {
+   	.config = &config,
+	.system = &system,
+	.compress = &compress,
+	.circle = &circle
+   };
+
+   thread_audio_data atd = {
+   	.audio = &audio
+   };
+
+   while (mainRunning) {
+   	pthread_create(&vthread, NULL, &thread_video, &vtd);
+	pthread_create(&athread, NULL, &thread_audio, &atd);
+
+	pthread_join(vthread, NULL);
+	pthread_join(athread, NULL);
+
+	rsOutputDestroy(&output);
+	rsOutputCreate(&output, &config, &audio);
+	rsOutput(&output, &circle);
+	//this will block till encoding is done
+	rsOutputDestroy(&output);
+   }
 
    rsOutputDestroy(&output);
    rsBufferCircleDestroy(&circle);
    rsCompressDestroy(&compress);
    rsSystemDestroy(&system);
    rsConfigDestroy(&config);
-   rsAudioDestroy(&audio);
+   rsAudioDestroy(&config);
 }

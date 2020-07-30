@@ -63,7 +63,6 @@ static void xlibSystemDestroy(RSSystem *system) {
       XDestroyImage(extra->sharedFrame);
       XShmDetach(extra->display, &extra->sharedInfo);
       shmdt(extra->sharedInfo.shmaddr);
-      shmctl(extra->sharedInfo.shmid, IPC_RMID, NULL);
    }
    XCloseDisplay(extra->display);
    rsMemoryDestroy(extra);
@@ -76,26 +75,7 @@ static void xlibSystemFrameDestroy(RSFrame *frame) {
    }
 }
 
-static void xlibSystemCreateFrame(RSFrame *frame, RSSystem *system) {
-   XlibSystemExtra *extra = system->extra;
-   rsFramerateSleep(&extra->frameTime, extra->config.framerate);
-   XImage *image;
-   if (extra->sharedFrame == NULL) {
-      // Ignore failure like shared images, create blank image if failed
-      image = XGetImage(extra->display, extra->rootWindow, extra->config.offsetY,
-                        extra->config.offsetY, (unsigned)extra->config.width,
-                        (unsigned)extra->config.height, AllPlanes, ZPixmap);
-      frame->extra = image;
-   } else {
-      // This sometimes returns BadMatch (Invalid parameter) during suspension or sleep
-      xlibIgnore = BadMatch;
-      XShmGetImage(extra->display, extra->rootWindow, extra->sharedFrame,
-                   (int)extra->config.offsetX, (int)extra->config.offsetY, AllPlanes);
-      image = extra->sharedFrame;
-      frame->extra = NULL;
-      xlibIgnore = Success;
-   }
-
+static void xlibSystemFrameImage(RSFrame *frame, XImage *image) {
    if (image->depth != 24 || image->bits_per_pixel != 32 ||
        image->byte_order != LSBFirst) {
       rsError("Only BGRX X11 images are supported");
@@ -161,6 +141,7 @@ bool rsXlibSystemCreate(RSSystem *system, RSConfig *config) {
       return false;
    }
    XSetErrorHandler(xlibSystemError);
+   XSynchronize(extra->display, true);
    rsLog("X11 vendor: %s %i.%i.%i", ServerVendor(extra->display),
          ProtocolVersion(extra->display), ProtocolRevision(extra->display),
          VendorRelease(extra->display));
@@ -234,7 +215,11 @@ bool rsXlibSystemCreate(RSSystem *system, RSConfig *config) {
       // Attach the shared memory
       extra->sharedInfo.shmaddr = shmat(extra->sharedInfo.shmid, NULL, 0);
       extra->sharedFrame->data = extra->sharedInfo.shmaddr;
+      extra->sharedInfo.readOnly = false;
       XShmAttach(extra->display, &extra->sharedInfo);
+
+      // We do not need the shared memory ID anymore
+      shmctl(extra->sharedInfo.shmid, IPC_RMID, NULL);
    } else {
       rsLog("X11 shared memory not supported");
       extra->sharedFrame = NULL;
@@ -242,7 +227,7 @@ bool rsXlibSystemCreate(RSSystem *system, RSConfig *config) {
 
    clock_gettime(CLOCK_MONOTONIC, &extra->frameTime);
    system->destroy = xlibSystemDestroy;
-   system->frameCreate = xlibSystemCreateFrame;
+   system->frameCreate = xlibSystemFrameCreate;
    system->wantsSave = xlibSystemWantsSave;
    return true;
 }

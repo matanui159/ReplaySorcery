@@ -46,6 +46,18 @@ static void outputNals(mp4_h26x_writer_t *track, x264_nal_t *nals, int nalCount,
    }
 }
 
+static void outputCommand(const char *command) {
+   if (*command == '\0') {
+      // Ignore empty strings
+      return;
+   }
+   rsLog("Running command: %s", command);
+   int ret = system(command);
+   if (ret != 0) {
+      rsLog("Warning: command returned non-zero exit code (%i): %s", ret, command);
+   }
+}
+
 static void *outputThread(void *data) {
    RSOutput *output = data;
    outputCommand(output->config->preOutputCommand);
@@ -77,7 +89,7 @@ static void *outputThread(void *data) {
    mp4_h26x_write_init(&track, muxer, output->config->width, output->config->height,
                        false);
 
-   //audio code
+   //audio setup
    RSAudio* audio = output->audio;
    MP4E_track_t tr;
    tr.track_media_kind = e_audio;
@@ -86,13 +98,15 @@ static void *outputThread(void *data) {
    tr.language[2] = 'd';
    tr.language[3] = 0;
    tr.object_type_indication = MP4_OBJECT_TYPE_AUDIO_ISO_IEC_14496_3;
-   tr.time_scale = 90000;
+   tr.time_scale = OUTPUT_TIMEBASE;
    tr.default_duration = 0;
    tr.u.a.channelcount = AUDIO_CHANNELS;
    int audio_track_id = MP4E_add_track(muxer, &tr);
    MP4E_set_dsi(muxer, audio_track_id, audio->aac_info.confBuf, audio->aac_info.confSize);
    uint64_t ts = 0, ats = 0;
    int samples_count = 0;
+
+   rsAudioRewindBuffer(output->audio, output->frameCount, output->config.framerate);
    //!audio code
 
    RSFrame frame, yFrame, uFrame, vFrame;
@@ -118,9 +132,6 @@ static void *outputThread(void *data) {
    x264_encoder_headers(x264, &nals, &nalCount);
    outputNals(&track, nals, nalCount, 0);
 
-
-	rsAudioRewindBuffer(audio, output->frameCount / output->config.framerate);
-
    for (size_t i = 0; i < output->frameCount; ++i) {
       if (i % OUTPUT_PROGRESS == 0) {
          rsLog("Output progress: %zu/%zu", i, output->frameCount);
@@ -133,23 +144,19 @@ static void *outputThread(void *data) {
       outputNals(&track, nals, nalCount, duration);
 
 
-	ts += OUTPUT_TIMEBASE / output->config.framerate;
-	while (ats < ts)
-	{
-		uint8_t buf[2048];
-		int out_bytes = rsAudioEncode(audio, buf, sizeof(buf));
-		samples_count += 1024;
-		ats = (uint64_t)samples_count * OUTPUT_TIMEBASE / AUDIO_RATE;
-		if (MP4E_STATUS_OK != MP4E_put_sample(muxer, audio_track_id, buf,
-					out_bytes, 1024*OUTPUT_TIMEBASE/AUDIO_RATE,
-					MP4E_SAMPLE_RANDOM_ACCESS))
-		{
-			printf("error: MP4E_put_sample failed\n");
-			exit(1);
-		}
-
+      ts += OUTPUT_TIMEBASE / output->config.framerate;
+      while (ats < ts) {
+      	uint8_t buf[2048];
+	int out_bytes = rsAudioEncode(output->audio, buf, sizeof(buf));
+	samples_count += 1024; //TODO: get the number from encoder
+	ats = (uint64_t)samples_count * OUTPUT_TIMEBASE / AUDIO_RATE;
+	if (MP4E_STATUS_OK != MP4E_put_sample(muxer, audio_track_id, buf,
+				out_bytes, 1024*OUTPUT_TIMEBASE/AUDIO_RATE,
+				MP4E_SAMPLE_RANDOM_ACCESS)) {
+		rsError("MP4E_put_sample failed\n");
+		exit(1); //TODO graceful handling of this error if possible
 	}
-
+      }
    }
    while (x264_encoder_delayed_frames(x264) > 0) {
       x264_encoder_encode(x264, &nals, &nalCount, NULL, &outPic);
@@ -189,7 +196,7 @@ void rsOutputDestroy(RSOutput *output) {
    if (output->thread != 0) {
       pthread_join(output->thread, NULL);
    }
-   rsMemoryClear(&(output->config), sizeof(&output)-8);
+   rsMemoryClear(output, sizeof(RSOutput));
 }
 
 void rsOutput(RSOutput *output, const RSBufferCircle *frames) {

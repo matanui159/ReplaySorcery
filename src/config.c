@@ -75,6 +75,7 @@ static void configString(void *param, const char *value) {
    *str = rsStringClone(value);
 }
 
+// Remember to update `replay-sorcery.default.conf`
 static const ConfigParam configParams[] = {
     CONFIG_PARAM(offsetX, configPos, "0"),
     CONFIG_PARAM(offsetY, configPos, "0"),
@@ -186,6 +187,10 @@ void rsConfigLoad(RSConfig *config) {
 
    // Relative config
    configLoadFile(config, ".");
+
+   if (config->width % 2 != 0 || config->height % 2 != 0) {
+      rsError("Only frame sizes divisable by 2 are supported");
+   }
 }
 
 void rsConfigDestroy(RSConfig *config) {

@@ -26,7 +26,7 @@ int rsAudioCreate(RSAudio* audio, const RSConfig *config);
 void rsAudioDestroy(RSAudio* audio);
 void rsAudioGrabSample(RSAudio* audio);
 int rsAudioEncode(RSAudio* audio, uint8_t *out_buffer, size_t out_buffer_size);
-void rsAudioRewindBuffer(RSAudio* audio, int seconds);
+void rsAudioRewindBuffer(RSAudio* audio, int frames, int framerate);
 
 #endif
 

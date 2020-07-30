@@ -77,14 +77,11 @@ static void rsAudioGetSampleData(RSAudio* audio, uint8_t* dst, size_t size) {
 	audio->index = -diff;
 }
 
-void rsAudioRewindBuffer(RSAudio* audio, int seconds) {
-	size_t total_size = audio->one_second_size * seconds;
-	int new_index = audio->index - total_size;
-	if (new_index < 0) {
-		new_index = audio->size + new_index;
-	}
+void rsAudioRewindBuffer(RSAudio* audio, int frames, int framerate) {
+	//TODO
+	(void)frames;
+	(void)framerate;
 	audio->index = 0;
-	printf("index is now at %d\n", audio->index);
 }
 
 static size_t rsAudioNextSampleIndex(RSAudio* audio, size_t samples_size) {

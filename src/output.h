@@ -33,7 +33,7 @@ typedef struct RSOutput {
    pthread_t thread;
 } RSOutput;
 
-void rsOutputCreate(RSOutput *output, const RSConfig *config);
+void rsOutputCreate(RSOutput *output, const RSConfig *config, RSAudio* audio);
 void rsOutputDestroy(RSOutput *output);
 void rsOutput(RSOutput *output, const RSBufferCircle *frames);
 
