@@ -13,8 +13,9 @@ pkgver=$VERSION
 pkgrel=1
 pkgdesc="An open-source, instant-replay screen recorder for Linux"
 arch=("i686" "x86_64")
-license=("GPL-3.0")
-makedepends=("cmake" "make" "git" "pkg-config" "nasm")
+license=("GPL3")
+depends=("gcc-libs" "libxext")
+makedepends=("cmake" "make" "git" "nasm")
 url="https://github.com/matanui159/ReplaySorcery"
 source=("\${pkgname}::git+\${url}.git#tag=\${pkgver}")
 sha256sums=("SKIP")
