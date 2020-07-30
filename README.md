@@ -1,5 +1,5 @@
 # WIP audio recording
-works, but it's out of sync yet
+works, but its still buggy and ugly
 
 # ReplaySorcery
 ## An open-source, instant-replay solution for Linux.

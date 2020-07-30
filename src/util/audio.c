@@ -1,16 +1,23 @@
-#include "audio.h"
-
 /*
-int main(int argc, char** argv[])
-{
-	RSAudio audio;
-	RSConfig config;
-	config.framerate = 30;
-	config.duration = 10;
-	rsAudioCreate(&audio, &config);
-	rsAudioEncode(&audio);
-}
-*/
+ * Copyright (C) 2020  Joshua Minter & Patryk Seregiet
+ *
+ * This file is part of ReplaySorcery.
+ *
+ * ReplaySorcery is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * ReplaySorcery is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "audio.h"
 
 static void rsAudioPrepareEncoder(RSAudio* audio);
 static void rsAudioGetSampleData(RSAudio* audio, uint8_t* dst, size_t size);
@@ -32,11 +39,6 @@ int rsAudioCreate(RSAudio* audio, const RSConfig *config) {
 	}
 	size_t size_1s = pa_bytes_per_second(&ss);
 	size_t size_total = size_1s * config->duration;
-/*
-	size_t size_1s = 88200;
-	size_t size_total = 2646000;
-*/
-	printf("one second: %d, total: %d\n", size_1s, size_total);
 	audio->one_second_size = size_1s;
 	audio->size = size_total;
 	audio->data = malloc(size_total + 1024);
@@ -46,7 +48,6 @@ int rsAudioCreate(RSAudio* audio, const RSConfig *config) {
 	}
 	audio->index = 0;
 	rsAudioPrepareEncoder(audio);
-	printf("rsAudioCreate\n");
 	return 1;
 }
 
@@ -68,7 +69,6 @@ static void rsAudioGetSampleData(RSAudio* audio, uint8_t* dst, size_t size) {
 	if (diff >= 0) {
 		memcpy(dst, audio->data + audio->index, first_copy_size);
 		audio->index += first_copy_size;
-		printf("legit\n");
 		return;
 	}
 	first_copy_size += diff;
@@ -111,7 +111,6 @@ void rsAudioGrabSample(RSAudio* audio) {
 		rsError("PulseAudio: pa_simple_read() failed: %s\n", pa_strerror(error));
 		return;
 	}
-	printf("grabbed 1 sec of audio\n");
 	audio->index += audio->one_second_size;
 	if (audio->index >= audio->size)
 	{
