@@ -42,25 +42,31 @@ static const char *getDeviceName(const RSConfig *config) {
 }
 
 static void prepareEncoder(RSAudio *audio, const RSConfig* config) {
-   aacEncOpen(&(audio->audioenc.aac_enc), 0, 0);
-   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_TRANSMUX, 0);
-   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_AFTERBURNER, 1);
-   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_BITRATE, AUDIO_BITRATE);
-   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_SAMPLERATE, AUDIO_RATE);
-   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_CHANNELMODE, config->audioChannels);
-   aacEncEncode(audio->audioenc.aac_enc, NULL, NULL, NULL, NULL);
-   aacEncInfo(audio->audioenc.aac_enc, &(audio->audioenc.aac_info));
+   RSAudioEncoder* audioenc = &audio->audioenc;
+   if (AACENC_OK != aacEncOpen(&(audioenc->aac_enc), 0, 0)) {
+      rsError("aacEncOpen failed");
+   }
+   aacEncoder_SetParam(audioenc->aac_enc, AACENC_TRANSMUX, 0);
+   aacEncoder_SetParam(audioenc->aac_enc, AACENC_AFTERBURNER, 1);
+   aacEncoder_SetParam(audioenc->aac_enc, AACENC_BITRATE, config->audioBitrate);
+   aacEncoder_SetParam(audioenc->aac_enc, AACENC_SAMPLERATE, config->audioSamplerate);
+   aacEncoder_SetParam(audioenc->aac_enc, AACENC_CHANNELMODE, config->audioChannels);
+   if (AACENC_OK != aacEncEncode(audioenc->aac_enc, NULL, NULL, NULL, NULL)) {
+      rsError("aacEncEncode failed. Probably bad bitrate. Tried %d", config->audioBitrate);
+   }
+   aacEncInfo(audioenc->aac_enc, &(audio->audioenc.aac_info));
 
-   audio->audioenc.data = 0;
-   audio->audioenc.frame = 0;
-   audio->audioenc.size = audio->size;
-   audio->audioenc.frame_size = (int)audio->audioenc.aac_info.frameLength * audio->channels * (int)sizeof(uint16_t);
-   audio->audioenc.index = 0;
+   audioenc->data = 0;
+   audioenc->frame = 0;
+   audioenc->index = 0;
+   audioenc->size = audio->size;
+   audioenc->samplesPerFrame = audioenc->aac_info.frameLength * config->audioChannels;
+   audioenc->frameSize = audioenc->samplesPerFrame * sizeof(uint16_t);
 }
 
 static void rsAudioEncoderPrepareFrame(RSAudioEncoder *audioenc) {
-   int firstCopySize = (int)audioenc->frame_size;
-   int endData = (int)audioenc->index + audioenc->frame_size;
+   int firstCopySize = (int)audioenc->frameSize;
+   int endData = (int)audioenc->index + audioenc->frameSize;
    int diff = audioenc->size - endData;
    if (diff >= 0) {
       memcpy(audioenc->frame, audioenc->data + audioenc->index, (size_t)firstCopySize);
@@ -76,6 +82,9 @@ static void rsAudioEncoderPrepareFrame(RSAudioEncoder *audioenc) {
 int rsAudioCreate(RSAudio *audio, const RSConfig *config) {
    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
    	rsError("SDL2 could not initialize! SDL Error: %s", SDL_GetError());
+   }
+   if (config->audioChannels != 1 && config->audioChannels != 2) {
+      rsLog("Only 1 or 2 channels are supported. Defaulting to 2");
    }
 
    SDL_AudioDeviceID devId = 0;
@@ -109,7 +118,7 @@ int rsAudioCreate(RSAudio *audio, const RSConfig *config) {
    audio->index = 0;
    audio->channels = ospec.channels;
    audio->bitrate = config->audioBitrate;
-   audio->sizebatch = sizebatch;
+   audio->sizeBatch = sizebatch;
    prepareEncoder(audio, config);
    SDL_PauseAudioDevice(audio->deviceId, 0);
    return 1;
@@ -119,14 +128,14 @@ void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSAudio *audio, int re
 	SDL_PauseAudioDevice(audio->deviceId, 1);
 	*audioenc = audio->audioenc;
 	audioenc->data = malloc(audioenc->size);
-	audioenc->frame = malloc(audioenc->frame_size); 
+	audioenc->frame = malloc(audioenc->frameSize); 
 	memcpy(audioenc->data, audio->data, audio->size);
-	size_t rewind_bytes = rewindframes * audio->sizebatch;
-	if (rewind_bytes <= audio->index) {
-		audioenc->index = audio->index - rewind_bytes;
+	int rewindBytes = rewindframes * audio->sizeBatch;
+	if (rewindBytes <= audio->index) {
+		audioenc->index = audio->index - rewindBytes;
 		return;
 	}
-	audioenc->index = audio->size - (rewind_bytes - audio->index);
+	audioenc->index = audio->size - (rewindBytes - audio->index);
 	SDL_PauseAudioDevice(audio->deviceId, 0);
 }
 
@@ -158,14 +167,14 @@ void rsAudioEncodeFrame(RSAudioEncoder *audioenc, uint8_t *out, int *num_of_byte
    void *iptr = audioenc->frame;
    void *optr = out;
 
-   int ibufsizes = audioenc->frame_size;
+   int ibufsizes = audioenc->frameSize;
    int iidentifiers = IN_AUDIO_DATA;
    int ielsizes = 2;
    int obufsizes = 2048;
    int oidentifiers = OUT_BITSTREAM_DATA;
    int oelsizes = 1;
 
-   iargs.numInSamples = audioenc->aac_info.frameLength * AUDIO_CHANNELS;
+   iargs.numInSamples = audioenc->samplesPerFrame;
    ibuf.numBufs = 1;
    ibuf.bufs = &iptr;
    ibuf.bufferIdentifiers = &iidentifiers;

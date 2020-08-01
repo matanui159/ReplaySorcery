@@ -101,12 +101,12 @@ static void *outputThread(void *data) {
    tr.object_type_indication = MP4_OBJECT_TYPE_AUDIO_ISO_IEC_14496_3;
    tr.time_scale = OUTPUT_TIMEBASE;
    tr.default_duration = 0;
-   tr.u.a.channelcount = output->audio->channels;
+   tr.u.a.channelcount = output->config->audioChannels;
    int audio_track_id = MP4E_add_track(muxer, &tr);
-   MP4E_set_dsi(muxer, audio_track_id, audioenc.aac_info.confBuf, audioenc.aac_info.confSize);
+   MP4E_set_dsi(muxer, audio_track_id, audioenc.aac_info.confBuf, (int)audioenc.aac_info.confSize);
    int64_t ts = 0;
    int64_t ats = 0;
-   int samples_count = 0;
+   int samplesCount = 0;
    
    RSFrame frame, yFrame, uFrame, vFrame;
    rsFrameCreate(&frame, (size_t)output->config->width, (size_t)output->config->height,
@@ -142,18 +142,17 @@ static void *outputThread(void *data) {
       x264_encoder_encode(x264, &nals, &nalCount, &inPic, &outPic);
       outputNals(&track, nals, nalCount, duration);
       
-      ts += OUTPUT_TIMEBASE / output->config->framerate;
+      ts += (OUTPUT_TIMEBASE / output->config->framerate) * output->config->audioChannels;
       while (ats < ts) {
-         uint8_t buf[2048*10];
-	 int num_of_bytes = 0;
-	 int num_of_samples = 0;
-         rsAudioEncodeFrame(&audioenc, buf, &num_of_bytes, &num_of_samples);
-         samples_count += num_of_samples;
-         ats = (int64_t)samples_count * OUTPUT_TIMEBASE / AUDIO_RATE;
-         if (MP4E_STATUS_OK != MP4E_put_sample(muxer, audio_track_id, buf, num_of_bytes,
-                                               num_of_samples * OUTPUT_TIMEBASE / AUDIO_RATE,
-                                               MP4E_SAMPLE_RANDOM_ACCESS)) {
-            rsError("MP4E_put_sample failed\n");
+         uint8_t buf[2048];
+         int numBytes = 0;
+         int numSamples = 0;
+         rsAudioEncodeFrame(&audioenc, buf, &numBytes, &numSamples);
+         samplesCount += numSamples;
+         ats = (int64_t)samplesCount * OUTPUT_TIMEBASE / output->config->audioSamplerate;
+         if (MP4E_STATUS_OK != MP4E_put_sample(muxer, audio_track_id, buf, numBytes,
+                (numSamples / output->config->audioChannels) * OUTPUT_TIMEBASE / output->config->audioSamplerate, MP4E_SAMPLE_RANDOM_ACCESS)) {
+	    rsError("MP4E_put_sample failed\n");
          }
       }
    }

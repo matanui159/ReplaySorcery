@@ -34,8 +34,9 @@ typedef struct RSAudioEncoder {
    uint8_t *data;
    uint8_t *frame;
    int size;
-   int frame_size;
+   int frameSize;
    int index;
+   int samplesPerFrame;
 } RSAudioEncoder;
 
 
@@ -46,7 +47,7 @@ typedef struct RSAudio {
    int channels;
    int size;
    int index;
-   int sizebatch;
+   int sizeBatch;
    uint8_t *data;
 } RSAudio;
 
