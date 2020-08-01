@@ -156,7 +156,7 @@ target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libSDL2.a" dl)
 ExternalProject_Add(fdk-aac
 	STEP_TARGETS fdk-aac
 	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dep/fdk-aac"
-	CONFIGURE_COMMAND pushd . && cd <SOURCE_DIR> && <SOURCE_DIR>/autogen.sh && popd && <SOURCE_DIR>/configure
+	CONFIGURE_COMMAND cd <SOURCE_DIR> && ./autogen.sh && cd <BINARY_DIR> && <SOURCE_DIR>/configure
 	   --prefix=<INSTALL_DIR>
 	   --enable-static=yes
 	   --enable-shared=no
