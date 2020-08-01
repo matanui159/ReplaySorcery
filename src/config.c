@@ -89,6 +89,7 @@ static const ConfigParam configParams[] = {
     CONFIG_PARAM(preOutputCommand, configString, ""),
     CONFIG_PARAM(postOutputCommand, configString,
                  "notify-send ReplaySorcery \"Video saved!\""),
+    CONFIG_PARAM(audioDeviceName, configString, "auto"),
     CONFIG_PARAM(audioChannels, configInt, "1"),
     CONFIG_PARAM(audioSamplerate, configInt, "44100"),
     CONFIG_PARAM(audioBitrate, configInt, "96000")};

@@ -128,8 +128,28 @@ ExternalProject_Get_Property(x264 INSTALL_DIR)
 target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
 target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libx264.a" m)
 
-# sdl2 for audio
-target_link_libraries(${binary} PRIVATE SDL2 fdk-aac)
+# sdl2 git submodule
+ExternalProject_Add(sdl2
+	STEP_TARGETS sdl2
+	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dep/sdl2"
+	CONFIGURE_COMMAND <SOURCE_DIR>/configure
+	   --prefix=<INSTALL_DIR>
+	   --enable-static
+	   --enable-video=no
+	   --enable-render=no
+	   --enable-joystick=no
+	   --enable-haptic=no
+	   --enable-sensor=no
+	   --enable-power=no
+	   --enable-filesystem=no
+	   --enable-timers=no
+	   --enable-file=no
+	   --enable-audio=yes
+)
+add_dependencies(${binary} sdl2)
+ExternalProject_Get_Property(sdl2 INSTALL_DIR)
+target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
+target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libSDL2.a" dl fdk-aac)
 
 # Minimp4 header-only git submodule
 target_include_directories(${binary} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/dep/minimp4")

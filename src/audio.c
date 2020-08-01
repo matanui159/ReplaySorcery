@@ -21,89 +21,105 @@
 #include "util/log.h"
 #include "memory.h"
 
-static void rsAudioPrepareEncoder(RSAudio *audio, const RSConfig* config);
-static void rsAudioPrepareEncoder(RSAudio *audio, const RSConfig* config);
-static void rsAudioEncoderPrepareFrame(RSAudioEncoder *audioenc);
+#define SAMPLE_COUNT 4096
 
-void rsAudioCallback(void *userdata, uint8_t *stream, int len) {
+static void audioCallback(void *userdata, uint8_t *stream, int len) {
 	RSAudio* audio = (RSAudio*)userdata;
-	size_t end = audio->index + len;
-	if (end <= audio->size) {
-		memcpy(audio->data + audio->index, stream, len);
-		audio->index += len;
-		return;
+	int end = audio->index + len;
+	if (end >= audio->size) {
+		audio->index = 0;
 	}
+	memcpy(audio->data + audio->index, stream, (size_t)len);
+	audio->index += len;
+}
 
-	int diff = end - audio->size;
-	int rest = len - diff;
-	memcpy(audio->data + audio->index, stream, diff);
-	memcpy(audio->data, stream+diff, rest);
-	audio->index += rest;
+static const char *getDeviceName(const RSConfig *config) {
+   const char* devname = config->audioDeviceName;
+   if (!devname || !strcmp(config->audioDeviceName, "auto")) {
+	   return 0;
+   }
+   return devname;
+}
+
+static void prepareEncoder(RSAudio *audio, const RSConfig* config) {
+   aacEncOpen(&(audio->audioenc.aac_enc), 0, 0);
+   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_TRANSMUX, 0);
+   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_AFTERBURNER, 1);
+   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_BITRATE, AUDIO_BITRATE);
+   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_SAMPLERATE, AUDIO_RATE);
+   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_CHANNELMODE, config->audioChannels);
+   aacEncEncode(audio->audioenc.aac_enc, NULL, NULL, NULL, NULL);
+   aacEncInfo(audio->audioenc.aac_enc, &(audio->audioenc.aac_info));
+
+   audio->audioenc.data = 0;
+   audio->audioenc.frame = 0;
+   audio->audioenc.size = audio->size;
+   audio->audioenc.frame_size = (int)audio->audioenc.aac_info.frameLength * audio->channels * (int)sizeof(uint16_t);
+   audio->audioenc.index = 0;
+}
+
+static void rsAudioEncoderPrepareFrame(RSAudioEncoder *audioenc) {
+   int firstCopySize = (int)audioenc->frame_size;
+   int endData = (int)audioenc->index + audioenc->frame_size;
+   int diff = audioenc->size - endData;
+   if (diff >= 0) {
+      memcpy(audioenc->frame, audioenc->data + audioenc->index, (size_t)firstCopySize);
+      audioenc->index += firstCopySize;
+      return;
+   }
+   firstCopySize += diff;
+   memcpy(audioenc->frame, audioenc->data + audioenc->index, firstCopySize);
+   memcpy(audioenc->frame + firstCopySize, audioenc->data, -diff);
+   audioenc->index = -diff;
 }
 
 int rsAudioCreate(RSAudio *audio, const RSConfig *config) {
-   int error;
    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
    	rsError("SDL2 could not initialize! SDL Error: %s", SDL_GetError());
    }
-   int devices = SDL_GetNumAudioDevices(1);
-   if (devices < 1) {
-	rsError("Unable to get audio capture device! SDL Error: %s", SDL_GetError());
-   }
-   rsLog("Audio driver : %s", SDL_GetCurrentAudioDriver());
-   for (int i = 0; i < devices; i++) {
-	rsLog("Audio device : %s", SDL_GetAudioDeviceName(i, 1));
-   }
 
-   SDL_AudioDeviceID recordingDeviceId = 0;
-   
+   SDL_AudioDeviceID devId = 0;
    SDL_AudioSpec ispec;
    SDL_AudioSpec ospec;
    SDL_zero(ispec);
-   ispec.freq = config->audioSamplerate;
+   SDL_zero(ospec);
+
+   ispec.freq = (int)config->audioSamplerate;
    ispec.format = AUDIO_S16LSB;
    ispec.channels = config->audioChannels;
-   ispec.samples = 4096;
-   ispec.callback = rsAudioCallback;
+   ispec.samples = SAMPLE_COUNT; //must be power of 2
+   ispec.callback = audioCallback;
    ispec.userdata = audio;
-   //Open recording device
-   recordingDeviceId = SDL_OpenAudioDevice(SDL_GetAudioDeviceName(1, SDL_TRUE), SDL_TRUE, 
-	   &ispec, &ospec, SDL_AUDIO_ALLOW_FORMAT_CHANGE );
-										
-   if( recordingDeviceId == 0 ) {
-   	rsError("Can't open this device");
-   }
-   audio->deviceId = recordingDeviceId;
-   size_t size_1s = config->audioSamplerate * sizeof(uint16_t) * config->audioChannels;
-   size_t size_total = size_1s * (unsigned)config->duration;
 
-   audio->size = size_total;
-   audio->data = rsMemoryCreate(size_total);
+   const char* devname = getDeviceName(config);
+   devId = SDL_OpenAudioDevice(devname, 1, &ispec, &ospec, 0);
+   if (!devId) {
+   	rsError("SDL2 couldn't open audio device %s", SDL_GetError());
+   }
+   audio->deviceId = devId;
+
+   int size1s = ospec.channels * ospec.freq * sizeof(uint16_t);
+   int sizebatch = size1s / config->framerate;
+   int sizeTotal = size1s * config->duration;
+   int numOfFrames = (sizeTotal + (SAMPLE_COUNT - 1)) / SAMPLE_COUNT; //round up div
+   sizeTotal = numOfFrames * SAMPLE_COUNT;
+
+   audio->size = sizeTotal;
+   audio->data = malloc(sizeTotal);
    audio->index = 0;
-   audio->channels = config->audioChannels;
+   audio->channels = ospec.channels;
    audio->bitrate = config->audioBitrate;
-   rsAudioPrepareEncoder(audio, config);
+   audio->sizebatch = sizebatch;
+   prepareEncoder(audio, config);
+   SDL_PauseAudioDevice(audio->deviceId, 0);
    return 1;
 }
 
-void rsAudioReadSamples(RSAudio *audio) {
-/*   int error;
-   int ret = pa_simple_read(audio->pa_api, audio->data + audio->index, audio->sizebatch,
-                        &error);
-   if (ret < 0) {
-      rsError("PulseAudio: pa_simple_read() failed: %s", pa_strerror(error));
-      return;
-   }
-   audio->index += audio->sizebatch;
-   if (audio->index >= audio->size) {
-      audio->index -= audio->size;
-   }
-*/}
-
-void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSAudio *audio, size_t rewindframes) {
+void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSAudio *audio, int rewindframes) {
+	SDL_PauseAudioDevice(audio->deviceId, 1);
 	*audioenc = audio->audioenc;
-	audioenc->data = rsMemoryCreate(audioenc->size);
-	audioenc->frame = rsMemoryCreate(audioenc->frame_size); 
+	audioenc->data = malloc(audioenc->size);
+	audioenc->frame = malloc(audioenc->frame_size); 
 	memcpy(audioenc->data, audio->data, audio->size);
 	size_t rewind_bytes = rewindframes * audio->sizebatch;
 	if (rewind_bytes <= audio->index) {
@@ -111,6 +127,7 @@ void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSAudio *audio, size_t
 		return;
 	}
 	audioenc->index = audio->size - (rewind_bytes - audio->index);
+	SDL_PauseAudioDevice(audio->deviceId, 0);
 }
 
 void rsAudioDestroy(RSAudio *audio) {
@@ -167,38 +184,6 @@ void rsAudioEncodeFrame(RSAudioEncoder *audioenc, uint8_t *out, int *num_of_byte
    }
    *num_of_bytes = oargs.numOutBytes;
    *num_of_samples = iargs.numInSamples;
-}
-
-static void rsAudioPrepareEncoder(RSAudio *audio, const RSConfig* config) {
-   aacEncOpen(&(audio->audioenc.aac_enc), 0, 0);
-   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_TRANSMUX, 0);
-   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_AFTERBURNER, 1);
-   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_BITRATE, AUDIO_BITRATE);
-   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_SAMPLERATE, AUDIO_RATE);
-   aacEncoder_SetParam(audio->audioenc.aac_enc, AACENC_CHANNELMODE, config->audioChannels);
-   aacEncEncode(audio->audioenc.aac_enc, NULL, NULL, NULL, NULL);
-   aacEncInfo(audio->audioenc.aac_enc, &(audio->audioenc.aac_info));
-
-   audio->audioenc.data = 0;
-   audio->audioenc.frame = 0;
-   audio->audioenc.size = audio->size;
-   audio->audioenc.frame_size = audio->audioenc.aac_info.frameLength * audio->channels * sizeof(uint16_t);
-   audio->audioenc.index = 0;
-}
-
-static void rsAudioEncoderPrepareFrame(RSAudioEncoder *audioenc) {
-   int32_t first_copy_size = audioenc->frame_size;
-   int32_t end_of_data = audioenc->index + audioenc->frame_size;
-   int diff = audioenc->size - end_of_data;
-   if (diff >= 0) {
-      memcpy(audioenc->frame, audioenc->data + audioenc->index, first_copy_size);
-      audioenc->index += first_copy_size;
-      return;
-   }
-   first_copy_size += diff;
-   memcpy(audioenc->frame, audioenc->data + audioenc->index, first_copy_size);
-   memcpy(audioenc->frame + first_copy_size, audioenc->data, -diff);
-   audioenc->index = -diff;
 }
 
 

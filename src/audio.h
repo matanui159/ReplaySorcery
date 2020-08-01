@@ -33,25 +33,25 @@ typedef struct RSAudioEncoder {
    AACENC_InfoStruct aac_info;
    uint8_t *data;
    uint8_t *frame;
-   size_t size;
-   size_t frame_size;
-   size_t index;
+   int size;
+   int frame_size;
+   int index;
 } RSAudioEncoder;
 
 
 typedef struct RSAudio {
-   int deviceId;
-   uint32_t bitrate;
-   uint8_t channels;
-   uint8_t *data;
-   size_t size;
-   size_t index;
-   size_t sizebatch;
    RSAudioEncoder audioenc;
+   SDL_AudioDeviceID deviceId;
+   int bitrate;
+   int channels;
+   int size;
+   int index;
+   int sizebatch;
+   uint8_t *data;
 } RSAudio;
 
 void rsAudioEncodeFrame(RSAudioEncoder *audioenc, uint8_t *out, int *num_of_bytes, int *num_of_samples);
-void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSAudio *audio, size_t rewindframes);
+void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSAudio *audio, int rewindframes);
 void rsAudioEncoderDestroy(RSAudioEncoder* audioenc);
 
 int rsAudioCreate(RSAudio *audio, const RSConfig *config);
