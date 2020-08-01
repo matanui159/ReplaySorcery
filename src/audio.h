@@ -51,11 +51,11 @@ typedef struct RSAudio {
    uint8_t *data;
 } RSAudio;
 
-void rsAudioEncodeFrame(RSAudioEncoder *audioenc, uint8_t *out, int *num_of_bytes, int *num_of_samples);
-void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSAudio *audio, int rewindframes);
+void rsAudioEncodeFrame(RSAudioEncoder *audioenc, uint8_t *out, int *numBytes, int *numSamples);
+void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSAudio *audio, int rewindFrames);
 void rsAudioEncoderDestroy(RSAudioEncoder* audioenc);
 
-int rsAudioCreate(RSAudio *audio, const RSConfig *config);
+void rsAudioCreate(RSAudio *audio, const RSConfig *config);
 void rsAudioDestroy(RSAudio *audio);
 void rsAudioReadSamples(RSAudio *audio);
 

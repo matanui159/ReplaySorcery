@@ -85,7 +85,6 @@ int main(int argc, char *argv[]) {
       rsCompress(&compress, rsBufferCircleNext(&circle), &frame);
       rsFrameDestroy(&frame);
       if (rsSystemWantsSave(&system)) {
-      rsLog("kek");
          rsOutputDestroy(&output);
          rsOutputCreate(&output, &config, &audio);
          rsOutput(&output, &circle);

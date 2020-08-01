@@ -91,7 +91,7 @@ static void *outputThread(void *data) {
 
    //setup for audio encoding
    RSAudioEncoder audioenc;
-   rsAudioEncoderCreate(&audioenc, output->audio, output->frameCount);
+   rsAudioEncoderCreate(&audioenc, output->audio, (int)output->frameCount);
    MP4E_track_t tr;
    tr.track_media_kind = e_audio;
    tr.language[0] = 'u';
@@ -101,7 +101,7 @@ static void *outputThread(void *data) {
    tr.object_type_indication = MP4_OBJECT_TYPE_AUDIO_ISO_IEC_14496_3;
    tr.time_scale = OUTPUT_TIMEBASE;
    tr.default_duration = 0;
-   tr.u.a.channelcount = output->config->audioChannels;
+   tr.u.a.channelcount = (unsigned)output->config->audioChannels;
    int audio_track_id = MP4E_add_track(muxer, &tr);
    MP4E_set_dsi(muxer, audio_track_id, audioenc.aac_info.confBuf, (int)audioenc.aac_info.confSize);
    int64_t ts = 0;

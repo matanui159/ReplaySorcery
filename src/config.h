@@ -36,9 +36,9 @@ typedef struct RSConfig {
    char *preOutputCommand;
    char *postOutputCommand;
    char *audioDeviceName;
-   uint8_t audioChannels;
-   uint32_t audioSamplerate;
-   uint32_t audioBitrate;
+   int audioChannels;
+   int audioSamplerate;
+   int audioBitrate;
 } RSConfig;
 
 void rsConfigLoad(RSConfig *config);
