@@ -13,3 +13,6 @@
 [submodule "dep/sdl2"]
 	path = dep/sdl2
 	url = https://github.com/pseregiet/sdl2-audio-monitor.git
+[submodule "dep/fdk-aac"]
+	path = dep/fdk-aac
+	url = https://github.com/mstorsjo/fdk-aac.git

@@ -134,7 +134,8 @@ ExternalProject_Add(sdl2
 	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dep/sdl2"
 	CONFIGURE_COMMAND <SOURCE_DIR>/configure
 	   --prefix=<INSTALL_DIR>
-	   --enable-static
+	   --enable-static=yes
+	   --enable-shared=no
 	   --enable-video=no
 	   --enable-render=no
 	   --enable-joystick=no
@@ -149,7 +150,21 @@ ExternalProject_Add(sdl2
 add_dependencies(${binary} sdl2)
 ExternalProject_Get_Property(sdl2 INSTALL_DIR)
 target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
-target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libSDL2.a" dl fdk-aac)
+target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libSDL2.a" dl)
+
+# fdk-aac git submodule
+ExternalProject_Add(fdk-aac
+	STEP_TARGETS fdk-aac
+	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dep/fdk-aac"
+	CONFIGURE_COMMAND pushd . && cd <SOURCE_DIR> && <SOURCE_DIR>/autogen.sh && popd && <SOURCE_DIR>/configure
+	   --prefix=<INSTALL_DIR>
+	   --enable-static=yes
+	   --enable-shared=no
+)
+add_dependencies(${binary} fdk-aac)
+ExternalProject_Get_Property(fdk-aac INSTALL_DIR)
+target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
+target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libfdk-aac.a")
 
 # Minimp4 header-only git submodule
 target_include_directories(${binary} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/dep/minimp4")
