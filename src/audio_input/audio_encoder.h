@@ -29,11 +29,9 @@ typedef struct RSAudioEncoder {
    AACENC_InfoStruct aac_info;
    int samplesPerFrame;
    int frameSize;
-   uint8_t *frameBuffer;
 } RSAudioEncoder;
 
 void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSConfig *config);
-void rsAudioEncoderDestroy(RSAudioEncoder* audioenc);
 void rsAudioEncoderEncode(RSAudioEncoder *audioenc, uint8_t *samples, uint8_t *out, int *numBytes, int *numSamples);
 
 #endif

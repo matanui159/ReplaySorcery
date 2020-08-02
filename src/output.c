@@ -176,7 +176,6 @@ static void *outputThread(void *data) {
    rsFrameDestroy(&frame);
    rsDecompressDestroy(&decompress);
    rsBufferDestroy(&output->frames);
-   rsAudioEncoderDestroy(&audioenc);
 
    outputCommand(output->config->postOutputCommand);
    return NULL;

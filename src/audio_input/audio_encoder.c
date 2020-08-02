@@ -36,13 +36,6 @@ void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSConfig *config) {
    aacEncInfo(audioenc->aac_enc, &(audioenc->aac_info));
    audioenc->samplesPerFrame = (int)audioenc->aac_info.frameLength * config->audioChannels;
    audioenc->frameSize = audioenc->samplesPerFrame * (int)sizeof(uint16_t);
-   audioenc->frameBuffer = rsMemoryCreate((size_t)audioenc->frameSize);
-}
-
-void rsAudioEncoderDestroy(RSAudioEncoder* audioenc) {
-   if (audioenc->frameBuffer) {
-      rsMemoryDestroy(audioenc->frameBuffer);
-   }
 }
 
 void rsAudioEncoderEncode(RSAudioEncoder *audioenc, uint8_t *rawSamples, uint8_t *out, int *numBytes, int *numSamples) {
