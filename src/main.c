@@ -21,11 +21,12 @@
 #include "compress.h"
 #include "config.h"
 #include "output.h"
-#include "audio.h"
+#include "audio_input/audio.h"
 #include "std.h"
 #include "system/xlib.h"
 #include "util/circle.h"
 #include "util/log.h"
+#include "util/memory.h"
 #include <signal.h>
 
 static sig_atomic_t mainRunning = true;
@@ -79,7 +80,7 @@ int main(int argc, char *argv[]) {
    size_t capacity = (size_t)(config.duration * config.framerate);
    rsBufferCircleCreate(&circle, capacity);
    rsAudioCreate(&audio, &config);
-
+   uint8_t *rawSamples = rsMemoryCreate((size_t)audio.data.size);
    while (mainRunning) {
       RSFrame frame;
       rsSystemFrameCreate(&frame, &system);
@@ -87,7 +88,7 @@ int main(int argc, char *argv[]) {
       rsFrameDestroy(&frame);
       if (rsSystemWantsSave(&system)) {
          rsOutputDestroy(&output);
-         rsOutputCreate(&output, &config);
+         rsOutputCreate(&output, &config, rawSamples);
          rsOutput(&output, &circle, &audio);
       }
    }
@@ -97,4 +98,5 @@ int main(int argc, char *argv[]) {
    rsCompressDestroy(&compress);
    rsSystemDestroy(&system);
    rsConfigDestroy(&config);
+   rsMemoryDestroy(rawSamples);
 }

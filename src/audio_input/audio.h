@@ -20,47 +20,23 @@
 #ifndef RS_UTIL_AUDIO_H
 #define RS_UTIL_AUDIO_H
 
-#include "config.h"
-#include "util/circle_static.h"
-#include <pthread.h>
-#include <fdk-aac/aacenc_lib.h>
 #include <SDL2/SDL.h>
-
-#define AUDIO_RATE 44100
-#define AUDIO_CHANNELS 1
-#define AUDIO_BITRATE 96000
-
-typedef struct RSAudioEncoder {
-   HANDLE_AACENCODER aac_enc;
-   AACENC_InfoStruct aac_info;
-   RSCircleStatic data;
-   uint8_t *frame;
-   int size;
-   int frameSize;
-   int index;
-   int samplesPerFrame;
-} RSAudioEncoder;
-
+#include <pthread.h>
+#include "../config.h"
+#include "../util/circle_static.h"
 
 typedef struct RSAudio {
-   RSAudioEncoder audioenc;
    SDL_AudioDeviceID deviceId;
    pthread_spinlock_t sampleGetLock;
    RSCircleStatic data;
    int bitrate;
    int channels;
-   int size;
-   int index;
    int sizeBatch;
 } RSAudio;
 
-void rsAudioEncodeFrame(RSAudioEncoder *audioenc, uint8_t *out, int *numBytes, int *numSamples);
-void rsAudioEncoderCreate(RSAudioEncoder* audioenc, RSAudio *audio, int rewindFrames);
-void rsAudioEncoderDestroy(RSAudioEncoder* audioenc);
-
 void rsAudioCreate(RSAudio *audio, const RSConfig *config);
 void rsAudioDestroy(RSAudio *audio);
-void rsAudioReadSamples(RSAudio *audio);
+void rsAudioGetSamples(RSAudio *audio, uint8_t *newbuff, int rewindFrames);
 
 #endif
 

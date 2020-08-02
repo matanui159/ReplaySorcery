@@ -20,7 +20,9 @@
 #include "memory.h"
 
 void rsCircleStaticCreate(RSCircleStatic *circle, int size) {
-   circle->data = rsMemoryCreate((size_t)size);
+   if (!circle->data) {
+      circle->data = rsMemoryCreate((size_t)size);
+   }
    circle->size = size;
    circle->index = 0;
 }

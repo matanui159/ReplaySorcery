@@ -1,5 +1,4 @@
 /*
- * Copyright (C) 2020  Joshua Minter
  * Copyright (C) 2020  Patryk Seregiet
  *
  * This file is part of ReplaySorcery.
@@ -18,28 +17,24 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_OUTPUT_H
-#define RS_OUTPUT_H
-#include "config.h"
-#include "audio_input/audio.h"
-#include "audio_input/audio_encoder.h"
-#include "std.h"
-#include "util/buffer.h"
-#include "util/circle.h"
-#include "util/circle_static.h"
-#include <pthread.h>
+#ifndef RS_AUDIO_ENCODER_H
+#define RS_AUDIO_ENCODER_H
 
-typedef struct RSOutput {
-   const RSConfig *config;
-   FILE *file;
-   RSBuffer frames;
-   pthread_t thread;
-   size_t frameCount;
-   uint8_t *rawSamples;
-} RSOutput;
+#include <fdk-aac/aacenc_lib.h>
+#include "../config.h"
+#include "../util/circle_static.h"
 
-void rsOutputCreate(RSOutput *output, const RSConfig *config, uint8_t *rawSamples);
-void rsOutputDestroy(RSOutput *output);
-void rsOutput(RSOutput *output, const RSBufferCircle *frames, RSAudio *audio);
+typedef struct RSAudioEncoder {
+   HANDLE_AACENCODER aac_enc;
+   AACENC_InfoStruct aac_info;
+   int samplesPerFrame;
+   int frameSize;
+   uint8_t *frameBuffer;
+} RSAudioEncoder;
+
+void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSConfig *config);
+void rsAudioEncoderDestroy(RSAudioEncoder* audioenc);
+void rsAudioEncoderEncode(RSAudioEncoder *audioenc, uint8_t *samples, uint8_t *out, int *numBytes, int *numSamples);
 
 #endif
+
