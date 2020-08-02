@@ -39,9 +39,9 @@ static const char *getDeviceName(const RSConfig *config) {
 
 static void printDevices(void) {
    rsLog("Available devices:");
-   int max = SDL_GetNumAudioDevices(1);
+   int max = SDL_GetNumAudioDevices(true);
    for (int i = 0; i < max; ++i) {
-      rsLog(SDL_GetAudioDeviceName(i, 1));
+      rsLog(SDL_GetAudioDeviceName(i, true));
    }
 }
 
@@ -67,7 +67,7 @@ void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
    ispec.userdata = audio;
 
    const char* devname = getDeviceName(config);
-   devId = SDL_OpenAudioDevice(devname, 1, &ispec, &ospec, 0);
+   devId = SDL_OpenAudioDevice(devname, true, &ispec, &ospec, 0);
    if (!devId) {
       rsError("SDL2 couldn't open audio device %s", SDL_GetError());
    }

@@ -16,7 +16,8 @@ set(sources
    src/system/system.c
    src/system/framerate.c
    src/system/xlib.c
-   src/audio.c
+   src/audio_input/audio.c
+   src/audio_input/audio_encoder.c
    src/config.c
    src/compress.c
    src/mp4.c
@@ -36,7 +37,8 @@ set(headers
    src/system/system.h
    src/system/framerate.h
    src/system/xlib.h
-   src/audio.h
+   src/audio_input/audio.h
+   src/audio_input/audio_encoder.h
    src/config.h
    src/compress.h
    src/output.h
