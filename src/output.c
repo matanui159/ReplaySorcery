@@ -90,7 +90,7 @@ static void *outputThread(void *data) {
    mp4_h26x_write_init(&track, muxer, output->config->width, output->config->height,
                        false);
 
-   //setup for audio encoding
+   // setup for audio encoding
    RSAudioEncoder audioenc;
    rsAudioEncoderCreate(&audioenc, output->config);
    MP4E_track_t tr;
@@ -105,11 +105,11 @@ static void *outputThread(void *data) {
    tr.u.a.channelcount = (unsigned)output->config->audioChannels;
    int audio_track_id = MP4E_add_track(muxer, &tr);
    MP4E_set_dsi(muxer, audio_track_id, audioenc.aac_info.confBuf,
-		   (int)audioenc.aac_info.confSize);
+                (int)audioenc.aac_info.confSize);
    int64_t ts = 0;
    int64_t ats = 0;
    int samplesCount = 0;
-   
+
    RSFrame frame, yFrame, uFrame, vFrame;
    rsFrameCreate(&frame, (size_t)output->config->width, (size_t)output->config->height,
                  3);
@@ -143,19 +143,22 @@ static void *outputThread(void *data) {
       inPic.i_pts = (int64_t)(duration * i);
       x264_encoder_encode(x264, &nals, &nalCount, &inPic, &outPic);
       outputNals(&track, nals, nalCount, duration);
-      
+
       ts += (OUTPUT_TIMEBASE / output->config->framerate) * output->config->audioChannels;
       while (ats < ts) {
          uint8_t buf[2048];
          int numBytes = 0;
          int numSamples = 0;
          rsAudioEncoderEncode(&audioenc, output->rawSamples, buf, &numBytes, &numSamples);
-	 output->rawSamples += audioenc.frameSize;
+         output->rawSamples += audioenc.frameSize;
          samplesCount += numSamples;
          ats = (int64_t)samplesCount * OUTPUT_TIMEBASE / output->config->audioSamplerate;
-         if (MP4E_STATUS_OK != MP4E_put_sample(muxer, audio_track_id, buf, numBytes,
-                (numSamples / output->config->audioChannels) * OUTPUT_TIMEBASE / output->config->audioSamplerate, MP4E_SAMPLE_RANDOM_ACCESS)) {
-	    rsError("MP4E_put_sample failed\n");
+         if (MP4E_STATUS_OK !=
+             MP4E_put_sample(muxer, audio_track_id, buf, numBytes,
+                             (numSamples / output->config->audioChannels) *
+                                 OUTPUT_TIMEBASE / output->config->audioSamplerate,
+                             MP4E_SAMPLE_RANDOM_ACCESS)) {
+            rsError("MP4E_put_sample failed\n");
          }
       }
    }

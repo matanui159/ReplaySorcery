@@ -21,24 +21,29 @@
 #include "../util/log.h"
 #include "../util/memory.h"
 
-void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSConfig *config) {
+void rsAudioEncoderCreate(RSAudioEncoder *audioenc, const RSConfig *config) {
    if (AACENC_OK != aacEncOpen(&(audioenc->aac_enc), 0, 0)) {
       rsError("aacEncOpen failed");
    }
    aacEncoder_SetParam(audioenc->aac_enc, AACENC_TRANSMUX, 0);
    aacEncoder_SetParam(audioenc->aac_enc, AACENC_AFTERBURNER, 1);
    aacEncoder_SetParam(audioenc->aac_enc, AACENC_BITRATE, (UINT)config->audioBitrate);
-   aacEncoder_SetParam(audioenc->aac_enc, AACENC_SAMPLERATE, (UINT)config->audioSamplerate);
-   aacEncoder_SetParam(audioenc->aac_enc, AACENC_CHANNELMODE, (UINT)config->audioChannels);
+   aacEncoder_SetParam(audioenc->aac_enc, AACENC_SAMPLERATE,
+                       (UINT)config->audioSamplerate);
+   aacEncoder_SetParam(audioenc->aac_enc, AACENC_CHANNELMODE,
+                       (UINT)config->audioChannels);
    if (AACENC_OK != aacEncEncode(audioenc->aac_enc, NULL, NULL, NULL, NULL)) {
-      rsError("aacEncEncode failed. Probably bad bitrate. Tried %d", config->audioBitrate);
+      rsError("aacEncEncode failed. Probably bad bitrate. Tried %d",
+              config->audioBitrate);
    }
    aacEncInfo(audioenc->aac_enc, &(audioenc->aac_info));
-   audioenc->samplesPerFrame = (int)audioenc->aac_info.frameLength * config->audioChannels;
+   audioenc->samplesPerFrame =
+       (int)audioenc->aac_info.frameLength * config->audioChannels;
    audioenc->frameSize = audioenc->samplesPerFrame * (int)sizeof(uint16_t);
 }
 
-void rsAudioEncoderEncode(RSAudioEncoder *audioenc, uint8_t *rawSamples, uint8_t *out, int *numBytes, int *numSamples) {
+void rsAudioEncoderEncode(RSAudioEncoder *audioenc, uint8_t *rawSamples, uint8_t *out,
+                          int *numBytes, int *numSamples) {
    AACENC_BufDesc ibuf = {0};
    AACENC_BufDesc obuf = {0};
    AACENC_InArgs iargs = {0};
@@ -67,8 +72,7 @@ void rsAudioEncoderEncode(RSAudioEncoder *audioenc, uint8_t *rawSamples, uint8_t
    obuf.bufSizes = &obufsizes;
    obuf.bufElSizes = &oelsizes;
 
-   if (AACENC_OK !=
-       aacEncEncode(audioenc->aac_enc, &ibuf, &obuf, &iargs, &oargs)) {
+   if (AACENC_OK != aacEncEncode(audioenc->aac_enc, &ibuf, &obuf, &iargs, &oargs)) {
       rsLog("AAC: aac encode failed");
    }
    *numBytes = oargs.numOutBytes;

@@ -76,4 +76,3 @@ void rsCircleStaticMoveBackIndex(RSCircleStatic *circle, int bytes) {
    }
    circle->index = circle->size - (bytes - circle->index);
 }
-

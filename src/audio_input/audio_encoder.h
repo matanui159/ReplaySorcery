@@ -20,9 +20,9 @@
 #ifndef RS_AUDIO_ENCODER_H
 #define RS_AUDIO_ENCODER_H
 
-#include <fdk-aac/aacenc_lib.h>
 #include "../config.h"
 #include "../util/circle_static.h"
+#include <fdk-aac/aacenc_lib.h>
 
 typedef struct RSAudioEncoder {
    HANDLE_AACENCODER aac_enc;
@@ -31,8 +31,8 @@ typedef struct RSAudioEncoder {
    int frameSize;
 } RSAudioEncoder;
 
-void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSConfig *config);
-void rsAudioEncoderEncode(RSAudioEncoder *audioenc, uint8_t *samples, uint8_t *out, int *numBytes, int *numSamples);
+void rsAudioEncoderCreate(RSAudioEncoder *audioenc, const RSConfig *config);
+void rsAudioEncoderEncode(RSAudioEncoder *audioenc, uint8_t *samples, uint8_t *out,
+                          int *numBytes, int *numSamples);
 
 #endif
-

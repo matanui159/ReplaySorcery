@@ -18,10 +18,10 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "audio_input/audio.h"
 #include "compress.h"
 #include "config.h"
 #include "output.h"
-#include "audio_input/audio.h"
 #include "std.h"
 #include "system/xlib.h"
 #include "util/circle.h"

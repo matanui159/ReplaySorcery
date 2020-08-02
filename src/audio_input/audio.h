@@ -20,10 +20,10 @@
 #ifndef RS_UTIL_AUDIO_H
 #define RS_UTIL_AUDIO_H
 
-#include <SDL2/SDL.h>
-#include <pthread.h>
 #include "../config.h"
 #include "../util/circle_static.h"
+#include <SDL2/SDL.h>
+#include <pthread.h>
 
 typedef struct RSAudio {
    SDL_AudioDeviceID deviceId;
@@ -39,4 +39,3 @@ void rsAudioDestroy(RSAudio *audio);
 void rsAudioGetSamples(RSAudio *audio, uint8_t *newbuff, int rewindFrames);
 
 #endif
-

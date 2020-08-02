@@ -20,17 +20,17 @@
 #include "audio.h"
 #include "../util/log.h"
 #include "../util/memory.h"
-#define SAMPLES_PER_CALLBACK 4096 //has to be power of 2
+#define SAMPLES_PER_CALLBACK 4096 // has to be power of 2
 
 static void audioCallback(void *userdata, uint8_t *stream, int len) {
-   RSAudio* audio = (RSAudio*)userdata;
+   RSAudio *audio = (RSAudio *)userdata;
    pthread_spin_lock(&audio->sampleGetLock);
    rsCircleStaticAdd(&audio->data, stream, len);
    pthread_spin_unlock(&audio->sampleGetLock);
 }
 
 static const char *getDeviceName(const RSConfig *config) {
-   const char* devname = config->audioDeviceName;
+   const char *devname = config->audioDeviceName;
    if (!devname || !strcmp(config->audioDeviceName, "auto")) {
       return NULL;
    }
@@ -62,11 +62,11 @@ void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
    ispec.freq = (int)config->audioSamplerate;
    ispec.format = AUDIO_S16LSB;
    ispec.channels = (Uint8)config->audioChannels;
-   ispec.samples = SAMPLES_PER_CALLBACK; //must be power of 2
+   ispec.samples = SAMPLES_PER_CALLBACK; // must be power of 2
    ispec.callback = audioCallback;
    ispec.userdata = audio;
 
-   const char* devname = getDeviceName(config);
+   const char *devname = getDeviceName(config);
    devId = SDL_OpenAudioDevice(devname, true, &ispec, &ospec, 0);
    if (!devId) {
       rsError("SDL2 couldn't open audio device %s", SDL_GetError());
@@ -75,7 +75,8 @@ void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
    audio->deviceId = devId;
    int size1s = ospec.channels * ospec.freq * (int)sizeof(uint16_t);
    int sizeTotal = size1s * config->duration;
-   int numOfCallbacks = (sizeTotal + (SAMPLES_PER_CALLBACK - 1)) / SAMPLES_PER_CALLBACK; //round up div
+   int numOfCallbacks =
+       (sizeTotal + (SAMPLES_PER_CALLBACK - 1)) / SAMPLES_PER_CALLBACK; // round up div
    sizeTotal = numOfCallbacks * SAMPLES_PER_CALLBACK;
    audio->sizeBatch = size1s / config->framerate;
 
@@ -99,4 +100,3 @@ void rsAudioDestroy(RSAudio *audio) {
    rsCircleStaticDestroy(&audio->data);
    pthread_spin_destroy(&audio->sampleGetLock);
 }
-
