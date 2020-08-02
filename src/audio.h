@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter & Patryk Seregiet
+ * Copyright (C) 2020  Patryk Seregiet
  *
  * This file is part of ReplaySorcery.
  *
@@ -21,6 +21,8 @@
 #define RS_UTIL_AUDIO_H
 
 #include "config.h"
+#include "util/circle_static.h"
+#include <pthread.h>
 #include <fdk-aac/aacenc_lib.h>
 #include <SDL2/SDL.h>
 
@@ -31,7 +33,7 @@
 typedef struct RSAudioEncoder {
    HANDLE_AACENCODER aac_enc;
    AACENC_InfoStruct aac_info;
-   uint8_t *data;
+   RSCircleStatic data;
    uint8_t *frame;
    int size;
    int frameSize;
@@ -43,16 +45,17 @@ typedef struct RSAudioEncoder {
 typedef struct RSAudio {
    RSAudioEncoder audioenc;
    SDL_AudioDeviceID deviceId;
+   pthread_spinlock_t sampleGetLock;
+   RSCircleStatic data;
    int bitrate;
    int channels;
    int size;
    int index;
    int sizeBatch;
-   uint8_t *data;
 } RSAudio;
 
 void rsAudioEncodeFrame(RSAudioEncoder *audioenc, uint8_t *out, int *numBytes, int *numSamples);
-void rsAudioEncoderCreate(RSAudioEncoder* audioenc, const RSAudio *audio, int rewindFrames);
+void rsAudioEncoderCreate(RSAudioEncoder* audioenc, RSAudio *audio, int rewindFrames);
 void rsAudioEncoderDestroy(RSAudioEncoder* audioenc);
 
 void rsAudioCreate(RSAudio *audio, const RSConfig *config);

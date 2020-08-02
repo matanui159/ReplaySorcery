@@ -9,6 +9,7 @@ set(sources
    src/util/memory.c
    src/util/buffer.c
    src/util/circle.c
+   src/util/circle_static.c
    src/util/path.c
    src/util/string.c
    src/util/frame.c
@@ -28,6 +29,7 @@ set(headers
    src/util/memory.h
    src/util/buffer.h
    src/util/circle.h
+   src/util/circle_static.h
    src/util/path.h
    src/util/string.h
    src/util/frame.h

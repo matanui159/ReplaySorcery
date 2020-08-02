@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020  Patryk Seregiet
  *
  * This file is part of ReplaySorcery.
  *
@@ -86,8 +87,8 @@ int main(int argc, char *argv[]) {
       rsFrameDestroy(&frame);
       if (rsSystemWantsSave(&system)) {
          rsOutputDestroy(&output);
-         rsOutputCreate(&output, &config, &audio);
-         rsOutput(&output, &circle);
+         rsOutputCreate(&output, &config);
+         rsOutput(&output, &circle, &audio);
       }
    }
 

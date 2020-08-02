@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020  Patryk Seregiet
  *
  * This file is part of ReplaySorcery.
  *
@@ -90,8 +91,6 @@ static void *outputThread(void *data) {
                        false);
 
    //setup for audio encoding
-   RSAudioEncoder audioenc;
-   rsAudioEncoderCreate(&audioenc, output->audio, (int)output->frameCount);
    MP4E_track_t tr;
    tr.track_media_kind = e_audio;
    tr.language[0] = 'u';
@@ -103,7 +102,8 @@ static void *outputThread(void *data) {
    tr.default_duration = 0;
    tr.u.a.channelcount = (unsigned)output->config->audioChannels;
    int audio_track_id = MP4E_add_track(muxer, &tr);
-   MP4E_set_dsi(muxer, audio_track_id, audioenc.aac_info.confBuf, (int)audioenc.aac_info.confSize);
+   MP4E_set_dsi(muxer, audio_track_id, output->audioenc.aac_info.confBuf,
+		   (int)output->audioenc.aac_info.confSize);
    int64_t ts = 0;
    int64_t ats = 0;
    int samplesCount = 0;
@@ -147,7 +147,7 @@ static void *outputThread(void *data) {
          uint8_t buf[2048];
          int numBytes = 0;
          int numSamples = 0;
-         rsAudioEncodeFrame(&audioenc, buf, &numBytes, &numSamples);
+         rsAudioEncodeFrame(&output->audioenc, buf, &numBytes, &numSamples);
          samplesCount += numSamples;
          ats = (int64_t)samplesCount * OUTPUT_TIMEBASE / output->config->audioSamplerate;
          if (MP4E_STATUS_OK != MP4E_put_sample(muxer, audio_track_id, buf, numBytes,
@@ -173,15 +173,14 @@ static void *outputThread(void *data) {
    rsFrameDestroy(&frame);
    rsDecompressDestroy(&decompress);
    rsBufferDestroy(&output->frames);
-   rsAudioEncoderDestroy(&audioenc);
+   rsAudioEncoderDestroy(&output->audioenc);
 
    outputCommand(output->config->postOutputCommand);
    return NULL;
 }
 
-void rsOutputCreate(RSOutput *output, const RSConfig *config, RSAudio *audio) {
+void rsOutputCreate(RSOutput *output, const RSConfig *config) {
    output->config = config;
-   output->audio = audio;
    RSBuffer path;
    rsBufferCreate(&path);
    rsPathAppendDated(&path, config->outputFile);
@@ -199,9 +198,10 @@ void rsOutputDestroy(RSOutput *output) {
    rsMemoryClear(output, sizeof(RSOutput));
 }
 
-void rsOutput(RSOutput *output, const RSBufferCircle *frames) {
+void rsOutput(RSOutput *output, const RSBufferCircle *frames, RSAudio *audio) {
    rsBufferCreate(&output->frames);
    rsBufferCircleExtract(frames, &output->frames);
    output->frameCount = frames->size;
+   rsAudioEncoderCreate(&output->audioenc, audio, (int)output->frameCount);
    pthread_create(&output->thread, NULL, outputThread, output);
 }
