@@ -88,16 +88,14 @@ The path to output the videos to. Can use [`strftime`](https://en.cppreference.c
 ### `preOutputCommand` and `postOutputCommand`
 These options can be used to run commands before or after outputting a video, for instance generating notifications, playing sounds or running post processing. Failures from these commands do not stop ReplaySorcery. The default is setup to show a notification when the output is finished, but it requires `libnotify` to be installed. Default is an empty string and `notify-send ReplaySorcery "Video saved!"` respectively.
 
+### `audioDeviceName`, `audioChannels`, `audioSamplerate`, `audioBitrate`
+These options control the audio recording and its quallity. `audioDeviceName` can be `auto` which will pick the default capture device (probably a microphone). A list of available capture devices is listed when the program launches. Look for device with name `Monitor of...`, that will let you record your sound. You can also change the device you want to record on the fly with a program like `pavucontrol`. `audioChannels` sellects how many channels you want to record. Tested vales are 1 for mono and 2 for stereo. 5.1 and other systems are not tested as of yet. audioSamplerate is how many samples per second you want to capture. It's best to select the same samplerate as your device, otherwise we'll have to convert the samples and that just wastes cpu and memory for no gains. Unless you changed something in your system you probably run at 44100hz which is the default. `audioBitrate` is the bitrate of the encoded audio. We use AAC encoder. Default is 96000.
 # Issues
 - Does not track frame timing properly so if there is lag or dropped frames the output will be played back faster.
 - Can be a bit resource hungry at times (in particular memory)
 
 # TODO
 - Document code better
-- Add audio support
-  - For my personal requirements it would need to support hot plugging (I use a bluetooth headset).
-  - Alot of the time visuals alone are enough to tell a story.
-  - (not crossing it out entirely just might take time).
 - Cross-platform support
   - Doubt there is any demand though
   - Maybe for Intel devices if they are fast enough?

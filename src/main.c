@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
    signal(SIGFPE, mainSignal);
    signal(SIGINT, mainSignal);
    signal(SIGTERM, mainSignal);
-   rsLog("ReplaySorcery  Copyright (C) 2020  Joshua Minter");
+   rsLog("ReplaySorcery  Copyright (C) 2020  ReplaySorcery developers");
    rsLog("This program comes with ABSOLUTELY NO WARRANTY.");
    rsLog("This is free software, and you are welcome to redistribute it");
    rsLog("under certain conditions; see COPYING for details.");
