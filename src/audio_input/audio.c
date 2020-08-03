@@ -45,12 +45,6 @@ static void getDeviceName(RSAudio *audio, const RSConfig *config) {
       strcat(audio->deviceName, sdlname);
       return;
    }
-   if (!strstr(devname, monitor)) {
-      audio->deviceName = rsMemoryCreate(strlen(devname) + strlen(monitor) + 1);
-      strcpy(audio->deviceName, monitor);
-      strcat(audio->deviceName, devname);
-      return;
-   }
    audio->deviceName = rsMemoryCreate(strlen(devname) + 1);
    strcpy(audio->deviceName, devname);
 }
@@ -66,6 +60,9 @@ static void printDevices(void) {
 void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
       rsError("SDL2 could not initialize! SDL Error: %s", SDL_GetError());
+   }
+   if (pthread_spin_init(&audio->sampleGetLock, PTHREAD_PROCESS_PRIVATE)) {
+      rsError("pthread_spin_init failed");
    }
    printDevices();
    SDL_AudioDeviceID devId = 0;
@@ -102,11 +99,13 @@ void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
 
 void rsAudioGetSamples(RSAudio *audio, uint8_t *newbuff, int rewindFrames) {
    int oldIndex = audio->data.index;
-   SDL_LockAudioDevice(audio->deviceId);
+   pthread_spin_lock(&audio->sampleGetLock);
+   //SDL_LockAudioDevice(audio->deviceId);
    rsCircleStaticMoveBackIndex(&audio->data, rewindFrames * audio->sizeBatch);
    rsCircleStaticGet(&audio->data, newbuff, audio->data.size);
    audio->data.index = oldIndex;
-   SDL_UnlockAudioDevice(audio->deviceId);
+   pthread_spin_unlock(&audio->sampleGetLock);
+   //SDL_UnlockAudioDevice(audio->deviceId);
 }
 
 void rsAudioDestroy(RSAudio *audio) {
@@ -117,4 +116,5 @@ void rsAudioDestroy(RSAudio *audio) {
       rsMemoryDestroy(audio->deviceName);
    }
    rsCircleStaticDestroy(&audio->data);
+   pthread_spin_destroy(&audio->sampleGetLock);
 }
