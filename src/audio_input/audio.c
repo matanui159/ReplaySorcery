@@ -38,7 +38,7 @@ static void getDeviceName(RSAudio *audio, const RSConfig *config) {
       const char *sdlname = SDL_GetAudioDeviceName(0, false);
       if (!sdlname) {
          audio->deviceName = NULL;
-	 return;
+         return;
       }
       audio->deviceName = rsMemoryCreate(strlen(sdlname) + strlen(monitor) + 1);
       strcpy(audio->deviceName, monitor);
