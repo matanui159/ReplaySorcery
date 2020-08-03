@@ -23,12 +23,11 @@
 #include "../config.h"
 #include "../util/circle_static.h"
 #include <SDL2/SDL.h>
-#include <pthread.h>
 
 typedef struct RSAudio {
    SDL_AudioDeviceID deviceId;
-   pthread_spinlock_t sampleGetLock;
    RSCircleStatic data;
+   char *deviceName;
    int bitrate;
    int channels;
    int sizeBatch;
