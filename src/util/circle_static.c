@@ -20,9 +20,7 @@
 #include "memory.h"
 
 void rsCircleStaticCreate(RSCircleStatic *circle, int size) {
-   if (!circle->data) {
-      circle->data = rsMemoryCreate((size_t)size);
-   }
+   circle->data = rsMemoryCreate((size_t)size);
    circle->size = size;
    circle->index = 0;
 }
@@ -31,12 +29,6 @@ void rsCircleStaticDestroy(RSCircleStatic *circle) {
    if (circle->data) {
       rsMemoryDestroy(circle->data);
    }
-}
-
-void rsCircleStaticDuplicate(RSCircleStatic *dst, const RSCircleStatic *src) {
-   rsCircleStaticCreate(dst, src->size);
-   dst->index = src->index;
-   memcpy(dst->data, src->data, (size_t)src->size);
 }
 
 void rsCircleStaticAdd(RSCircleStatic *circle, uint8_t *src, int size) {

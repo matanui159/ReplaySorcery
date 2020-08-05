@@ -24,19 +24,29 @@
 #include "../util/circle_static.h"
 #include <SDL2/SDL.h>
 #include <pthread.h>
+#include <time.h>
+
+enum RSAUDIO_TYPE { RSAUDIO_AUTO, RSAUDIO_DEFAULT, RSAUDIO_SPECIFIC };
 
 typedef struct RSAudio {
    SDL_AudioDeviceID deviceId;
+   enum RSAUDIO_TYPE deviceType;
+   SDL_AudioSpec ispec;
+   SDL_AudioSpec ospec;
    pthread_spinlock_t sampleGetLock;
    RSCircleStatic data;
    char *deviceName;
    int bitrate;
    int channels;
    int sizeBatch;
+   int deviceNum;
+   uint32_t deviceAddTime;
+   uint32_t deviceRemoveTime;
 } RSAudio;
 
 void rsAudioCreate(RSAudio *audio, const RSConfig *config);
 void rsAudioDestroy(RSAudio *audio);
 void rsAudioGetSamples(RSAudio *audio, uint8_t *newbuff, int rewindFrames);
+void rsAudioHandleEvents(RSAudio *audio);
 
 #endif

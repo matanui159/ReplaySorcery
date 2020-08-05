@@ -82,6 +82,7 @@ int main(int argc, char *argv[]) {
    rsAudioCreate(&audio, &config);
    uint8_t *rawSamples = rsMemoryCreate((size_t)audio.data.size);
    while (mainRunning) {
+      rsAudioHandleEvents(&audio);
       RSFrame frame;
       rsSystemFrameCreate(&frame, &system);
       rsCompress(&compress, rsBufferCircleNext(&circle), &frame);

@@ -139,6 +139,8 @@ ExternalProject_Add(sdl2
 	CONFIGURE_COMMAND <SOURCE_DIR>/configure
 	   --prefix=<INSTALL_DIR>
 	   --enable-static=yes
+	   --enable-timers=yes
+	   --enable-audio=yes
 	   --enable-shared=no
 	   --enable-video=no
 	   --enable-render=no
@@ -147,9 +149,7 @@ ExternalProject_Add(sdl2
 	   --enable-sensor=no
 	   --enable-power=no
 	   --enable-filesystem=no
-	   --enable-timers=no
 	   --enable-file=no
-	   --enable-audio=yes
 )
 add_dependencies(${binary} sdl2)
 ExternalProject_Get_Property(sdl2 INSTALL_DIR)

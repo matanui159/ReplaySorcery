@@ -29,7 +29,6 @@ typedef struct RSCircleStatic {
 
 void rsCircleStaticCreate(RSCircleStatic *circle, int size);
 void rsCircleStaticDestroy(RSCircleStatic *circle);
-void rsCircleStaticDuplicate(RSCircleStatic *dst, const RSCircleStatic *src);
 void rsCircleStaticAdd(RSCircleStatic *circle, uint8_t *src, int size);
 void rsCircleStaticGet(RSCircleStatic *circle, uint8_t *dst, int size);
 void rsCircleStaticMoveBackIndex(RSCircleStatic *circle, int bytes);

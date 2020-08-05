@@ -21,91 +21,156 @@
 #include "../util/log.h"
 #include "../util/memory.h"
 #define SAMPLES_PER_CALLBACK 4096 // has to be power of 2
+#define AUDIO_DEVICE_ADD_WAIT_TIME_MS 100
 
 static void audioCallback(void *userdata, uint8_t *stream, int len) {
    RSAudio *audio = (RSAudio *)userdata;
    rsCircleStaticAdd(&audio->data, stream, len);
 }
 
-static void getDeviceName(RSAudio *audio, const RSConfig *config) {
+static char *getDeviceName(const char *devname) {
    const char *monitor = "Monitor of ";
-   const char *devname = config->audioDeviceName;
-   if (!strcmp(config->audioDeviceName, "unknown")) {
-      audio->deviceName = NULL;
-      return;
+   if (!devname || !strcmp(devname, "auto")) {
+      return NULL;
    }
-   if (!strcmp(devname, "auto")) {
+   if (!strcmp(devname, "default")) {
       const char *sdlname = SDL_GetAudioDeviceName(0, false);
       if (!sdlname) {
-         audio->deviceName = NULL;
-         return;
+         return NULL;
       }
-      audio->deviceName = rsMemoryCreate(strlen(sdlname) + strlen(monitor) + 1);
-      strcpy(audio->deviceName, monitor);
-      strcat(audio->deviceName, sdlname);
-      return;
+      char *newname = rsMemoryCreate(strlen(sdlname) + strlen(monitor) + 1);
+      strcpy(newname, monitor);
+      strcat(newname, sdlname);
+      return newname;
    }
-   audio->deviceName = rsMemoryCreate(strlen(devname) + 1);
-   strcpy(audio->deviceName, devname);
+   return strdup(devname);
 }
 
-static void printDevices(void) {
-   rsLog("Available devices:");
+static void probeDevices(RSAudio *audio) {
    int max = SDL_GetNumAudioDevices(true);
+   rsLog("Available devices:");
    for (int i = 0; i < max; ++i) {
-      rsLog(SDL_GetAudioDeviceName(i, true));
+      rsLog("-   %s", SDL_GetAudioDeviceName(i, true));
    }
+   audio->deviceNum = max;
+   SDL_GetNumAudioDevices(false);
+}
+
+static bool openDevice(RSAudio *audio, const char *devname) {
+   SDL_zero(audio->ospec);
+   audio->deviceId = SDL_OpenAudioDevice(devname, true, &audio->ispec, &audio->ospec, 0);
+   if (!audio->deviceId) {
+      rsLog("SDL2 couldn't open audio device %s : %s", SDL_GetError(), devname);
+      return false;
+   }
+   rsLog("Opened audio device %s", devname);
+   return true;
 }
 
 void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
-   if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+   if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_EVENTS) < 0) {
       rsError("SDL2 could not initialize! SDL Error: %s", SDL_GetError());
    }
+   SDL_EventState(SDL_AUDIODEVICEADDED, SDL_ENABLE);
+   SDL_EventState(SDL_AUDIODEVICEREMOVED, SDL_ENABLE);
    if (pthread_spin_init(&audio->sampleGetLock, PTHREAD_PROCESS_PRIVATE)) {
       rsError("pthread_spin_init failed");
    }
-   printDevices();
-   SDL_AudioDeviceID devId = 0;
-   SDL_AudioSpec ispec;
-   SDL_AudioSpec ospec;
-   SDL_zero(ispec);
-   SDL_zero(ospec);
 
-   ispec.freq = (int)config->audioSamplerate;
-   ispec.format = AUDIO_S16LSB;
-   ispec.channels = (Uint8)config->audioChannels;
-   ispec.samples = SAMPLES_PER_CALLBACK; // must be power of 2
-   ispec.callback = audioCallback;
-   ispec.userdata = audio;
+   SDL_zero(audio->ispec);
+   audio->ispec.freq = (int)config->audioSamplerate;
+   audio->ispec.format = AUDIO_S16LSB;
+   audio->ispec.channels = (Uint8)config->audioChannels;
+   audio->ispec.samples = SAMPLES_PER_CALLBACK; // must be power of 2
+   audio->ispec.callback = audioCallback;
+   audio->ispec.userdata = audio;
 
-   getDeviceName(audio, config);
-   devId = SDL_OpenAudioDevice(audio->deviceName, true, &ispec, &ospec, 0);
-   if (!devId) {
-      rsError("SDL2 couldn't open audio device %s", SDL_GetError());
+   probeDevices(audio);
+   audio->deviceName = getDeviceName(config->audioDeviceName);
+   if (!openDevice(audio, audio->deviceName)) {
+      rsError("Exiting");
    }
-   rsLog("Opened audio device %s", audio->deviceName);
 
-   audio->deviceId = devId;
-   int size1s = ospec.channels * ospec.freq * (int)sizeof(uint16_t);
+   int size1s = audio->ospec.channels * audio->ospec.freq * (int)sizeof(uint16_t);
    int sizeTotal = size1s * config->duration;
    int numOfCallbacks =
        (sizeTotal + (SAMPLES_PER_CALLBACK - 1)) / SAMPLES_PER_CALLBACK; // round up div
    sizeTotal = numOfCallbacks * SAMPLES_PER_CALLBACK;
    audio->sizeBatch = size1s / config->framerate;
-
    rsCircleStaticCreate(&audio->data, sizeTotal);
+   audio->deviceAddTime = 0;
+   audio->deviceRemoveTime = 0;
+   SDL_PauseAudioDevice(audio->deviceId, 0);
+}
+
+static void rsAudioReconnect(RSAudio *audio, const char *devname) {
+   SDL_CloseAudioDevice(audio->deviceId);
+   /*
+    * set the audio buffor index to 0. Effectively erasing all
+    * the collected samples so far. This ensures that we'll be
+    * back in sync after the audio setup is complete.
+    * Once the frame pace and audio timestamps are implemented
+    * it should be calculated how long the audio setup took
+    * and move the index accordingly
+    */
+   audio->data.index = 0;
+   probeDevices(audio);
+   char *newname = getDeviceName(devname);
+   bool ok = openDevice(audio, newname);
+   rsMemoryDestroy(newname);
+   if (!ok) {
+      // just try opening the NULL device
+      if (!openDevice(audio, 0)) {
+         rsLog("Couldn't open any audio device. You will have no sound");
+         return;
+      }
+   }
    SDL_PauseAudioDevice(audio->deviceId, 0);
 }
 
 void rsAudioGetSamples(RSAudio *audio, uint8_t *newbuff, int rewindFrames) {
    int oldIndex = audio->data.index;
    pthread_spin_lock(&audio->sampleGetLock);
-   //SDL_LockAudioDevice(audio->deviceId);
    rsCircleStaticMoveBackIndex(&audio->data, rewindFrames * audio->sizeBatch);
    rsCircleStaticGet(&audio->data, newbuff, audio->data.size);
    audio->data.index = oldIndex;
    pthread_spin_unlock(&audio->sampleGetLock);
-   //SDL_UnlockAudioDevice(audio->deviceId);
+}
+
+void rsAudioHandleEvents(RSAudio *audio) {
+   if (audio->deviceAddTime && (SDL_GetTicks() > audio->deviceAddTime)) {
+      rsLog("New audio devices detected. Attempting reconnect");
+      rsAudioReconnect(audio, audio->deviceName);
+      audio->deviceAddTime = 0;
+   }
+   if (audio->deviceRemoveTime && (SDL_GetTicks() > audio->deviceRemoveTime)) {
+      rsLog("Audio device disconnected. Trying to connect to another device");
+      rsAudioReconnect(audio, "default");
+      audio->deviceRemoveTime = 0;
+   }
+   SDL_Event e;
+   while (SDL_PollEvent(&e)) {
+      if (e.type == SDL_AUDIODEVICEREMOVED && e.adevice.iscapture) {
+         /*
+          * do it after few miliseconds, give time to the pulse audio to elect
+          * the new default device
+          */
+         audio->deviceRemoveTime = SDL_GetTicks() + AUDIO_DEVICE_ADD_WAIT_TIME_MS;
+         rsLog("%d %d", SDL_GetTicks(), audio->deviceRemoveTime);
+      } else if (e.type == SDL_AUDIODEVICEADDED && e.adevice.iscapture) {
+         if ((int)e.adevice.which < audio->deviceNum) {
+            // pulse audio sometimes reports already existing device as added
+            continue;
+         }
+         /*
+          * connecting one physical device can produce many logical devices
+          * f.e a headset with microphone will produce 4 devices. speakers,
+          * microphone and a monitor of each. That's why we're gonna wait few
+          * milliseconds for all the devices to pop up, then try connecting
+          */
+         audio->deviceAddTime = SDL_GetTicks() + AUDIO_DEVICE_ADD_WAIT_TIME_MS;
+      }
+   }
 }
 
 void rsAudioDestroy(RSAudio *audio) {
