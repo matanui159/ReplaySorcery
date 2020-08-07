@@ -26,7 +26,7 @@
 
 static void audioCallback(void *userdata, uint8_t *stream, int len) {
    RSAudio *audio = (RSAudio *)userdata;
-   rsCircleStaticAdd(&audio->data, stream, len);
+   rsCircleStaticAdd(&audio->data, stream, (size_t)len);
 }
 
 static char *getDeviceName(const char *devname) {
@@ -98,7 +98,7 @@ void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
        (sizeTotal + (SAMPLES_PER_CALLBACK - 1)) / SAMPLES_PER_CALLBACK; // round up div
    sizeTotal = numOfCallbacks * SAMPLES_PER_CALLBACK;
    audio->sizeBatch = size1s / config->framerate;
-   rsCircleStaticCreate(&audio->data, sizeTotal);
+   rsCircleStaticCreate(&audio->data, (size_t)sizeTotal);
    audio->deviceAddTime = 0;
    audio->deviceRemoveTime = 0;
    SDL_PauseAudioDevice(audio->deviceId, 0);
@@ -130,9 +130,9 @@ static void rsAudioReconnect(RSAudio *audio, const char *devname) {
 }
 
 void rsAudioGetSamples(RSAudio *audio, uint8_t *newbuff, int rewindFrames) {
-   int oldIndex = audio->data.index;
+   size_t oldIndex = audio->data.index;
    pthread_spin_lock(&audio->sampleGetLock);
-   rsCircleStaticMoveBackIndex(&audio->data, rewindFrames * audio->sizeBatch);
+   rsCircleStaticMoveBackIndex(&audio->data, (size_t)(rewindFrames * audio->sizeBatch));
    rsCircleStaticGet(&audio->data, newbuff, audio->data.size);
    audio->data.index = oldIndex;
    pthread_spin_unlock(&audio->sampleGetLock);
