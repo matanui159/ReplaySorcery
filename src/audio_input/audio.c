@@ -20,6 +20,7 @@
 #include "audio.h"
 #include "../util/log.h"
 #include "../util/memory.h"
+#include "../util/string.h"
 #define SAMPLES_PER_CALLBACK 4096 // has to be power of 2
 #define AUDIO_DEVICE_ADD_WAIT_TIME_MS 100
 
@@ -43,14 +44,14 @@ static char *getDeviceName(const char *devname) {
       strcat(newname, sdlname);
       return newname;
    }
-   return strdup(devname);
+   return rsStringClone(devname);
 }
 
 static void probeDevices(RSAudio *audio) {
    int max = SDL_GetNumAudioDevices(true);
    rsLog("Available devices:");
    for (int i = 0; i < max; ++i) {
-      rsLog("-   %s", SDL_GetAudioDeviceName(i, true));
+      rsLog(" - %s", SDL_GetAudioDeviceName(i, true));
    }
    audio->deviceNum = max;
    SDL_GetNumAudioDevices(false);

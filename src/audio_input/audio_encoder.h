@@ -19,10 +19,10 @@
 
 #ifndef RS_AUDIO_ENCODER_H
 #define RS_AUDIO_ENCODER_H
-
 #include "../config.h"
 #include "../util/circle_static.h"
 #include <fdk-aac/aacenc_lib.h>
+#define AAC_OUTPUT_BUFFER_SIZE (1024 * 8)
 
 typedef struct RSAudioEncoder {
    HANDLE_AACENCODER aac_enc;

@@ -55,7 +55,7 @@ void rsAudioEncoderEncode(RSAudioEncoder *audioenc, uint8_t *rawSamples, uint8_t
    int ibufsizes = audioenc->frameSize;
    int iidentifiers = IN_AUDIO_DATA;
    int ielsizes = 2;
-   int obufsizes = 2048;
+   int obufsizes = AAC_OUTPUT_BUFFER_SIZE;
    int oidentifiers = OUT_BITSTREAM_DATA;
    int oelsizes = 1;
 
@@ -72,7 +72,7 @@ void rsAudioEncoderEncode(RSAudioEncoder *audioenc, uint8_t *rawSamples, uint8_t
    obuf.bufSizes = &obufsizes;
    obuf.bufElSizes = &oelsizes;
 
-   if (AACENC_OK != aacEncEncode(audioenc->aac_enc, &ibuf, &obuf, &iargs, &oargs)) {
+   if (aacEncEncode(audioenc->aac_enc, &ibuf, &obuf, &iargs, &oargs) != AACENC_OK) {
       rsLog("AAC: aac encode failed");
    }
    *numBytes = oargs.numOutBytes;

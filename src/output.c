@@ -146,7 +146,7 @@ static void *outputThread(void *data) {
 
       ts += (OUTPUT_TIMEBASE / output->config->framerate) * output->config->audioChannels;
       while (ats < ts) {
-         uint8_t buf[2048];
+         uint8_t buf[AAC_OUTPUT_BUFFER_SIZE];
          int numBytes = 0;
          int numSamples = 0;
          rsAudioEncoderEncode(&audioenc, output->rawSamples, buf, &numBytes, &numSamples);

@@ -19,8 +19,8 @@
 #include "circle_static.h"
 #include "memory.h"
 
-void rsCircleStaticCreate(RSCircleStatic *circle, int size) {
-   circle->data = rsMemoryCreate((size_t)size);
+void rsCircleStaticCreate(RSCircleStatic *circle, size_t size) {
+   circle->data = rsMemoryCreate(size);
    circle->size = size;
    circle->index = 0;
 }
@@ -31,37 +31,35 @@ void rsCircleStaticDestroy(RSCircleStatic *circle) {
    }
 }
 
-void rsCircleStaticAdd(RSCircleStatic *circle, uint8_t *src, int size) {
-   int end = circle->index + size;
-   int diff = circle->size - end;
-   if (diff >= 0) {
-      memcpy(circle->data + circle->index, src, (size_t)size);
+void rsCircleStaticAdd(RSCircleStatic *circle, uint8_t *src, size_t size) {
+   size_t end = circle->index + size;
+   if (circle->size >= end) {
+      memcpy(circle->data + circle->index, src, size);
       circle->index += size;
       return;
    }
-   int part1 = size + diff;
-   int part2 = size - part1;
-   memcpy(circle->data + circle->index, src, (size_t)part1);
-   memcpy(circle->data, src + part1, (size_t)part2);
+   size_t part1 = size - (end - circle->size);
+   size_t part2 = size - part1;
+   memcpy(circle->data + circle->index, src, part1);
+   memcpy(circle->data, src + part1, part2);
    circle->index = part2;
 }
 
-void rsCircleStaticGet(RSCircleStatic *circle, uint8_t *dst, int size) {
-   int end = circle->index + size;
-   int diff = circle->size - end;
-   if (diff >= 0) {
-      memcpy(dst, circle->data + circle->index, (size_t)size);
+void rsCircleStaticGet(RSCircleStatic *circle, uint8_t *dst, size_t size) {
+   size_t end = circle->index + size;
+   if (circle->size >= end) {
+      memcpy(dst, circle->data + circle->index, size);
       circle->index += size;
       return;
    }
-   int part1 = size + diff;
-   int part2 = size - part1;
-   memcpy(dst, circle->data + circle->index, (size_t)part1);
-   memcpy(dst + part1, circle->data, (size_t)part2);
+   size_t part1 = size - (end - circle->size);
+   size_t part2 = size - part1;
+   memcpy(dst, circle->data + circle->index, part1);
+   memcpy(dst + part1, circle->data, part2);
    circle->index = part2;
 }
 
-void rsCircleStaticMoveBackIndex(RSCircleStatic *circle, int bytes) {
+void rsCircleStaticMoveBackIndex(RSCircleStatic *circle, size_t bytes) {
    if (bytes <= circle->index) {
       circle->index -= bytes;
       return;

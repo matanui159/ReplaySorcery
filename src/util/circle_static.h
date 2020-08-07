@@ -23,14 +23,15 @@
 
 typedef struct RSCircleStatic {
    uint8_t *data;
-   int size;
-   int index;
+   size_t size;
+   size_t index;
 } RSCircleStatic;
 
-void rsCircleStaticCreate(RSCircleStatic *circle, int size);
+void rsCircleStaticCreate(RSCircleStatic *circle, size_t size);
 void rsCircleStaticDestroy(RSCircleStatic *circle);
-void rsCircleStaticAdd(RSCircleStatic *circle, uint8_t *src, int size);
-void rsCircleStaticGet(RSCircleStatic *circle, uint8_t *dst, int size);
-void rsCircleStaticMoveBackIndex(RSCircleStatic *circle, int bytes);
+void rsCircleStaticAdd(RSCircleStatic *circle, uint8_t *src, size_t size);
+void rsCircleStaticGet(RSCircleStatic *circle, uint8_t *dst, size_t size);
+void rsCircleStaticMoveBackIndex(RSCircleStatic *circle, size_t bytes);
 
 #endif
+

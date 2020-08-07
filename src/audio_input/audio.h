@@ -19,7 +19,6 @@
 
 #ifndef RS_UTIL_AUDIO_H
 #define RS_UTIL_AUDIO_H
-
 #include "../config.h"
 #include "../util/circle_static.h"
 #include <SDL2/SDL.h>
