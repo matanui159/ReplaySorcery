@@ -34,4 +34,3 @@ void rsCircleStaticGet(RSCircleStatic *circle, uint8_t *dst, size_t size);
 void rsCircleStaticMoveBackIndex(RSCircleStatic *circle, size_t bytes);
 
 #endif
-
