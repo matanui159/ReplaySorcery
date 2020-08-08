@@ -34,7 +34,7 @@ static char *getDeviceName(const char *devname) {
    if (devname == NULL || strcmp(devname, "auto") == 0) {
       return NULL;
    }
-   if (!strcmp(devname, "default")) {
+   if (strcmp(devname, "default") == 0) {
       const char *sdlname = SDL_GetAudioDeviceName(0, false);
       if (!sdlname) {
          return NULL;
