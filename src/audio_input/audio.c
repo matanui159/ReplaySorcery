@@ -144,7 +144,7 @@ void rsAudioHandleEvents(RSAudio *audio) {
       rsAudioReconnect(audio, audio->deviceName);
       audio->deviceAddTime = 0;
    }
-   if (audio->deviceRemoveTime && (SDL_GetTicks() > audio->deviceRemoveTime)) {
+   if (audio->deviceRemoveTime != 0 && (SDL_GetTicks() > audio->deviceRemoveTime)) {
       rsLog("Audio device disconnected. Trying to connect to another device");
       rsAudioReconnect(audio, "default");
       audio->deviceRemoveTime = 0;
