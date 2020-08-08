@@ -162,6 +162,7 @@ static void *outputThread(void *data) {
          }
       }
    }
+
    while (x264_encoder_delayed_frames(x264) > 0) {
       x264_encoder_encode(x264, &nals, &nalCount, NULL, &outPic);
       outputNals(&track, nals, nalCount, duration);
