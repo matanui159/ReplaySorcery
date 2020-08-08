@@ -60,7 +60,7 @@ static void probeDevices(RSAudio *audio) {
 static bool openDevice(RSAudio *audio, const char *devname) {
    SDL_zero(audio->ospec);
    audio->deviceId = SDL_OpenAudioDevice(devname, true, &audio->ispec, &audio->ospec, 0);
-   if (!audio->deviceId) {
+   if (audio->deviceId == 0) {
       rsLog("SDL2 couldn't open audio device %s : %s", SDL_GetError(), devname);
       return false;
    }
