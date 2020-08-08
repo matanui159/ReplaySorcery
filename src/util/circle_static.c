@@ -35,7 +35,7 @@ void rsCircleStaticAdd(RSCircleStatic *circle, uint8_t *src, size_t size) {
    size_t end = circle->index + size;
    if (circle->size >= end) {
       memcpy(circle->data + circle->index, src, size);
-      circle->index += size;
+      circle->index = end;
       return;
    }
    size_t part1 = size - (end - circle->size);
