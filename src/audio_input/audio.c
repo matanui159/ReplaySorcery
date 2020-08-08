@@ -31,7 +31,7 @@ static void audioCallback(void *userdata, uint8_t *stream, int len) {
 
 static char *getDeviceName(const char *devname) {
    const char *monitor = "Monitor of ";
-   if (!devname || !strcmp(devname, "auto")) {
+   if (devname == NULL || strcmp(devname, "auto") == 0) {
       return NULL;
    }
    if (!strcmp(devname, "default")) {
