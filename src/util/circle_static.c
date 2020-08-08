@@ -26,7 +26,7 @@ void rsCircleStaticCreate(RSCircleStatic *circle, size_t size) {
 }
 
 void rsCircleStaticDestroy(RSCircleStatic *circle) {
-   if (circle->data) {
+   if (circle->data != NULL) {
       rsMemoryDestroy(circle->data);
    }
 }
