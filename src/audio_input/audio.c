@@ -149,6 +149,7 @@ void rsAudioHandleEvents(RSAudio *audio) {
       rsAudioReconnect(audio, "default");
       audio->deviceRemoveTime = 0;
    }
+
    SDL_Event e;
    while (SDL_PollEvent(&e)) {
       if (e.type == SDL_AUDIODEVICEREMOVED && e.adevice.iscapture) {
