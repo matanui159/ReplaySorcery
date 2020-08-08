@@ -26,7 +26,9 @@
 
 static void audioCallback(void *userdata, uint8_t *stream, int len) {
    RSAudio *audio = (RSAudio *)userdata;
+   pthread_spin_lock(&audio->sampleGetLock);
    rsCircleStaticAdd(&audio->data, stream, (size_t)len);
+   pthread_spin_unlock(&audio->sampleGetLock);
 }
 
 static char *getDeviceName(const char *devname) {
@@ -68,6 +70,31 @@ static bool openDevice(RSAudio *audio, const char *devname) {
    return true;
 }
 
+static void deviceReconnect(RSAudio *audio, const char *devname) {
+   SDL_CloseAudioDevice(audio->deviceId);
+   /*
+    * set the audio buffor index to 0. Effectively erasing all
+    * the collected samples so far. This ensures that we'll be
+    * back in sync after the audio setup is complete.
+    * Once the frame pace and audio timestamps are implemented
+    * it should be calculated how long the audio setup took
+    * and move the index accordingly
+    */
+   audio->data.index = 0;
+   probeDevices(audio);
+   char *newname = getDeviceName(devname);
+   bool ok = openDevice(audio, newname);
+   rsMemoryDestroy(newname);
+   if (!ok) {
+      // just try opening the NULL device
+      if (!openDevice(audio, 0)) {
+         rsLog("Couldn't open any audio device. You will have no sound");
+         return;
+      }
+   }
+   SDL_PauseAudioDevice(audio->deviceId, 0);
+}
+
 void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
    if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_EVENTS) < 0) {
       rsError("SDL2 could not initialize! SDL Error: %s", SDL_GetError());
@@ -97,42 +124,17 @@ void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
    int numOfCallbacks =
        (sizeTotal + (SAMPLES_PER_CALLBACK - 1)) / SAMPLES_PER_CALLBACK; // round up div
    sizeTotal = numOfCallbacks * SAMPLES_PER_CALLBACK;
-   audio->sizeBatch = size1s / config->framerate;
+   audio->sizeBatch = (size_t)(size1s / config->framerate);
    rsCircleStaticCreate(&audio->data, (size_t)sizeTotal);
    audio->deviceAddTime = 0;
    audio->deviceRemoveTime = 0;
    SDL_PauseAudioDevice(audio->deviceId, 0);
 }
 
-static void rsAudioReconnect(RSAudio *audio, const char *devname) {
-   SDL_CloseAudioDevice(audio->deviceId);
-   /*
-    * set the audio buffor index to 0. Effectively erasing all
-    * the collected samples so far. This ensures that we'll be
-    * back in sync after the audio setup is complete.
-    * Once the frame pace and audio timestamps are implemented
-    * it should be calculated how long the audio setup took
-    * and move the index accordingly
-    */
-   audio->data.index = 0;
-   probeDevices(audio);
-   char *newname = getDeviceName(devname);
-   bool ok = openDevice(audio, newname);
-   rsMemoryDestroy(newname);
-   if (!ok) {
-      // just try opening the NULL device
-      if (!openDevice(audio, 0)) {
-         rsLog("Couldn't open any audio device. You will have no sound");
-         return;
-      }
-   }
-   SDL_PauseAudioDevice(audio->deviceId, 0);
-}
-
-void rsAudioGetSamples(RSAudio *audio, uint8_t *newbuff, int rewindFrames) {
+void rsAudioGetSamples(RSAudio *audio, uint8_t *newbuff, size_t rewindFrames) {
    size_t oldIndex = audio->data.index;
    pthread_spin_lock(&audio->sampleGetLock);
-   rsCircleStaticMoveBackIndex(&audio->data, (size_t)(rewindFrames * audio->sizeBatch));
+   rsCircleStaticMoveBackIndex(&audio->data, rewindFrames * audio->sizeBatch);
    rsCircleStaticGet(&audio->data, newbuff, audio->data.size);
    audio->data.index = oldIndex;
    pthread_spin_unlock(&audio->sampleGetLock);
@@ -141,12 +143,12 @@ void rsAudioGetSamples(RSAudio *audio, uint8_t *newbuff, int rewindFrames) {
 void rsAudioHandleEvents(RSAudio *audio) {
    if (audio->deviceAddTime != 0 && (SDL_GetTicks() > audio->deviceAddTime)) {
       rsLog("New audio devices detected. Attempting reconnect");
-      rsAudioReconnect(audio, audio->deviceName);
+      deviceReconnect(audio, audio->deviceName);
       audio->deviceAddTime = 0;
    }
    if (audio->deviceRemoveTime != 0 && (SDL_GetTicks() > audio->deviceRemoveTime)) {
       rsLog("Audio device disconnected. Trying to connect to another device");
-      rsAudioReconnect(audio, "default");
+      deviceReconnect(audio, "default");
       audio->deviceRemoveTime = 0;
    }
 

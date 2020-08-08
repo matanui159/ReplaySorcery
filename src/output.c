@@ -209,6 +209,6 @@ void rsOutput(RSOutput *output, const RSBufferCircle *frames, RSAudio *audio) {
    rsBufferCreate(&output->frames);
    rsBufferCircleExtract(frames, &output->frames);
    output->frameCount = frames->size;
-   rsAudioGetSamples(audio, output->rawSamples, (int)frames->size);
+   rsAudioGetSamples(audio, output->rawSamples, frames->size);
    pthread_create(&output->thread, NULL, outputThread, output);
 }

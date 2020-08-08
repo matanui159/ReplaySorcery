@@ -37,7 +37,7 @@ typedef struct RSAudio {
    char *deviceName;
    int bitrate;
    int channels;
-   int sizeBatch;
+   size_t sizeBatch;
    int deviceNum;
    uint32_t deviceAddTime;
    uint32_t deviceRemoveTime;
@@ -45,7 +45,7 @@ typedef struct RSAudio {
 
 void rsAudioCreate(RSAudio *audio, const RSConfig *config);
 void rsAudioDestroy(RSAudio *audio);
-void rsAudioGetSamples(RSAudio *audio, uint8_t *newbuff, int rewindFrames);
+void rsAudioGetSamples(RSAudio *audio, uint8_t *newbuff, size_t rewindFrames);
 void rsAudioHandleEvents(RSAudio *audio);
 
 #endif
