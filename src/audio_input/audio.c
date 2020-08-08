@@ -36,7 +36,7 @@ static char *getDeviceName(const char *devname) {
    }
    if (strcmp(devname, "default") == 0) {
       const char *sdlname = SDL_GetAudioDeviceName(0, false);
-      if (!sdlname) {
+      if (sdlname == NULL) {
          return NULL;
       }
       char *newname = rsMemoryCreate(strlen(sdlname) + strlen(monitor) + 1);
