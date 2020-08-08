@@ -139,7 +139,7 @@ void rsAudioGetSamples(RSAudio *audio, uint8_t *newbuff, int rewindFrames) {
 }
 
 void rsAudioHandleEvents(RSAudio *audio) {
-   if (audio->deviceAddTime && (SDL_GetTicks() > audio->deviceAddTime)) {
+   if (audio->deviceAddTime != 0 && (SDL_GetTicks() > audio->deviceAddTime)) {
       rsLog("New audio devices detected. Attempting reconnect");
       rsAudioReconnect(audio, audio->deviceName);
       audio->deviceAddTime = 0;
