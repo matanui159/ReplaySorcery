@@ -92,7 +92,8 @@ static const ConfigParam configParams[] = {
     CONFIG_PARAM(audioDeviceName, configString, "auto"),
     CONFIG_PARAM(audioChannels, configInt, "1"),
     CONFIG_PARAM(audioSamplerate, configInt, "44100"),
-    CONFIG_PARAM(audioBitrate, configInt, "96000")};
+    CONFIG_PARAM(audioBitrate, configInt, "96000"),
+    CONFIG_PARAM(audioSystemFallback, configInt, "0")};
 
 #define CONFIG_PARAMS_SIZE (sizeof(configParams) / sizeof(ConfigParam))
 

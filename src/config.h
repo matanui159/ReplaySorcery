@@ -39,6 +39,7 @@ typedef struct RSConfig {
    int audioChannels;
    int audioSamplerate;
    int audioBitrate;
+   int audioSystemFallback;
 } RSConfig;
 
 void rsConfigLoad(RSConfig *config);

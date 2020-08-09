@@ -33,10 +33,10 @@ static void audioCallback(void *userdata, uint8_t *stream, int len) {
 
 static char *getDeviceName(const char *devname) {
    const char *monitor = "Monitor of ";
-   if (devname == NULL || strcmp(devname, "auto") == 0) {
+   if (devname == NULL || strcmp(devname, "system") == 0) {
       return NULL;
    }
-   if (strcmp(devname, "default") == 0) {
+   if (strcmp(devname, "auto") == 0) {
       const char *sdlname = SDL_GetAudioDeviceName(0, false);
       if (sdlname == NULL) {
          return NULL;
@@ -86,8 +86,10 @@ static void deviceReconnect(RSAudio *audio, const char *devname) {
    bool ok = openDevice(audio, newname);
    rsMemoryDestroy(newname);
    if (!ok) {
-      // just try opening the NULL device
-      if (!openDevice(audio, 0)) {
+      if (newname != NULL && audio->systemFallback) {
+         ok = openDevice(audio, NULL);
+      }
+      if (!ok) {
          rsLog("Couldn't open any audio device. You will have no sound");
          return;
       }
@@ -104,6 +106,7 @@ void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
    if (pthread_spin_init(&audio->sampleGetLock, PTHREAD_PROCESS_PRIVATE)) {
       rsError("pthread_spin_init failed");
    }
+   audio->systemFallback = (config->audioSystemFallback != 0);
 
    SDL_zero(audio->ispec);
    audio->ispec.freq = (int)config->audioSamplerate;
@@ -116,7 +119,13 @@ void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
    probeDevices(audio);
    audio->deviceName = getDeviceName(config->audioDeviceName);
    if (!openDevice(audio, audio->deviceName)) {
-      rsError("Exiting");
+      bool ok = false;
+      if (audio->deviceName != NULL && audio->systemFallback) {
+         ok = openDevice(audio, NULL);
+      }
+      if (!ok) {
+         rsLog("Couldn't open any audio device. You will have no sound");
+      }
    }
 
    int size1s = audio->ospec.channels * audio->ospec.freq * (int)sizeof(uint16_t);
@@ -148,7 +157,7 @@ void rsAudioHandleEvents(RSAudio *audio) {
    }
    if (audio->deviceRemoveTime != 0 && (SDL_GetTicks() > audio->deviceRemoveTime)) {
       rsLog("Audio device disconnected. Trying to connect to another device");
-      deviceReconnect(audio, "default");
+      deviceReconnect(audio, "auto");
       audio->deviceRemoveTime = 0;
    }
 

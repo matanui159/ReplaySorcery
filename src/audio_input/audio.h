@@ -41,6 +41,7 @@ typedef struct RSAudio {
    int deviceNum;
    uint32_t deviceAddTime;
    uint32_t deviceRemoveTime;
+   bool systemFallback;
 } RSAudio;
 
 void rsAudioCreate(RSAudio *audio, const RSConfig *config);
