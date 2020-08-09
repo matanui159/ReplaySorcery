@@ -22,7 +22,7 @@
 #include "../util/memory.h"
 #include "../util/string.h"
 #define SAMPLES_PER_CALLBACK 4096 // has to be power of 2
-#define AUDIO_DEVICE_ADD_WAIT_TIME_MS 100
+#define AUDIO_DEVICE_ADD_WAIT_TIME_MS 500
 
 static void audioCallback(void *userdata, uint8_t *stream, int len) {
    RSAudio *audio = (RSAudio *)userdata;
@@ -37,7 +37,7 @@ static char *getDeviceName(const char *devname) {
       return NULL;
    }
    if (strcmp(devname, "auto") == 0) {
-      const char *sdlname = SDL_GetAudioDeviceName(0, false);
+      const char *sdlname = SDL_GetAudioDeviceName(-1, false);
       if (sdlname == NULL) {
          return NULL;
       }
@@ -56,7 +56,6 @@ static void probeDevices(RSAudio *audio) {
       rsLog(" - %s", SDL_GetAudioDeviceName(i, true));
    }
    audio->deviceNum = max;
-   SDL_GetNumAudioDevices(false);
 }
 
 static bool openDevice(RSAudio *audio, const char *devname) {
@@ -135,15 +134,18 @@ void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
    audio->ispec.userdata = audio;
 
    probeDevices(audio);
-   audio->deviceName = getDeviceName(config->audioDeviceName);
-   if (!openDevice(audio, audio->deviceName)) {
+   char *deviceName = getDeviceName(config->audioDeviceName);
+   if (!openDevice(audio, deviceName)) {
       bool ok = false;
-      if (audio->deviceName != NULL && audio->systemFallback) {
+      if (deviceName != NULL && audio->systemFallback) {
          ok = openDevice(audio, NULL);
       }
       if (!ok) {
          rsLog("Couldn't open any audio device. You will have no sound");
       }
+   }
+   if (deviceName != NULL) {
+      rsMemoryDestroy(deviceName);
    }
    calcAudioParams(audio);
    SDL_PauseAudioDevice(audio->deviceId, 0);
@@ -161,7 +163,7 @@ void rsAudioGetSamples(RSAudio *audio, uint8_t *newbuff, size_t rewindFrames) {
 void rsAudioHandleEvents(RSAudio *audio) {
    if (audio->deviceAddTime != 0 && (SDL_GetTicks() > audio->deviceAddTime)) {
       rsLog("New audio devices detected. Attempting reconnect");
-      deviceReconnect(audio, audio->deviceName);
+      deviceReconnect(audio, "auto");
       audio->deviceAddTime = 0;
    }
    if (audio->deviceRemoveTime != 0 && (SDL_GetTicks() > audio->deviceRemoveTime)) {
@@ -178,7 +180,6 @@ void rsAudioHandleEvents(RSAudio *audio) {
           * the new default device
           */
          audio->deviceRemoveTime = SDL_GetTicks() + AUDIO_DEVICE_ADD_WAIT_TIME_MS;
-         rsLog("%d %d", SDL_GetTicks(), audio->deviceRemoveTime);
       } else if (e.type == SDL_AUDIODEVICEADDED && e.adevice.iscapture) {
          if ((int)e.adevice.which < audio->deviceNum) {
             // pulse audio sometimes reports already existing device as added
@@ -198,9 +199,6 @@ void rsAudioHandleEvents(RSAudio *audio) {
 void rsAudioDestroy(RSAudio *audio) {
    if (audio->deviceId) {
       SDL_CloseAudioDevice(audio->deviceId);
-   }
-   if (audio->deviceName) {
-      rsMemoryDestroy(audio->deviceName);
    }
    rsCircleStaticDestroy(&audio->data);
    pthread_spin_destroy(&audio->sampleGetLock);

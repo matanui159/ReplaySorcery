@@ -34,7 +34,6 @@ typedef struct RSAudio {
    SDL_AudioSpec ospec;
    pthread_spinlock_t sampleGetLock;
    RSCircleStatic data;
-   char *deviceName;
    int bitrate;
    int channels;
    int duration;
