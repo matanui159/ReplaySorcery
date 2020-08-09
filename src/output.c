@@ -143,7 +143,9 @@ static void *outputThread(void *data) {
       inPic.i_pts = (int64_t)(duration * i);
       x264_encoder_encode(x264, &nals, &nalCount, &inPic, &outPic);
       outputNals(&track, nals, nalCount, duration);
-
+      if (output->rawSamples == NULL) {
+         continue;
+      }
       ts += (OUTPUT_TIMEBASE / output->config->framerate) * output->config->audioChannels;
       while (ats < ts) {
          uint8_t buf[AAC_OUTPUT_BUFFER_SIZE];
@@ -185,9 +187,8 @@ static void *outputThread(void *data) {
    return NULL;
 }
 
-void rsOutputCreate(RSOutput *output, const RSConfig *config, uint8_t *rawSamples) {
+void rsOutputCreate(RSOutput *output, const RSConfig *config, RSAudio *audio) {
    output->config = config;
-   output->rawSamples = rawSamples;
    RSBuffer path;
    rsBufferCreate(&path);
    rsPathAppendDated(&path, config->outputFile);
@@ -196,11 +197,18 @@ void rsOutputCreate(RSOutput *output, const RSConfig *config, uint8_t *rawSample
       rsError("Failed to open output file '%s': %s", path.data, strerror(errno));
    }
    rsBufferDestroy(&path);
+   if (audio->data.data != NULL) {
+      output->rawSamples = rsMemoryCreate(audio->data.size);
+      output->rawSamplesOriginal = output->rawSamples;
+   }
 }
 
 void rsOutputDestroy(RSOutput *output) {
    if (output->thread != 0) {
       pthread_join(output->thread, NULL);
+   }
+   if (output->rawSamplesOriginal != NULL) {
+      rsMemoryDestroy(output->rawSamplesOriginal);
    }
    rsMemoryClear(output, sizeof(RSOutput));
 }
@@ -209,6 +217,8 @@ void rsOutput(RSOutput *output, const RSBufferCircle *frames, RSAudio *audio) {
    rsBufferCreate(&output->frames);
    rsBufferCircleExtract(frames, &output->frames);
    output->frameCount = frames->size;
-   rsAudioGetSamples(audio, output->rawSamples, frames->size);
+   if (output->rawSamples != NULL) {
+      rsAudioGetSamples(audio, output->rawSamples, frames->size);
+   }
    pthread_create(&output->thread, NULL, outputThread, output);
 }

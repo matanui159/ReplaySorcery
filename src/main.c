@@ -80,7 +80,6 @@ int main(int argc, char *argv[]) {
    size_t capacity = (size_t)(config.duration * config.framerate);
    rsBufferCircleCreate(&circle, capacity);
    rsAudioCreate(&audio, &config);
-   uint8_t *rawSamples = rsMemoryCreate((size_t)audio.data.size);
 
    while (mainRunning) {
       rsAudioHandleEvents(&audio);
@@ -90,7 +89,7 @@ int main(int argc, char *argv[]) {
       rsFrameDestroy(&frame);
       if (rsSystemWantsSave(&system)) {
          rsOutputDestroy(&output);
-         rsOutputCreate(&output, &config, rawSamples);
+         rsOutputCreate(&output, &config, &audio);
          rsOutput(&output, &circle, &audio);
       }
    }
@@ -100,5 +99,4 @@ int main(int argc, char *argv[]) {
    rsCompressDestroy(&compress);
    rsSystemDestroy(&system);
    rsConfigDestroy(&config);
-   rsMemoryDestroy(rawSamples);
 }

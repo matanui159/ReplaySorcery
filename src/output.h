@@ -36,9 +36,10 @@ typedef struct RSOutput {
    pthread_t thread;
    size_t frameCount;
    uint8_t *rawSamples;
+   uint8_t *rawSamplesOriginal;
 } RSOutput;
 
-void rsOutputCreate(RSOutput *output, const RSConfig *config, uint8_t *rawSamples);
+void rsOutputCreate(RSOutput *output, const RSConfig *config, RSAudio *audio);
 void rsOutputDestroy(RSOutput *output);
 void rsOutput(RSOutput *output, const RSBufferCircle *frames, RSAudio *audio);
 

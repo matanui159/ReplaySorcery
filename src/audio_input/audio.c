@@ -70,6 +70,21 @@ static bool openDevice(RSAudio *audio, const char *devname) {
    return true;
 }
 
+static void calcAudioParams(RSAudio *audio) {
+   if (audio->data.data != NULL) {
+      return;
+   }
+   int size1s = audio->ospec.channels * audio->ospec.freq * (int)sizeof(uint16_t);
+   int sizeTotal = size1s * audio->duration;
+   int numOfCallbacks =
+       (sizeTotal + (SAMPLES_PER_CALLBACK - 1)) / SAMPLES_PER_CALLBACK; // round up div
+   sizeTotal = numOfCallbacks * SAMPLES_PER_CALLBACK;
+   audio->sizeBatch = (size_t)(size1s / audio->framerate);
+   rsCircleStaticCreate(&audio->data, (size_t)sizeTotal);
+   audio->deviceAddTime = 0;
+   audio->deviceRemoveTime = 0;
+}
+
 static void deviceReconnect(RSAudio *audio, const char *devname) {
    SDL_CloseAudioDevice(audio->deviceId);
    /*
@@ -94,10 +109,12 @@ static void deviceReconnect(RSAudio *audio, const char *devname) {
          return;
       }
    }
+   calcAudioParams(audio);
    SDL_PauseAudioDevice(audio->deviceId, 0);
 }
 
 void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
+   rsMemoryClear(audio, sizeof(*audio));
    if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_EVENTS) < 0) {
       rsError("SDL2 could not initialize! SDL Error: %s", SDL_GetError());
    }
@@ -107,8 +124,9 @@ void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
       rsError("pthread_spin_init failed");
    }
    audio->systemFallback = (config->audioSystemFallback != 0);
+   audio->duration = config->duration;
+   audio->framerate = config->framerate;
 
-   SDL_zero(audio->ispec);
    audio->ispec.freq = (int)config->audioSamplerate;
    audio->ispec.format = AUDIO_S16LSB;
    audio->ispec.channels = (Uint8)config->audioChannels;
@@ -127,16 +145,7 @@ void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
          rsLog("Couldn't open any audio device. You will have no sound");
       }
    }
-
-   int size1s = audio->ospec.channels * audio->ospec.freq * (int)sizeof(uint16_t);
-   int sizeTotal = size1s * config->duration;
-   int numOfCallbacks =
-       (sizeTotal + (SAMPLES_PER_CALLBACK - 1)) / SAMPLES_PER_CALLBACK; // round up div
-   sizeTotal = numOfCallbacks * SAMPLES_PER_CALLBACK;
-   audio->sizeBatch = (size_t)(size1s / config->framerate);
-   rsCircleStaticCreate(&audio->data, (size_t)sizeTotal);
-   audio->deviceAddTime = 0;
-   audio->deviceRemoveTime = 0;
+   calcAudioParams(audio);
    SDL_PauseAudioDevice(audio->deviceId, 0);
 }
 

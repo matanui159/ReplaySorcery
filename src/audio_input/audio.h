@@ -37,8 +37,10 @@ typedef struct RSAudio {
    char *deviceName;
    int bitrate;
    int channels;
-   size_t sizeBatch;
+   int duration;
+   int framerate;
    int deviceNum;
+   size_t sizeBatch;
    uint32_t deviceAddTime;
    uint32_t deviceRemoveTime;
    bool systemFallback;
