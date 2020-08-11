@@ -73,28 +73,17 @@ static void calcAudioParams(RSAudio *audio) {
    if (audio->data.data != NULL) {
       return;
    }
-   int size1s = audio->ospec.channels * audio->ospec.freq * (int)sizeof(uint16_t);
-   int sizeTotal = size1s * audio->duration;
-   int numOfCallbacks =
+   size_t size1s = (size_t)(audio->ospec.channels * audio->ospec.freq) * sizeof(uint16_t);
+   size_t sizeTotal = size1s * audio->duration;
+   size_t numOfCallbacks =
        (sizeTotal + (SAMPLES_PER_CALLBACK - 1)) / SAMPLES_PER_CALLBACK; // round up div
    sizeTotal = numOfCallbacks * SAMPLES_PER_CALLBACK;
-   audio->sizeBatch = (size_t)(size1s / audio->framerate);
+   audio->sizeBatch = size1s / audio->framerate;
    rsCircleStaticCreate(&audio->data, (size_t)sizeTotal);
    audio->deviceAddTime = 0;
    audio->deviceRemoveTime = 0;
 }
-
-static void deviceReconnect(RSAudio *audio, const char *devname) {
-   SDL_CloseAudioDevice(audio->deviceId);
-   /*
-    * set the audio buffor index to 0. Effectively erasing all
-    * the collected samples so far. This ensures that we'll be
-    * back in sync after the audio setup is complete.
-    * Once the frame pace and audio timestamps are implemented
-    * it should be calculated how long the audio setup took
-    * and move the index accordingly
-    */
-   audio->data.index = 0;
+static void deviceConnect(RSAudio *audio, const char *devname) {
    probeDevices(audio);
    char *newname = getDeviceName(devname);
    bool ok = openDevice(audio, newname);
@@ -111,6 +100,19 @@ static void deviceReconnect(RSAudio *audio, const char *devname) {
    calcAudioParams(audio);
    SDL_PauseAudioDevice(audio->deviceId, 0);
 }
+static void deviceReconnect(RSAudio *audio, const char *devname) {
+   SDL_CloseAudioDevice(audio->deviceId);
+   /*
+    * set the audio buffor index to 0. Effectively erasing all
+    * the collected samples so far. This ensures that we'll be
+    * back in sync after the audio setup is complete.
+    * Once the frame pace and audio timestamps are implemented
+    * it should be calculated how long the audio setup took
+    * and move the index accordingly
+    */
+   audio->data.index = 0;
+   deviceConnect(audio, devname);
+}
 
 void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
    rsMemoryClear(audio, sizeof(*audio));
@@ -123,8 +125,8 @@ void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
       rsError("pthread_spin_init failed");
    }
    audio->systemFallback = (config->audioSystemFallback != 0);
-   audio->duration = config->duration;
-   audio->framerate = config->framerate;
+   audio->duration = (size_t)config->duration;
+   audio->framerate = (size_t)config->framerate;
 
    audio->ispec.freq = (int)config->audioSamplerate;
    audio->ispec.format = AUDIO_S16LSB;
@@ -132,23 +134,7 @@ void rsAudioCreate(RSAudio *audio, const RSConfig *config) {
    audio->ispec.samples = SAMPLES_PER_CALLBACK; // must be power of 2
    audio->ispec.callback = audioCallback;
    audio->ispec.userdata = audio;
-
-   probeDevices(audio);
-   char *deviceName = getDeviceName(config->audioDeviceName);
-   if (!openDevice(audio, deviceName)) {
-      bool ok = false;
-      if (deviceName != NULL && audio->systemFallback) {
-         ok = openDevice(audio, NULL);
-      }
-      if (!ok) {
-         rsLog("Couldn't open any audio device. You will have no sound");
-      }
-   }
-   if (deviceName != NULL) {
-      rsMemoryDestroy(deviceName);
-   }
-   calcAudioParams(audio);
-   SDL_PauseAudioDevice(audio->deviceId, 0);
+   deviceConnect(audio, config->audioDeviceName);
 }
 
 void rsAudioGetSamples(RSAudio *audio, uint8_t *newbuff, size_t rewindFrames) {

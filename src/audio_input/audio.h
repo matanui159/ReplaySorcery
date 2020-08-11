@@ -36,8 +36,8 @@ typedef struct RSAudio {
    RSCircleStatic data;
    int bitrate;
    int channels;
-   int duration;
-   int framerate;
+   size_t duration;
+   size_t framerate;
    int deviceNum;
    size_t sizeBatch;
    uint32_t deviceAddTime;
