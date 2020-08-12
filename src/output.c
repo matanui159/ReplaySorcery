@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020  Patryk Seregiet
  *
  * This file is part of ReplaySorcery.
  *
@@ -89,6 +90,26 @@ static void *outputThread(void *data) {
    mp4_h26x_write_init(&track, muxer, output->config->width, output->config->height,
                        false);
 
+   // setup for audio encoding
+   RSAudioEncoder audioenc;
+   rsAudioEncoderCreate(&audioenc, output->config);
+   MP4E_track_t tr;
+   tr.track_media_kind = e_audio;
+   tr.language[0] = 'u';
+   tr.language[1] = 'n';
+   tr.language[2] = 'd';
+   tr.language[3] = 0;
+   tr.object_type_indication = MP4_OBJECT_TYPE_AUDIO_ISO_IEC_14496_3;
+   tr.time_scale = OUTPUT_TIMEBASE;
+   tr.default_duration = 0;
+   tr.u.a.channelcount = (unsigned)output->config->audioChannels;
+   int audio_track_id = MP4E_add_track(muxer, &tr);
+   MP4E_set_dsi(muxer, audio_track_id, audioenc.aac_info.confBuf,
+                (int)audioenc.aac_info.confSize);
+   int64_t ts = 0;
+   int64_t ats = 0;
+   int samplesCount = 0;
+
    RSFrame frame, yFrame, uFrame, vFrame;
    rsFrameCreate(&frame, (size_t)output->config->width, (size_t)output->config->height,
                  3);
@@ -122,7 +143,28 @@ static void *outputThread(void *data) {
       inPic.i_pts = (int64_t)(duration * i);
       x264_encoder_encode(x264, &nals, &nalCount, &inPic, &outPic);
       outputNals(&track, nals, nalCount, duration);
+      if (output->rawSamples == NULL) {
+         continue;
+      }
+      ts += (OUTPUT_TIMEBASE / output->config->framerate) * output->config->audioChannels;
+      while (ats < ts) {
+         uint8_t buf[AAC_OUTPUT_BUFFER_SIZE];
+         int numBytes = 0;
+         int numSamples = 0;
+         rsAudioEncoderEncode(&audioenc, output->rawSamples, buf, &numBytes, &numSamples);
+         output->rawSamples += audioenc.frameSize;
+         samplesCount += numSamples;
+         ats = (int64_t)samplesCount * OUTPUT_TIMEBASE / output->config->audioSamplerate;
+         if (MP4E_STATUS_OK !=
+             MP4E_put_sample(muxer, audio_track_id, buf, numBytes,
+                             (numSamples / output->config->audioChannels) *
+                                 OUTPUT_TIMEBASE / output->config->audioSamplerate,
+                             MP4E_SAMPLE_RANDOM_ACCESS)) {
+            rsError("MP4E_put_sample failed\n");
+         }
+      }
    }
+
    while (x264_encoder_delayed_frames(x264) > 0) {
       x264_encoder_encode(x264, &nals, &nalCount, NULL, &outPic);
       outputNals(&track, nals, nalCount, duration);
@@ -145,7 +187,7 @@ static void *outputThread(void *data) {
    return NULL;
 }
 
-void rsOutputCreate(RSOutput *output, const RSConfig *config) {
+void rsOutputCreate(RSOutput *output, const RSConfig *config, RSAudio *audio) {
    output->config = config;
    RSBuffer path;
    rsBufferCreate(&path);
@@ -155,18 +197,28 @@ void rsOutputCreate(RSOutput *output, const RSConfig *config) {
       rsError("Failed to open output file '%s': %s", path.data, strerror(errno));
    }
    rsBufferDestroy(&path);
+   if (audio->data.data != NULL) {
+      output->rawSamples = rsMemoryCreate(audio->data.size);
+      output->rawSamplesOriginal = output->rawSamples;
+   }
 }
 
 void rsOutputDestroy(RSOutput *output) {
    if (output->thread != 0) {
       pthread_join(output->thread, NULL);
    }
+   if (output->rawSamplesOriginal != NULL) {
+      rsMemoryDestroy(output->rawSamplesOriginal);
+   }
    rsMemoryClear(output, sizeof(RSOutput));
 }
 
-void rsOutput(RSOutput *output, const RSBufferCircle *frames) {
+void rsOutput(RSOutput *output, const RSBufferCircle *frames, RSAudio *audio) {
    rsBufferCreate(&output->frames);
    rsBufferCircleExtract(frames, &output->frames);
    output->frameCount = frames->size;
+   if (output->rawSamples != NULL) {
+      rsAudioGetSamples(audio, output->rawSamples, frames->size);
+   }
    pthread_create(&output->thread, NULL, outputThread, output);
 }

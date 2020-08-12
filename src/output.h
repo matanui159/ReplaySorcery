@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020  Patryk Seregiet
  *
  * This file is part of ReplaySorcery.
  *
@@ -19,22 +20,27 @@
 
 #ifndef RS_OUTPUT_H
 #define RS_OUTPUT_H
+#include "audio_input/audio.h"
+#include "audio_input/audio_encoder.h"
 #include "config.h"
 #include "std.h"
 #include "util/buffer.h"
 #include "util/circle.h"
+#include "util/circle_static.h"
 #include <pthread.h>
 
 typedef struct RSOutput {
    const RSConfig *config;
    FILE *file;
    RSBuffer frames;
-   size_t frameCount;
    pthread_t thread;
+   size_t frameCount;
+   uint8_t *rawSamples;
+   uint8_t *rawSamplesOriginal;
 } RSOutput;
 
-void rsOutputCreate(RSOutput *output, const RSConfig *config);
+void rsOutputCreate(RSOutput *output, const RSConfig *config, RSAudio *audio);
 void rsOutputDestroy(RSOutput *output);
-void rsOutput(RSOutput *output, const RSBufferCircle *frames);
+void rsOutput(RSOutput *output, const RSBufferCircle *frames, RSAudio *audio);
 
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020  Patryk Seregiet
  *
  * This file is part of ReplaySorcery.
  *
@@ -17,32 +17,20 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_CONFIG_H
-#define RS_CONFIG_H
-#include "std.h"
+#ifndef RS_UTIL_CIRCLE_STATIC_H
+#define RS_UTIL_CIRCLE_STATIC_H
+#include "../std.h"
 
-#define RS_CONFIG_AUTO -1
+typedef struct RSCircleStatic {
+   uint8_t *data;
+   size_t size;
+   size_t index;
+} RSCircleStatic;
 
-typedef struct RSConfig {
-   int offsetX;
-   int offsetY;
-   int width;
-   int height;
-   int framerate;
-   int duration;
-   int compressQuality;
-   char *keyCombo;
-   char *outputFile;
-   char *preOutputCommand;
-   char *postOutputCommand;
-   char *audioDeviceName;
-   int audioChannels;
-   int audioSamplerate;
-   int audioBitrate;
-   bool audioSystemFallback;
-} RSConfig;
-
-void rsConfigLoad(RSConfig *config);
-void rsConfigDestroy(RSConfig *config);
+void rsCircleStaticCreate(RSCircleStatic *circle, size_t size);
+void rsCircleStaticDestroy(RSCircleStatic *circle);
+void rsCircleStaticAdd(RSCircleStatic *circle, uint8_t *src, size_t size);
+void rsCircleStaticGet(RSCircleStatic *circle, uint8_t *dst, size_t size);
+void rsCircleStaticMoveBackIndex(RSCircleStatic *circle, size_t bytes);
 
 #endif

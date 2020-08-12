@@ -75,6 +75,17 @@ static void configString(void *param, const char *value) {
    *str = rsStringClone(value);
 }
 
+static void configBool(void *param, const char *value) {
+   bool *val = param;
+   if (strcmp(value, "true") == 0) {
+      *val = true;
+   } else if (strcmp(value, "false") == 0) {
+      *val = false;
+   } else {
+      rsError("Config value '%s' must be 'true' or 'false'", value);
+   }
+}
+
 // Remember to update `replay-sorcery.default.conf`
 static const ConfigParam configParams[] = {
     CONFIG_PARAM(offsetX, configPos, "0"),
@@ -88,7 +99,12 @@ static const ConfigParam configParams[] = {
     CONFIG_PARAM(outputFile, configString, "~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4"),
     CONFIG_PARAM(preOutputCommand, configString, ""),
     CONFIG_PARAM(postOutputCommand, configString,
-                 "notify-send ReplaySorcery \"Video saved!\"")};
+                 "notify-send ReplaySorcery \"Video saved!\""),
+    CONFIG_PARAM(audioDeviceName, configString, "auto"),
+    CONFIG_PARAM(audioChannels, configInt, "1"),
+    CONFIG_PARAM(audioSamplerate, configInt, "44100"),
+    CONFIG_PARAM(audioBitrate, configInt, "96000"),
+    CONFIG_PARAM(audioSystemFallback, configBool, "false")};
 
 #define CONFIG_PARAMS_SIZE (sizeof(configParams) / sizeof(ConfigParam))
 

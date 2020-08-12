@@ -10,3 +10,9 @@
 [submodule "dep/minimp4"]
 	path = dep/minimp4
 	url = https://github.com/lieff/minimp4.git
+[submodule "dep/sdl2"]
+	path = dep/sdl2
+	url = https://github.com/pseregiet/sdl2-audio-monitor.git
+[submodule "dep/fdk-aac"]
+	path = dep/fdk-aac
+	url = https://github.com/mstorsjo/fdk-aac.git

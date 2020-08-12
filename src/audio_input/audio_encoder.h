@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020  Patryk Seregiet
  *
  * This file is part of ReplaySorcery.
  *
@@ -17,32 +17,22 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_CONFIG_H
-#define RS_CONFIG_H
-#include "std.h"
+#ifndef RS_AUDIO_ENCODER_H
+#define RS_AUDIO_ENCODER_H
+#include "../config.h"
+#include "../util/circle_static.h"
+#include <fdk-aac/aacenc_lib.h>
+#define AAC_OUTPUT_BUFFER_SIZE (1024 * 8)
 
-#define RS_CONFIG_AUTO -1
+typedef struct RSAudioEncoder {
+   HANDLE_AACENCODER aac_enc;
+   AACENC_InfoStruct aac_info;
+   int samplesPerFrame;
+   int frameSize;
+} RSAudioEncoder;
 
-typedef struct RSConfig {
-   int offsetX;
-   int offsetY;
-   int width;
-   int height;
-   int framerate;
-   int duration;
-   int compressQuality;
-   char *keyCombo;
-   char *outputFile;
-   char *preOutputCommand;
-   char *postOutputCommand;
-   char *audioDeviceName;
-   int audioChannels;
-   int audioSamplerate;
-   int audioBitrate;
-   bool audioSystemFallback;
-} RSConfig;
-
-void rsConfigLoad(RSConfig *config);
-void rsConfigDestroy(RSConfig *config);
+void rsAudioEncoderCreate(RSAudioEncoder *audioenc, const RSConfig *config);
+void rsAudioEncoderEncode(RSAudioEncoder *audioenc, uint8_t *samples, uint8_t *out,
+                          int *numBytes, int *numSamples);
 
 #endif
