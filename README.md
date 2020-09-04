@@ -106,5 +106,4 @@ These options control the audio recording and its quallity. `audioDeviceName` ca
   - Maybe for Intel devices if they are fast enough?
 - Smaller tweaks:
   - Add sound effect for when it saves
-  - Add configuration option for changing hotkey
   - Allow downscaling before saving
