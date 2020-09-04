@@ -33,6 +33,7 @@ typedef struct RSConfig {
    int compressQuality;
    char *keyCombo;
    char *outputFile;
+   char *outputX264Preset;
    char *preOutputCommand;
    char *postOutputCommand;
    char *audioDeviceName;

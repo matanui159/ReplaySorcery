@@ -97,6 +97,7 @@ static const ConfigParam configParams[] = {
     CONFIG_PARAM(compressQuality, configPos, "70"),
     CONFIG_PARAM(keyCombo, configString, "Ctrl+Shift+R"),
     CONFIG_PARAM(outputFile, configString, "~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4"),
+    CONFIG_PARAM(outputX264Preset, configString, "ultrafast"),
     CONFIG_PARAM(preOutputCommand, configString, ""),
     CONFIG_PARAM(postOutputCommand, configString,
                  "notify-send ReplaySorcery \"Video saved!\""),
