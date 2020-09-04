@@ -3,3 +3,4 @@
 - [Bennett Hardwick](https://github.com/bennetthardwick): AUR package scripts
 - [Magnus Boman](https://github.com/kattjevfel): AUR package scripts
 - [Patryk Seregiet](https://github.com/pseregiet): audio recording
+- [Hugo Locurcio](https://github.com/Calinou): video encoding options

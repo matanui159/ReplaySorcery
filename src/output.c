@@ -70,7 +70,7 @@ static void *outputThread(void *data) {
    x264_param_t params;
    x264_param_default(&params);
    x264_param_default_preset(&params, output->config->outputX264Preset, NULL);
-   x264_param_apply_profile(&params, "baseline");
+   x264_param_apply_profile(&params, "high");
    params.i_width = output->config->width;
    params.i_height = output->config->height;
    params.i_csp = X264_CSP_I420;
