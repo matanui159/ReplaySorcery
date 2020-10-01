@@ -1,47 +1,19 @@
 cmake_minimum_required(VERSION 3.0)
-project(ReplaySorcery VERSION 0.2.7)
+project(ReplaySorcery VERSION 0.4.0)
 include(CheckCCompilerFlag)
 include(ExternalProject)
+find_package(PkgConfig REQUIRED)
 
 set(binary replay-sorcery)
 set(sources
-   src/util/log.c
-   src/util/memory.c
-   src/util/buffer.c
-   src/util/circle.c
-   src/util/circle_static.c
-   src/util/path.c
-   src/util/string.c
-   src/util/frame.c
-   src/system/system.c
-   src/system/framerate.c
-   src/system/xlib.c
-   src/audio_input/audio.c
-   src/audio_input/audio_encoder.c
-   src/config.c
-   src/compress.c
-   src/mp4.c
-   src/output.c
    src/main.c
+   src/util/log.c
+   src/device/demux.c
 )
 set(headers
-   src/std.h
    src/util/log.h
-   src/util/memory.h
-   src/util/buffer.h
-   src/util/circle.h
-   src/util/circle_static.h
-   src/util/path.h
-   src/util/string.h
-   src/util/frame.h
-   src/system/system.h
-   src/system/framerate.h
-   src/system/xlib.h
-   src/audio_input/audio.h
-   src/audio_input/audio_encoder.h
-   src/config.h
-   src/compress.h
-   src/output.h
+   src/device/device.h
+   src/device/demux.h
 )
 
 add_executable(${binary} ${sources})
@@ -77,15 +49,18 @@ endif()
 
 # Pthreads
 find_package(Threads REQUIRED)
-target_link_libraries(${binary} PRIVATE ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${binary} PRIVATE Threads::Threads)
 
-# X11 with Xutil and MIT-SHM
-find_package(X11 REQUIRED)
-if (NOT X11_FOUND OR NOT X11_Xutil_FOUND OR NOT X11_XShm_FOUND)
-   message(SEND_ERROR "Failed to find X11 with util and shm extensions")
-endif()
-target_include_directories(${binary} SYSTEM PRIVATE ${X11_INCLUDE_DIRS})
-target_link_libraries(${binary} PRIVATE ${X11_LIBRARIES})
+# FFmpeg
+pkg_check_modules(FFMPEG
+   REQUIRED IMPORTED_TARGET
+   libavutil
+   libavformat
+   libavcodec
+   libavdevice
+   libavfilter
+)
+target_link_libraries(${binary} PRIVATE PkgConfig::FFMPEG)
 
 # libbacktrace git submodule
 ExternalProject_Add(backtrace
@@ -115,64 +90,6 @@ add_dependencies(${binary} jpeg)
 ExternalProject_Get_Property(jpeg INSTALL_DIR)
 target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
 target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libjpeg.a")
-
-# x264 git submodule
-ExternalProject_Add(x264
-   STEP_TARGETS x264
-   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dep/x264"
-   CONFIGURE_COMMAND <SOURCE_DIR>/configure
-      --prefix=<INSTALL_DIR>
-      --enable-static
-      --disable-cli
-      --disable-opencl
-      --extra-cflags=-O3
-)
-add_dependencies(${binary} x264)
-ExternalProject_Get_Property(x264 INSTALL_DIR)
-target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
-target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libx264.a" m)
-
-# sdl2 git submodule
-ExternalProject_Add(sdl2
-	STEP_TARGETS sdl2
-	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dep/sdl2"
-	CONFIGURE_COMMAND <SOURCE_DIR>/configure
-	   --prefix=<INSTALL_DIR>
-	   --enable-static=yes
-	   --enable-timers=yes
-	   --enable-audio=yes
-	   --enable-shared=no
-	   --enable-video=no
-	   --enable-render=no
-	   --enable-joystick=no
-	   --enable-haptic=no
-	   --enable-sensor=no
-	   --enable-power=no
-	   --enable-filesystem=no
-	   --enable-file=no
-)
-add_dependencies(${binary} sdl2)
-ExternalProject_Get_Property(sdl2 INSTALL_DIR)
-target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
-target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libSDL2.a" dl)
-
-# fdk-aac git submodule
-ExternalProject_Add(fdk-aac
-	STEP_TARGETS fdk-aac
-	SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dep/fdk-aac"
-	CONFIGURE_COMMAND cd <SOURCE_DIR> && ./autogen.sh && cd <BINARY_DIR> && <SOURCE_DIR>/configure
-	   --prefix=<INSTALL_DIR>
-	   --enable-static=yes
-	   --enable-shared=no
-)
-add_dependencies(${binary} fdk-aac)
-ExternalProject_Get_Property(fdk-aac INSTALL_DIR)
-target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
-target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libfdk-aac.a")
-
-# Minimp4 header-only git submodule
-target_include_directories(${binary} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/dep/minimp4")
-set_property(SOURCE src/mp4.c PROPERTY COMPILE_FLAGS -w)
 
 # Clang format target to make formatting easy
 add_custom_target(clang-format

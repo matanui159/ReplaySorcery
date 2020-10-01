@@ -10,8 +10,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           submodules: true
-      - name: Install nasm
-        run: sudo apt-get install -y nasm
       - name: Configure code
         run: cmake -B bin -DCMAKE_BUILD_TYPE=Release -DRS_WARN_ERROR=ON
       - name: Build code
