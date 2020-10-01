@@ -8,12 +8,15 @@ set(binary replay-sorcery)
 set(sources
    src/main.c
    src/util/log.c
+   src/device/device.c
    src/device/demux.c
+   src/device/x11.c
 )
 set(headers
    src/util/log.h
    src/device/device.h
    src/device/demux.h
+   src/device/x11.h
 )
 
 add_executable(${binary} ${sources})

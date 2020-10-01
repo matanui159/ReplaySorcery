@@ -17,26 +17,14 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_DEVICE_H
-#define RS_DEVICE_H
-#include <libavutil/avutil.h>
-#include <libavutil/frame.h>
+#include "x11.h"
+#include "demux.h"
+#include <stdlib.h>
 
-typedef struct RSDevice {
-   void *extra;
-   void (*destroy)(struct RSDevice *device);
-   int (*getFrame)(struct RSDevice *device, AVFrame *frame);
-} RSDevice;
-
-static av_always_inline void rsDeviceDestroy(RSDevice *device) {
-   device->destroy(device);
+int rsX11DeviceCreate(RSDevice *device) {
+   const char *display = getenv("DISPLAY");
+   if (display == NULL) {
+      display = ":0";
+   }
+   return rsDemuxDeviceCreate(device, "x11grab", display, NULL);
 }
-
-static av_always_inline int rsDeviceGetFrame(RSDevice *device, AVFrame *frame) {
-   return device->getFrame(device, frame);
-}
-
-void rsDeviceInit(void);
-int rsVideoDeviceCreate(RSDevice *device);
-
-#endif

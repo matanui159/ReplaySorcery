@@ -55,7 +55,7 @@ static int logTrace(void *extra, uintptr_t pc, const char *file, int line,
 
 static void logCallback(void *ctx, int level, const char *format, va_list args) {
    av_log_default_callback(ctx, level, format, args);
-   if (level <= AV_LOG_WARNING && traceState != NULL &&
+   if (level <= AV_LOG_ERROR && traceState != NULL &&
        av_log_get_level() >= AV_LOG_DEBUG) {
       backtrace_full(traceState, 0, logTrace, logTraceError, NULL);
    }

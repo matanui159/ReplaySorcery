@@ -81,18 +81,18 @@ int rsDemuxDeviceCreate(RSDevice *device, const char *name, const char *input,
 
    AVInputFormat *format = av_find_input_format(name);
    if (format == NULL) {
-      av_log(NULL, AV_LOG_WARNING, "Device not found: %s\n", name);
+      av_log(NULL, AV_LOG_ERROR, "Device not found: %s\n", name);
       ret = AVERROR_DEMUXER_NOT_FOUND;
       goto error;
    }
    if ((ret = avformat_open_input(&demux->formatCtx, input, format, options)) < 0) {
-      av_log(demux->formatCtx, AV_LOG_WARNING, "Failed to open '%s': %s\n", input,
+      av_log(demux->formatCtx, AV_LOG_ERROR, "Failed to open '%s': %s\n", input,
              av_err2str(ret));
       goto error;
    }
    if (av_dict_count(*options) > 0) {
       const char *unused = av_dict_get(*options, "", NULL, AV_DICT_IGNORE_SUFFIX)->key;
-      av_log(demux->formatCtx, AV_LOG_WARNING, "Option not found: %s\n", unused);
+      av_log(demux->formatCtx, AV_LOG_ERROR, "Option not found: %s\n", unused);
       ret = AVERROR_OPTION_NOT_FOUND;
       goto error;
    }
@@ -101,7 +101,7 @@ int rsDemuxDeviceCreate(RSDevice *device, const char *name, const char *input,
    AVCodecParameters *codecpar = demux->formatCtx->streams[0]->codecpar;
    AVCodec *codec = avcodec_find_decoder(codecpar->codec_id);
    if (codec == NULL) {
-      av_log(demux->formatCtx, AV_LOG_WARNING, "Decoder not found: %s\n",
+      av_log(demux->formatCtx, AV_LOG_ERROR, "Decoder not found: %s\n",
              avcodec_get_name(codecpar->codec_id));
       ret = AVERROR_DECODER_NOT_FOUND;
       goto error;
@@ -116,7 +116,7 @@ int rsDemuxDeviceCreate(RSDevice *device, const char *name, const char *input,
       goto error;
    }
    if ((ret = avcodec_open2(demux->codecCtx, codec, NULL)) < 0) {
-      av_log(demux->codecCtx, AV_LOG_WARNING, "Failed to open decoder: %s\n",
+      av_log(demux->codecCtx, AV_LOG_ERROR, "Failed to open decoder: %s\n",
              av_err2str(ret));
       goto error;
    }

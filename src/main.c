@@ -17,19 +17,40 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "device/demux.h"
+#include "device/device.h"
 #include "util/log.h"
-#include <libavdevice/avdevice.h>
+#include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
+#include <stdlib.h>
+
+static int mainRun(void) {
+   int ret;
+   rsLogInit();
+   av_log_set_level(AV_LOG_DEBUG);
+
+   av_log(NULL, AV_LOG_INFO,
+          "ReplaySorcery  Copyright (C) 2020  ReplaySorcery developers\n"
+          "This program comes with ABSOLUTELY NO WARRANTY.\n"
+          "This is free software, and you are welcome to redistribute it\n"
+          "under certain conditions; see COPYING for details.\n");
+   av_log(NULL, AV_LOG_INFO, "FFmpeg version: %s\n", av_version_info());
+
+   RSDevice device;
+   rsDeviceInit();
+   if ((ret = rsVideoDeviceCreate(&device)) < 0) {
+      return ret;
+   }
+   rsDeviceDestroy(&device);
+   return 0;
+}
 
 int main(int argc, char *argv[]) {
    (void)argc;
    (void)argv;
-   rsLogInit();
-   av_log_set_level(AV_LOG_DEBUG);
-   avdevice_register_all();
-
-   RSDevice device;
-   rsDemuxDeviceCreate(&device, "x11grab", ":0", NULL);
-   rsDeviceDestroy(&device);
+   int ret;
+   if ((ret = mainRun()) < 0) {
+      av_log(NULL, AV_LOG_FATAL, "%s\n", av_err2str(ret));
+      return EXIT_FAILURE;
+   }
+   return EXIT_SUCCESS;
 }

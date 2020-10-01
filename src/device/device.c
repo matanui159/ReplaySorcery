@@ -17,26 +17,20 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_DEVICE_H
-#define RS_DEVICE_H
-#include <libavutil/avutil.h>
-#include <libavutil/frame.h>
+#include "device.h"
+#include "x11.h"
+#include <libavdevice/avdevice.h>
 
-typedef struct RSDevice {
-   void *extra;
-   void (*destroy)(struct RSDevice *device);
-   int (*getFrame)(struct RSDevice *device, AVFrame *frame);
-} RSDevice;
-
-static av_always_inline void rsDeviceDestroy(RSDevice *device) {
-   device->destroy(device);
+void rsDeviceInit(void) {
+   avdevice_register_all();
 }
 
-static av_always_inline int rsDeviceGetFrame(RSDevice *device, AVFrame *frame) {
-   return device->getFrame(device, frame);
+int rsVideoDeviceCreate(RSDevice *device) {
+   int ret;
+   if ((ret = rsX11DeviceCreate(device)) >= 0) {
+      return 0;
+   }
+   av_log(NULL, AV_LOG_WARNING, "Failed to create X11 device: %s\n", av_err2str(ret));
+
+   return AVERROR(ENOSYS);
 }
-
-void rsDeviceInit(void);
-int rsVideoDeviceCreate(RSDevice *device);
-
-#endif
