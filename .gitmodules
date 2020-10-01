@@ -4,9 +4,6 @@
 [submodule "dep/libbacktrace"]
 	path = dep/libbacktrace
 	url = https://github.com/ianlancetaylor/libbacktrace.git
-[submodule "dep/x264"]
-	path = dep/x264
-	url = https://code.videolan.org/videolan/x264.git
 [submodule "dep/minimp4"]
 	path = dep/minimp4
 	url = https://github.com/lieff/minimp4.git
