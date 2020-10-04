@@ -17,9 +17,11 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "config.h"
 #include "device/device.h"
 #include "util/log.h"
 #include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <stdlib.h>
 
@@ -27,6 +29,8 @@ static int mainRun(void) {
    int ret;
    rsLogInit();
    av_log_set_level(AV_LOG_DEBUG);
+   rsConfigInit();
+   rsDeviceInit();
 
    av_log(NULL, AV_LOG_INFO,
           "ReplaySorcery  Copyright (C) 2020  ReplaySorcery developers\n"
@@ -36,7 +40,6 @@ static int mainRun(void) {
    av_log(NULL, AV_LOG_INFO, "FFmpeg version: %s\n", av_version_info());
 
    RSDevice device;
-   rsDeviceInit();
    if ((ret = rsVideoDeviceCreate(&device)) < 0) {
       return ret;
    }

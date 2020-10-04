@@ -5,6 +5,7 @@
          "name": "Linux",
          "cStandard": "c99",
          "includePath": [
+            "${workspaceFolder}/bin",
             "${workspaceFolder}/bin/backtrace-prefix/include",
             "${workspaceFolder}/bin/jpeg-prefix/include",
             "/usr/include/ffmpeg"

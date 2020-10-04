@@ -17,26 +17,26 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "device.h"
-#include "../config.h"
-#include "x11.h"
-#include <libavdevice/avdevice.h>
+#ifndef RS_CONFIG_H
+#define RS_CONFIG_H
+#include <libavutil/avutil.h>
 
-void rsDeviceInit(void) {
-   avdevice_register_all();
-}
+#define RS_CONFIG_AUTO -1
+#define RS_CONFIG_VIDEO_X11 0
 
-int rsVideoDeviceCreate(RSDevice *device) {
-   switch (rsConfig.videoInput) {
-   case RS_CONFIG_VIDEO_X11:
-      return rsX11DeviceCreate(device);
-   }
+typedef struct RSConfig {
+   const AVClass *avClass;
+   int logLevel;
+   int videoX;
+   int videoY;
+   int videoWidth;
+   int videoHeight;
+   int videoFramerate;
+   int videoInput;
+} RSConfig;
 
-   int ret;
-   if ((ret = rsX11DeviceCreate(device)) >= 0) {
-      return 0;
-   }
-   av_log(NULL, AV_LOG_WARNING, "Failed to create X11 device: %s\n", av_err2str(ret));
+extern RSConfig rsConfig;
 
-   return AVERROR(ENOSYS);
-}
+void rsConfigInit(void);
+
+#endif

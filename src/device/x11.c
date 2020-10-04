@@ -18,13 +18,67 @@
  */
 
 #include "x11.h"
+#include "../config.h"
 #include "demux.h"
-#include <stdlib.h>
+#include "rsbuild.h"
+#include <libavutil/avstring.h>
+#include <libavutil/avutil.h>
+#include <libavutil/dict.h>
+
+#ifdef RS_BUILD_X11_FOUND
+#include <X11/Xlib.h>
+#endif
 
 int rsX11DeviceCreate(RSDevice *device) {
    const char *display = getenv("DISPLAY");
    if (display == NULL) {
       display = ":0";
    }
-   return rsDemuxDeviceCreate(device, "x11grab", display, NULL);
+
+   int width = rsConfig.videoWidth;
+   int height = rsConfig.videoHeight;
+#ifdef RS_BUILD_X11_FOUND
+   if (width == RS_CONFIG_AUTO || height == RS_CONFIG_AUTO) {
+      Display *connection = XOpenDisplay(display);
+      if (connection == NULL) {
+         av_log(NULL, AV_LOG_WARNING, "Failed to open X11 display\n");
+      } else {
+         av_log(NULL, AV_LOG_INFO, "X11 version: %i.%i\n", ProtocolVersion(connection),
+                ProtocolRevision(connection));
+         av_log(NULL, AV_LOG_INFO, "X11 vendor: %s v%i\n", ServerVendor(connection),
+                VendorRelease(connection));
+         Screen *screen = DefaultScreenOfDisplay(connection);
+         if (width == RS_CONFIG_AUTO) {
+            width = WidthOfScreen(screen) - rsConfig.videoX;
+         }
+         if (height == RS_CONFIG_AUTO) {
+            height = HeightOfScreen(screen) - rsConfig.videoY;
+         }
+         XCloseDisplay(connection);
+         av_log(NULL, AV_LOG_INFO, "Video size: %ix%i\n", width, height);
+      }
+   }
+
+#else
+   av_log(NULL, AV_LOG_WARNING, "X11 was not found during compilation\n");
+#endif
+   if (width == RS_CONFIG_AUTO || height == RS_CONFIG_AUTO) {
+      av_log(NULL, AV_LOG_ERROR, "Could not detect X11 display size\n");
+      return AVERROR(ENOSYS);
+   }
+
+   char *size = av_asprintf("%ix%i", width, height);
+   if (size == NULL) {
+      return AVERROR(ENOMEM);
+   }
+
+   AVDictionary *options = NULL;
+   av_dict_set_int(&options, "grab_x", rsConfig.videoX, 0);
+   av_dict_set_int(&options, "grab_y", rsConfig.videoY, 0);
+   av_dict_set(&options, "video_size", size, AV_DICT_DONT_STRDUP_VAL);
+   av_dict_set_int(&options, "framerate", rsConfig.videoFramerate, 0);
+   if (av_dict_count(options) != 4) {
+      return AVERROR(ENOMEM);
+   }
+   return rsDemuxDeviceCreate(device, "x11grab", display, &options);
 }

@@ -7,12 +7,15 @@ find_package(PkgConfig REQUIRED)
 set(binary replay-sorcery)
 set(sources
    src/main.c
+   src/config.c
    src/util/log.c
    src/device/device.c
    src/device/demux.c
    src/device/x11.c
 )
 set(headers
+   src/rsbuild.h.in
+   src/config.h
    src/util/log.h
    src/device/device.h
    src/device/demux.h
@@ -44,26 +47,10 @@ option(RS_WARN_ERROR "Fail on compiler warning" OFF)
 if (RS_WARN_ERROR)
    target_c_flag(${binary} -Werror HAVE_WARN_ERROR)
 endif()
-
 option(RS_PROFILE "Enable code profiling" OFF)
 if (RS_PROFILE)
    target_c_flag(${binary} -pg HAVE_PG_FLAG)
 endif()
-
-# Pthreads
-find_package(Threads REQUIRED)
-target_link_libraries(${binary} PRIVATE Threads::Threads)
-
-# FFmpeg
-pkg_check_modules(FFMPEG
-   REQUIRED IMPORTED_TARGET
-   libavutil
-   libavformat
-   libavcodec
-   libavdevice
-   libavfilter
-)
-target_link_libraries(${binary} PRIVATE PkgConfig::FFMPEG)
 
 # libbacktrace git submodule
 ExternalProject_Add(backtrace
@@ -93,6 +80,29 @@ add_dependencies(${binary} jpeg)
 ExternalProject_Get_Property(jpeg INSTALL_DIR)
 target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
 target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libjpeg.a")
+
+# FFmpeg
+pkg_check_modules(FFMPEG
+   REQUIRED IMPORTED_TARGET
+   libavutil
+   libavformat
+   libavcodec
+   libavdevice
+   libavfilter
+)
+target_link_libraries(${binary} PRIVATE PkgConfig::FFMPEG)
+
+# X11
+find_package(X11)
+if (X11_FOUND)
+   set(RS_BUILD_X11_FOUND true)
+   target_include_directories(${binary} SYSTEM PRIVATE ${X11_INCLUDE_DIRS})
+   target_link_libraries(${binary} PRIVATE ${X11_LIBRARIES})
+endif()
+
+# Build configuration
+configure_file(src/rsbuild.h.in rsbuild.h)
+target_include_directories(${binary} PRIVATE ${PROJECT_BINARY_DIR})
 
 # Clang format target to make formatting easy
 add_custom_target(clang-format

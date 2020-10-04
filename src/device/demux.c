@@ -25,13 +25,12 @@
 typedef struct DemuxDevice {
    AVFormatContext *formatCtx;
    AVCodecContext *codecCtx;
-   AVPacket *packet;
+   AVPacket packet;
 } DemuxDevice;
 
 static void demuxDeviceDestroy(RSDevice *device) {
    DemuxDevice *demux = device->extra;
    if (demux != NULL) {
-      av_packet_free(&demux->packet);
       avcodec_close(demux->codecCtx);
       avcodec_free_context(&demux->codecCtx);
       avformat_close_input(&demux->formatCtx);
@@ -43,12 +42,12 @@ static int demuxDeviceGetFrame(RSDevice *device, AVFrame *frame) {
    int ret;
    DemuxDevice *demux = device->extra;
    while ((ret = avcodec_receive_frame(demux->codecCtx, frame)) == AVERROR(EAGAIN)) {
-      if ((ret = av_read_frame(demux->formatCtx, demux->packet)) < 0) {
+      if ((ret = av_read_frame(demux->formatCtx, &demux->packet)) < 0) {
          av_log(demux->formatCtx, AV_LOG_ERROR, "Failed to read frame: %s\n",
                 av_err2str(ret));
          return ret;
       }
-      if ((ret = avcodec_send_packet(demux->codecCtx, demux->packet)) < 0) {
+      if ((ret = avcodec_send_packet(demux->codecCtx, &demux->packet)) < 0) {
          av_log(demux->codecCtx, AV_LOG_ERROR, "Failed to send packet to decoder: %s\n",
                 av_err2str(ret));
          return ret;
@@ -70,6 +69,7 @@ int rsDemuxDeviceCreate(RSDevice *device, const char *name, const char *input,
       options = &defaultOptions;
    }
 
+   memset(device, 0, sizeof(RSDevice));
    DemuxDevice *demux = av_mallocz(sizeof(DemuxDevice));
    device->extra = demux;
    device->destroy = demuxDeviceDestroy;
@@ -121,11 +121,7 @@ int rsDemuxDeviceCreate(RSDevice *device, const char *name, const char *input,
       goto error;
    }
 
-   demux->packet = av_packet_alloc();
-   if (demux->packet == NULL) {
-      ret = AVERROR(ENOMEM);
-      goto error;
-   }
+   av_init_packet(&demux->packet);
    return 0;
 
 error:
