@@ -25,11 +25,12 @@
 #include <libavutil/avutil.h>
 #include <stdlib.h>
 
-static int mainRun(void) {
+static int mainRun(int argc, char **argv) {
    int ret;
    rsLogInit();
-   av_log_set_level(AV_LOG_DEBUG);
-   rsConfigInit();
+   if ((ret = rsConfigInit(argc, argv)) < 0) {
+      return ret;
+   }
    rsDeviceInit();
 
    av_log(NULL, AV_LOG_INFO,
@@ -48,10 +49,8 @@ static int mainRun(void) {
 }
 
 int main(int argc, char *argv[]) {
-   (void)argc;
-   (void)argv;
    int ret;
-   if ((ret = mainRun()) < 0) {
+   if ((ret = mainRun(argc, argv)) < 0) {
       av_log(NULL, AV_LOG_FATAL, "%s\n", av_err2str(ret));
       return EXIT_FAILURE;
    }
