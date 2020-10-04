@@ -102,7 +102,7 @@ endif()
 
 # Build configuration
 configure_file(src/rsbuild.h.in rsbuild.h)
-target_include_directories(${binary} PRIVATE ${PROJECT_BINARY_DIR})
+target_include_directories(${binary} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 # Clang format target to make formatting easy
 add_custom_target(clang-format
@@ -112,12 +112,9 @@ add_custom_target(clang-format
 )
 
 # Installation
-install(TARGETS ${binary} DESTINATION bin)
 set(service replay-sorcery.service)
-# We cannot use CMAKE_INSTALL_PREFIX since the default is /usr/local
 set(RS_SYSTEMD_DIR /usr/lib/systemd/user CACHE STRING "Where to install the systemd service")
-configure_file(${service}.in ${service})
+configure_file(sys/${service}.in ${service})
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${service}" DESTINATION "${RS_SYSTEMD_DIR}")
-# Similar for here since we need to use the XDG path /etc/xdg
-set(RS_CONFIG_DIR /etc/xdg CACHE STRING "Where to install the default config")
-install(FILES replay-sorcery.default.conf DESTINATION "${RS_CONFIG_DIR}" RENAME replay-sorcery.conf)
+install(TARGETS ${binary} DESTINATION bin)
+install(FILES sys/etc/replay-sorcery.conf DESTINATION etc)

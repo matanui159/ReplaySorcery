@@ -20,6 +20,8 @@
 #ifndef RS_BUILD_H
 #define RS_BUILD_H
 
+#define RS_BUILD_CONFIG_FILE "@CMAKE_INSTALL_PREFIX@/etc/replay-sorcery.conf"
+
 #cmakedefine RS_BUILD_X11_FOUND
 
 #endif
