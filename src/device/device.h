@@ -23,17 +23,30 @@
 #include <libavutil/frame.h>
 
 typedef struct RSDevice {
+   struct {
+      enum AVPixelFormat pixfmt;
+      int width;
+      int height;
+      AVRational timebase;
+      AVRational framerate;
+   } info;
    void *extra;
    void (*destroy)(struct RSDevice *device);
    int (*getFrame)(struct RSDevice *device, AVFrame *frame);
 } RSDevice;
 
 static av_always_inline void rsDeviceDestroy(RSDevice *device) {
-   device->destroy(device);
+   if (device->destroy != NULL) {
+      device->destroy(device);
+   }
 }
 
 static av_always_inline int rsDeviceGetFrame(RSDevice *device, AVFrame *frame) {
-   return device->getFrame(device, frame);
+   if (device->getFrame == NULL) {
+      return AVERROR(ENOSYS);
+   } else {
+      return device->getFrame(device, frame);
+   }
 }
 
 void rsDeviceInit(void);

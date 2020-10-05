@@ -27,12 +27,12 @@ void rsDeviceInit(void) {
 }
 
 int rsVideoDeviceCreate(RSDevice *device) {
+   int ret;
    switch (rsConfig.videoInput) {
    case RS_CONFIG_VIDEO_X11:
       return rsX11DeviceCreate(device);
    }
 
-   int ret;
    if ((ret = rsX11DeviceCreate(device)) >= 0) {
       return 0;
    }

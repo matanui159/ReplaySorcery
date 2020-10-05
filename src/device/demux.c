@@ -20,7 +20,6 @@
 #include "demux.h"
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libavutil/avutil.h>
 
 typedef struct DemuxDevice {
    AVFormatContext *formatCtx;
@@ -31,7 +30,6 @@ typedef struct DemuxDevice {
 static void demuxDeviceDestroy(RSDevice *device) {
    DemuxDevice *demux = device->extra;
    if (demux != NULL) {
-      avcodec_close(demux->codecCtx);
       avcodec_free_context(&demux->codecCtx);
       avformat_close_input(&demux->formatCtx);
       av_freep(&device->extra);
@@ -97,11 +95,11 @@ int rsDemuxDeviceCreate(RSDevice *device, const char *name, const char *input,
    }
    av_dict_free(options);
 
-   AVCodecParameters *codecpar = demux->formatCtx->streams[0]->codecpar;
-   AVCodec *codec = avcodec_find_decoder(codecpar->codec_id);
+   AVStream *stream = demux->formatCtx->streams[0];
+   AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
    if (codec == NULL) {
       av_log(demux->formatCtx, AV_LOG_ERROR, "Decoder not found: %s\n",
-             avcodec_get_name(codecpar->codec_id));
+             avcodec_get_name(stream->codecpar->codec_id));
       ret = AVERROR_DECODER_NOT_FOUND;
       goto error;
    }
@@ -111,7 +109,7 @@ int rsDemuxDeviceCreate(RSDevice *device, const char *name, const char *input,
       ret = AVERROR(ENOMEM);
       goto error;
    }
-   if ((ret = avcodec_parameters_to_context(demux->codecCtx, codecpar)) < 0) {
+   if ((ret = avcodec_parameters_to_context(demux->codecCtx, stream->codecpar)) < 0) {
       goto error;
    }
    if ((ret = avcodec_open2(demux->codecCtx, codec, NULL)) < 0) {
@@ -121,10 +119,15 @@ int rsDemuxDeviceCreate(RSDevice *device, const char *name, const char *input,
    }
 
    av_init_packet(&demux->packet);
+   device->info.pixfmt = demux->codecCtx->pix_fmt;
+   device->info.width = demux->codecCtx->width;
+   device->info.height = demux->codecCtx->height;
+   device->info.timebase = stream->time_base;
+   device->info.framerate = stream->r_frame_rate;
    return 0;
 
 error:
    av_dict_free(options);
-   demuxDeviceDestroy(device);
+   rsDeviceDestroy(device);
    return ret;
 }

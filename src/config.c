@@ -34,6 +34,9 @@
 
 static const AVOption configOptions[] = {
     CONFIG_CONST(auto, RS_CONFIG_AUTO, auto),
+    CONFIG_CONST(low, RS_CONFIG_QUALITY_LOW, quality),
+    CONFIG_CONST(medium, RS_CONFIG_QUALITY_MEDIUM, quality),
+    CONFIG_CONST(high, RS_CONFIG_QUALITY_HIGH, quality),
     CONFIG_INT(logLevel, AV_LOG_INFO, AV_LOG_QUIET, AV_LOG_TRACE, logLevel),
     CONFIG_CONST(quiet, AV_LOG_QUIET, logLevel),
     CONFIG_CONST(panic, AV_LOG_PANIC, logLevel),
@@ -53,6 +56,13 @@ static const AVOption configOptions[] = {
                videoInput),
     CONFIG_CONST(auto, RS_CONFIG_AUTO, videoInput),
     CONFIG_CONST(x11, RS_CONFIG_VIDEO_X11, videoInput),
+    CONFIG_INT(videoEncoder, RS_CONFIG_AUTO, RS_CONFIG_AUTO, RS_CONFIG_VIDEO_X264,
+               videoEncoder),
+    CONFIG_CONST(auto, RS_CONFIG_AUTO, videoEncoder),
+    CONFIG_CONST(x264, RS_CONFIG_VIDEO_X264, videoEncoder),
+    CONFIG_CONST(x264l, RS_CONFIG_VIDEO_X264L, videoEncoder),
+    CONFIG_INT(videoQuality, RS_CONFIG_QUALITY_LOW, RS_CONFIG_QUALITY_LOW,
+               RS_CONFIG_QUALITY_HIGH, quality),
     {NULL}};
 
 static const AVClass configClass = {

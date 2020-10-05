@@ -12,6 +12,9 @@ set(sources
    src/device/device.c
    src/device/demux.c
    src/device/x11.c
+   src/encoder/encoder.c
+   src/encoder/codec.c
+   src/encoder/x264.c
 )
 set(headers
    src/rsbuild.h.in
@@ -20,6 +23,9 @@ set(headers
    src/device/device.h
    src/device/demux.h
    src/device/x11.h
+   src/encoder/encoder.h
+   src/encoder/codec.h
+   src/encoder/x264.h
 )
 
 add_executable(${binary} ${sources})

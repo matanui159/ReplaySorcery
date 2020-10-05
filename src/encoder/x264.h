@@ -17,34 +17,11 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_CONFIG_H
-#define RS_CONFIG_H
-#include <libavutil/avutil.h>
+#ifndef RS_ENCODER_X264_H
+#define RS_ENCODER_X264_H
+#include "../device/device.h"
+#include "encoder.h"
 
-#define RS_CONFIG_AUTO -1
-#define RS_CONFIG_QUALITY_LOW 0
-#define RS_CONFIG_QUALITY_MEDIUM 1
-#define RS_CONFIG_QUALITY_HIGH 2
-
-#define RS_CONFIG_VIDEO_X11 0
-#define RS_CONFIG_VIDEO_X264 0
-#define RS_CONFIG_VIDEO_X264L 1
-
-typedef struct RSConfig {
-   const AVClass *avClass;
-   int logLevel;
-   int videoX;
-   int videoY;
-   int videoWidth;
-   int videoHeight;
-   int videoFramerate;
-   int videoInput;
-   int videoEncoder;
-   int videoQuality;
-} RSConfig;
-
-extern RSConfig rsConfig;
-
-int rsConfigInit(void);
+int rsX264EncoderCreate(RSEncoder *encoder, const RSDevice *input, int lowLatency);
 
 #endif

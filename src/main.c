@@ -19,6 +19,7 @@
 
 #include "config.h"
 #include "device/device.h"
+#include "encoder/encoder.h"
 #include "util/log.h"
 #include <libavutil/avutil.h>
 
@@ -38,9 +39,11 @@ static int mainRun(void) {
    av_log(NULL, AV_LOG_INFO, "FFmpeg version: %s\n", av_version_info());
 
    RSDevice device;
-   if ((ret = rsVideoDeviceCreate(&device)) < 0) {
-      return ret;
-   }
+   rsVideoDeviceCreate(&device);
+   RSEncoder encoder;
+   rsVideoEncoderCreate(&encoder, &device);
+
+   rsEncoderDestroy(&encoder);
    rsDeviceDestroy(&device);
    return 0;
 }

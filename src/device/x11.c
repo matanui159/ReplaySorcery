@@ -78,6 +78,7 @@ int rsX11DeviceCreate(RSDevice *device) {
    av_dict_set(&options, "video_size", size, AV_DICT_DONT_STRDUP_VAL);
    av_dict_set_int(&options, "framerate", rsConfig.videoFramerate, 0);
    if (av_dict_count(options) != 4) {
+      av_dict_free(&options);
       return AVERROR(ENOMEM);
    }
    return rsDemuxDeviceCreate(device, "x11grab", display, &options);

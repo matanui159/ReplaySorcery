@@ -17,34 +17,23 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_CONFIG_H
-#define RS_CONFIG_H
-#include <libavutil/avutil.h>
+#include "encoder.h"
+#include "../config.h"
+#include "x264.h"
 
-#define RS_CONFIG_AUTO -1
-#define RS_CONFIG_QUALITY_LOW 0
-#define RS_CONFIG_QUALITY_MEDIUM 1
-#define RS_CONFIG_QUALITY_HIGH 2
+int rsVideoEncoderCreate(RSEncoder *encoder, const RSDevice *input) {
+   int ret;
+   switch (rsConfig.videoEncoder) {
+   case RS_CONFIG_VIDEO_X264:
+      return rsX264EncoderCreate(encoder, input, 0);
+   case RS_CONFIG_VIDEO_X264L:
+      return rsX264EncoderCreate(encoder, input, 1);
+   }
 
-#define RS_CONFIG_VIDEO_X11 0
-#define RS_CONFIG_VIDEO_X264 0
-#define RS_CONFIG_VIDEO_X264L 1
+   if ((ret = rsX264EncoderCreate(encoder, input, 1)) >= 0) {
+      return 0;
+   }
+   av_log(NULL, AV_LOG_WARNING, "Failed to create x264 encoder: %s\n", av_err2str(ret));
 
-typedef struct RSConfig {
-   const AVClass *avClass;
-   int logLevel;
-   int videoX;
-   int videoY;
-   int videoWidth;
-   int videoHeight;
-   int videoFramerate;
-   int videoInput;
-   int videoEncoder;
-   int videoQuality;
-} RSConfig;
-
-extern RSConfig rsConfig;
-
-int rsConfigInit(void);
-
-#endif
+   return AVERROR(ENOSYS);
+}

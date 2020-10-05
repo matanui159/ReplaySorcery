@@ -17,34 +17,32 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_CONFIG_H
-#define RS_CONFIG_H
+#ifndef RS_ENCODER_H
+#define RS_ENCODER_H
+#include "../device/device.h"
+#include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
 
-#define RS_CONFIG_AUTO -1
-#define RS_CONFIG_QUALITY_LOW 0
-#define RS_CONFIG_QUALITY_MEDIUM 1
-#define RS_CONFIG_QUALITY_HIGH 2
+typedef struct RSEncoder {
+   void *extra;
+   void (*destroy)(struct RSEncoder *encoder);
+   int (*getPacket)(struct RSEncoder *encoder, AVPacket *packet);
+} RSEncoder;
 
-#define RS_CONFIG_VIDEO_X11 0
-#define RS_CONFIG_VIDEO_X264 0
-#define RS_CONFIG_VIDEO_X264L 1
+static av_always_inline void rsEncoderDestroy(RSEncoder *encoder) {
+   if (encoder->destroy != NULL) {
+      encoder->destroy(encoder);
+   }
+}
 
-typedef struct RSConfig {
-   const AVClass *avClass;
-   int logLevel;
-   int videoX;
-   int videoY;
-   int videoWidth;
-   int videoHeight;
-   int videoFramerate;
-   int videoInput;
-   int videoEncoder;
-   int videoQuality;
-} RSConfig;
+static av_always_inline int rsEncoderGetPacket(RSEncoder *encoder, AVPacket *packet) {
+   if (encoder->getPacket == NULL) {
+      return AVERROR(ENOSYS);
+   } else {
+      encoder->getPacket(encoder, packet);
+   }
+}
 
-extern RSConfig rsConfig;
-
-int rsConfigInit(void);
+int rsVideoEncoderCreate(RSEncoder *encoder, const RSDevice *input);
 
 #endif
