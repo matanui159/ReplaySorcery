@@ -20,15 +20,12 @@
 #include "config.h"
 #include "device/device.h"
 #include "util/log.h"
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
-#include <stdlib.h>
 
-static int mainRun(int argc, char **argv) {
+static int mainRun(void) {
    int ret;
    rsLogInit();
-   if ((ret = rsConfigInit(argc, argv)) < 0) {
+   if ((ret = rsConfigInit()) < 0) {
       return ret;
    }
    rsDeviceInit();
@@ -49,8 +46,10 @@ static int mainRun(int argc, char **argv) {
 }
 
 int main(int argc, char *argv[]) {
+   (void)argc;
+   (void)argv;
    int ret;
-   if ((ret = mainRun(argc, argv)) < 0) {
+   if ((ret = mainRun()) < 0) {
       av_log(NULL, AV_LOG_FATAL, "%s\n", av_err2str(ret));
       return EXIT_FAILURE;
    }

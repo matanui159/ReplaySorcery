@@ -37,6 +37,6 @@ typedef struct RSConfig {
 
 extern RSConfig rsConfig;
 
-int rsConfigInit(int argc, char **argv);
+int rsConfigInit(void);
 
 #endif

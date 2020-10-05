@@ -18,51 +18,41 @@
  */
 
 #include "config.h"
+#include "rsbuild.h"
+#include <libavformat/avio.h>
+#include <libavutil/avstring.h>
+#include <libavutil/bprint.h>
 #include <libavutil/opt.h>
 
 #define CONFIG_CONST(name, value, group)                                                 \
-   { (name), NULL, 0, AV_OPT_TYPE_CONST, {.i64 = (value)}, 0, 0, 0, (group) }
-#define CONFIG_INT(name, field, def, min, max, group)                                    \
+   { #name, NULL, 0, AV_OPT_TYPE_CONST, {.i64 = (value) }, 0, 0, 0, #group }
+#define CONFIG_INT(name, def, min, max, group)                                           \
    {                                                                                     \
-      (name), NULL, offsetof(RSConfig, field), AV_OPT_TYPE_INT, {.i64 = (def)}, (min),   \
-          (max), 0, (group)                                                              \
+#name, NULL, offsetof(RSConfig, name), AV_OPT_TYPE_INT,                            \
+          {.i64 = (def) }, (min), (max), 0, #group                                       \
    }
 
 static const AVOption configOptions[] = {
-    CONFIG_CONST("auto", RS_CONFIG_AUTO, "auto"),
-    CONFIG_INT("log-level", logLevel, AV_LOG_INFO, AV_LOG_QUIET, AV_LOG_TRACE,
-               "logLevel"),
-    CONFIG_INT("l", logLevel, AV_LOG_INFO, AV_LOG_QUIET, AV_LOG_TRACE, "logLevel"),
-    CONFIG_CONST("quiet", AV_LOG_QUIET, "logLevel"),
-    CONFIG_CONST("panic", AV_LOG_PANIC, "logLevel"),
-    CONFIG_CONST("fatal", AV_LOG_FATAL, "logLevel"),
-    CONFIG_CONST("error", AV_LOG_ERROR, "logLevel"),
-    CONFIG_CONST("warning", AV_LOG_WARNING, "logLevel"),
-    CONFIG_CONST("info", AV_LOG_INFO, "logLevel"),
-    CONFIG_CONST("verbose", AV_LOG_VERBOSE, "logLevel"),
-    CONFIG_CONST("debug", AV_LOG_DEBUG, "logLevel"),
-    CONFIG_CONST("trace", AV_LOG_TRACE, "logLevel"),
-    CONFIG_INT("video-x", videoX, 0, 0, INT_MAX, NULL),
-    CONFIG_INT("x", videoX, 0, 0, INT_MAX, NULL),
-    CONFIG_INT("video-y", videoY, 0, 0, INT_MAX, NULL),
-    CONFIG_INT("y", videoY, 0, 0, INT_MAX, NULL),
-    CONFIG_INT("video-width", videoWidth, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX,
-               "auto"),
-    CONFIG_INT("width", videoWidth, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX, "auto"),
-    CONFIG_INT("w", videoWidth, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX, "auto"),
-    CONFIG_INT("video-height", videoHeight, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX,
-               "auto"),
-    CONFIG_INT("height", videoHeight, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX, "auto"),
-    CONFIG_INT("h", videoHeight, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX, "auto"),
-    CONFIG_INT("video-framerate", videoFramerate, 30, 0, INT_MAX, NULL),
-    CONFIG_INT("framerate", videoFramerate, 30, 0, INT_MAX, NULL),
-    CONFIG_INT("fr", videoFramerate, 30, 0, INT_MAX, NULL),
-    CONFIG_INT("video-input", videoInput, RS_CONFIG_AUTO, RS_CONFIG_AUTO,
-               RS_CONFIG_VIDEO_X11, "videoInput"),
-    CONFIG_INT("vi", videoInput, RS_CONFIG_AUTO, RS_CONFIG_AUTO, RS_CONFIG_VIDEO_X11,
-               "videoInput"),
-    CONFIG_CONST("auto", RS_CONFIG_AUTO, "videoInput"),
-    CONFIG_CONST("x11", RS_CONFIG_VIDEO_X11, "videoInput"),
+    CONFIG_CONST(auto, RS_CONFIG_AUTO, auto),
+    CONFIG_INT(logLevel, AV_LOG_INFO, AV_LOG_QUIET, AV_LOG_TRACE, logLevel),
+    CONFIG_CONST(quiet, AV_LOG_QUIET, logLevel),
+    CONFIG_CONST(panic, AV_LOG_PANIC, logLevel),
+    CONFIG_CONST(fatal, AV_LOG_FATAL, logLevel),
+    CONFIG_CONST(error, AV_LOG_ERROR, logLevel),
+    CONFIG_CONST(warning, AV_LOG_WARNING, logLevel),
+    CONFIG_CONST(info, AV_LOG_INFO, logLevel),
+    CONFIG_CONST(verbose, AV_LOG_VERBOSE, logLevel),
+    CONFIG_CONST(debug, AV_LOG_DEBUG, logLevel),
+    CONFIG_CONST(trace, AV_LOG_TRACE, logLevel),
+    CONFIG_INT(videoX, 0, 0, INT_MAX, NULL),
+    CONFIG_INT(videoY, 0, 0, INT_MAX, NULL),
+    CONFIG_INT(videoWidth, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX, auto),
+    CONFIG_INT(videoHeight, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX, auto),
+    CONFIG_INT(videoFramerate, 30, 0, INT_MAX, NULL),
+    CONFIG_INT(videoInput, RS_CONFIG_AUTO, RS_CONFIG_AUTO, RS_CONFIG_VIDEO_X11,
+               videoInput),
+    CONFIG_CONST(auto, RS_CONFIG_AUTO, videoInput),
+    CONFIG_CONST(x11, RS_CONFIG_VIDEO_X11, videoInput),
     {NULL}};
 
 static const AVClass configClass = {
@@ -73,26 +63,78 @@ static const AVClass configClass = {
 
 RSConfig rsConfig = {.avClass = &configClass};
 
-int rsConfigInit(int argc, char **argv) {
+static char *configTrim(char *str) {
+   while (av_isspace(*str)) {
+      ++str;
+   }
+   char *end = strchr(str, 0) - 1;
+   while (av_isspace(*end)) {
+      --end;
+   }
+   end[1] = 0;
+   return str;
+}
+
+int rsConfigInit(void) {
    int ret;
    av_opt_set_defaults(&rsConfig);
-   for (int i = 1; i < argc; i += 2) {
-      if (argv[i][0] != '-' || i == argc - 1) {
-         av_log(NULL, AV_LOG_ERROR, "Argument format: -[option] [value]\n");
-         return AVERROR_INVALIDDATA;
+
+   AVIOContext *file;
+   if ((ret = avio_open(&file, RS_BUILD_CONFIG_FILE, AVIO_FLAG_READ)) < 0) {
+      av_log(NULL, AV_LOG_WARNING, "Failed to open config file: %s\n", av_err2str(ret));
+      return 0;
+   }
+
+   AVBPrint buffer;
+   char *contents = NULL;
+   av_bprint_init(&buffer, 0, AV_BPRINT_SIZE_UNLIMITED);
+   if ((ret = avio_read_to_bprint(file, &buffer, INT_MAX)) < 0) {
+      av_log(NULL, AV_LOG_ERROR, "Failed to read config file: %s\n", av_err2str(ret));
+      goto error;
+   }
+   if ((ret = av_bprint_finalize(&buffer, &contents)) < 0) {
+      goto error;
+   }
+
+   const char *delim = "\n\r";
+   char *state;
+   for (char *line = av_strtok(contents, delim, &state); line != NULL;
+        line = av_strtok(NULL, delim, &state)) {
+      // Remove comments
+      char *hash = strchr(line, '#');
+      if (hash != NULL) {
+         *hash = 0;
       }
 
-      char *key = argv[i] + 1;
-      if (key[0] == '-') {
-         key += 1;
+      // Ignore empty lines
+      line = configTrim(line);
+      if (*line == 0) {
+         continue;
       }
-      char *value = argv[i + 1];
+
+      // Get key and valye
+      char *eq = strchr(line, '=');
+      if (eq == NULL) {
+         av_log(NULL, AV_LOG_ERROR,
+                "Config file format: key = value [# optional comment]\n");
+         goto error;
+      }
+
+      *eq = 0;
+      char *key = configTrim(line);
+      char *value = configTrim(eq + 1);
       if ((ret = av_opt_set(&rsConfig, key, value, 0)) < 0) {
          av_log(NULL, AV_LOG_ERROR, "Failed to set '%s' to '%s': %s\n", key, value,
                 av_err2str(ret));
-         return ret;
+         goto error;
       }
       av_log_set_level(rsConfig.logLevel);
    }
+
    return 0;
+error:
+   av_freep(&contents);
+   av_bprint_finalize(&buffer, NULL);
+   avio_closep(&file);
+   return ret;
 }

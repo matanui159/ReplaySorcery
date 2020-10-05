@@ -1,5 +1,7 @@
 {
+   "editor.tabSize": 3,
    "files.associations": {
-      "*.in": "cpp"
+      "*.h": "c",
+      "*.h.in": "c"
    }
 }

@@ -69,7 +69,6 @@ int rsDemuxDeviceCreate(RSDevice *device, const char *name, const char *input,
       options = &defaultOptions;
    }
 
-   memset(device, 0, sizeof(RSDevice));
    DemuxDevice *demux = av_mallocz(sizeof(DemuxDevice));
    device->extra = demux;
    device->destroy = demuxDeviceDestroy;
