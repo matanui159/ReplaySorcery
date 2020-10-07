@@ -46,5 +46,5 @@ int rsX264EncoderCreate(RSEncoder *encoder, const RSDevice *input, int lowLatenc
       av_dict_free(&options);
       return AVERROR(ENOMEM);
    }
-   return rsCodecEncoderCreate(encoder, "libx264", input, &options);
+   return rsCodecEncoderCreate(encoder, input, "libx264", &options);
 }

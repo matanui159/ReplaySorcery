@@ -62,7 +62,7 @@ error:
    return ret;
 }
 
-int rsCodecEncoderCreate(RSEncoder *encoder, const char *name, const RSDevice *input,
+int rsCodecEncoderCreate(RSEncoder *encoder, const RSDevice *input, const char *name,
                          AVDictionary **options) {
    int ret;
    AVDictionary *defaultOptions = NULL;

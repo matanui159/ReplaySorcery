@@ -24,7 +24,7 @@
 #include <libavutil/avutil.h>
 #include <libavutil/dict.h>
 
-int rsCodecEncoderCreate(RSEncoder *encoder, const char *name, const RSDevice *input,
+int rsCodecEncoderCreate(RSEncoder *encoder, const RSDevice *input, const char *name,
                          AVDictionary **options);
 
 #endif
