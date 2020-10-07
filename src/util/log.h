@@ -17,8 +17,8 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_UTIL_LOGGING_H
-#define RS_UTIL_LOGGING_H
+#ifndef RS_UTIL_LOG_H
+#define RS_UTIL_LOG_H
 
 void rsLogInit(void);
 

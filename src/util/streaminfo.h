@@ -17,34 +17,18 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_DEVICE_H
-#define RS_DEVICE_H
-#include "../util/streaminfo.h"
+#ifndef RS_UTIL_STREAMINFO_H
+#define RS_UTIL_STREAMINFO_H
 #include <libavutil/avutil.h>
-#include <libavutil/frame.h>
 
-typedef struct RSDevice {
-   RSStreamInfo info;
-   void *extra;
-   void (*destroy)(struct RSDevice *device);
-   int (*getFrame)(struct RSDevice *device, AVFrame *frame);
-} RSDevice;
-
-static av_always_inline void rsDeviceDestroy(RSDevice *device) {
-   if (device->destroy != NULL) {
-      device->destroy(device);
-   }
-}
-
-static av_always_inline int rsDeviceGetFrame(RSDevice *device, AVFrame *frame) {
-   if (device->getFrame == NULL) {
-      return AVERROR(ENOSYS);
-   } else {
-      return device->getFrame(device, frame);
-   }
-}
-
-void rsDeviceInit(void);
-int rsVideoDeviceCreate(RSDevice *device);
+typedef union RSStreamInfo {
+   struct {
+      enum AVMediaType type;
+      AVRational timebase;
+      enum AVPixelFormat pixfmt;
+      int width;
+      int height;
+   } v;
+} RSStreamInfo;
 
 #endif

@@ -43,20 +43,26 @@ static int demuxDeviceGetFrame(RSDevice *device, AVFrame *frame) {
       if ((ret = av_read_frame(demux->formatCtx, &demux->packet)) < 0) {
          av_log(demux->formatCtx, AV_LOG_ERROR, "Failed to read frame: %s\n",
                 av_err2str(ret));
-         return ret;
+         goto error;
       }
       if ((ret = avcodec_send_packet(demux->codecCtx, &demux->packet)) < 0) {
          av_log(demux->codecCtx, AV_LOG_ERROR, "Failed to send packet to decoder: %s\n",
                 av_err2str(ret));
-         return ret;
+         goto error;
       }
+      av_packet_unref(&demux->packet);
    }
+
    if (ret < 0) {
       av_log(demux->codecCtx, AV_LOG_ERROR, "Failed to receive packet from decoder: %s\n",
              av_err2str(ret));
       return ret;
    }
+
    return 0;
+error:
+   av_packet_unref(&demux->packet);
+   return ret;
 }
 
 int rsDemuxDeviceCreate(RSDevice *device, const char *name, const char *input,
@@ -119,13 +125,13 @@ int rsDemuxDeviceCreate(RSDevice *device, const char *name, const char *input,
    }
 
    av_init_packet(&demux->packet);
-   device->info.pixfmt = demux->codecCtx->pix_fmt;
-   device->info.width = demux->codecCtx->width;
-   device->info.height = demux->codecCtx->height;
-   device->info.timebase = stream->time_base;
-   device->info.framerate = stream->r_frame_rate;
-   return 0;
+   device->info.v.type = demux->codecCtx->codec_type;
+   device->info.v.timebase = stream->time_base;
+   device->info.v.pixfmt = demux->codecCtx->pix_fmt;
+   device->info.v.width = demux->codecCtx->width;
+   device->info.v.height = demux->codecCtx->height;
 
+   return 0;
 error:
    av_dict_free(options);
    rsDeviceDestroy(device);

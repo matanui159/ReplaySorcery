@@ -40,20 +40,26 @@ static int codecEncoderGetPacket(RSEncoder *encoder, AVPacket *packet) {
    CodecEncoder *codec = encoder->extra;
    while ((ret = avcodec_receive_packet(codec->codecCtx, packet)) == AVERROR(EAGAIN)) {
       if ((ret = rsDeviceGetFrame(&codec->input, codec->frame)) < 0) {
-         return ret;
+         goto error;
       }
       if ((ret = avcodec_send_frame(codec->codecCtx, codec->frame)) < 0) {
          av_log(codec->codecCtx, AV_LOG_ERROR, "Failed to send frame to encoder: %s\n",
                 av_err2str(ret));
-         return ret;
+         goto error;
       }
+      av_frame_unref(codec->frame);
    }
+
    if (ret < 0) {
       av_log(codec->codecCtx, AV_LOG_ERROR, "Failed to receive packet from encoder: %s\n",
              av_err2str(ret));
-      return ret;
+      goto error;
    }
+
    return 0;
+error:
+   av_frame_unref(codec->frame);
+   return ret;
 }
 
 int rsCodecEncoderCreate(RSEncoder *encoder, const char *name, const RSDevice *input,
@@ -87,11 +93,10 @@ int rsCodecEncoderCreate(RSEncoder *encoder, const char *name, const RSDevice *i
       goto error;
    }
 
-   codec->codecCtx->pix_fmt = input->info.pixfmt;
-   codec->codecCtx->width = input->info.width;
-   codec->codecCtx->height = input->info.height;
-   codec->codecCtx->time_base = input->info.timebase;
-   codec->codecCtx->framerate = input->info.framerate;
+   codec->codecCtx->time_base = input->info.v.timebase;
+   codec->codecCtx->pix_fmt = input->info.v.pixfmt;
+   codec->codecCtx->width = input->info.v.width;
+   codec->codecCtx->height = input->info.v.height;
    if ((ret = avcodec_open2(codec->codecCtx, avCodec, options)) < 0) {
       av_log(codec->codecCtx, AV_LOG_ERROR, "Failed to open decoder: %s\n",
              av_err2str(ret));
@@ -110,8 +115,8 @@ int rsCodecEncoderCreate(RSEncoder *encoder, const char *name, const RSDevice *i
       ret = AVERROR(ENOMEM);
       goto error;
    }
-   return 0;
 
+   return 0;
 error:
    av_dict_free(options);
    rsEncoderDestroy(encoder);

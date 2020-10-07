@@ -9,6 +9,7 @@ set(sources
    src/main.c
    src/config.c
    src/util/log.c
+   src/util/filter.c
    src/device/device.c
    src/device/demux.c
    src/device/x11.c
@@ -20,6 +21,8 @@ set(headers
    src/rsbuild.h.in
    src/config.h
    src/util/log.h
+   src/util/streaminfo.h
+   src/util/filter.h
    src/device/device.h
    src/device/demux.h
    src/device/x11.h
