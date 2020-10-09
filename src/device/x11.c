@@ -19,7 +19,6 @@
 
 #include "x11.h"
 #include "../config.h"
-#include "demux.h"
 #include "rsbuild.h"
 #include <libavutil/avstring.h>
 #include <libavutil/avutil.h>
@@ -81,5 +80,10 @@ int rsX11DeviceCreate(RSDevice *device) {
       av_dict_free(&options);
       return AVERROR(ENOMEM);
    }
-   return rsDemuxDeviceCreate(device, "x11grab", display, &options);
+
+   int ret = rsDeviceCreate(
+       device,
+       &(RSDeviceParams){.name = "x11grab", .options = options, .input = display});
+   av_dict_free(&options);
+   return ret;
 }

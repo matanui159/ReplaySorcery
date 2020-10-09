@@ -21,9 +21,73 @@
 #include "../config.h"
 #include "x11.h"
 #include <libavdevice/avdevice.h>
+#include <libavutil/dict.h>
 
 void rsDeviceInit(void) {
    avdevice_register_all();
+}
+
+int rsDeviceCreate(RSDevice *device, const RSDeviceParams *params) {
+   int ret;
+   AVDictionary *options = NULL;
+   if ((ret = av_dict_copy(&options, params->options, 0)) < 0) {
+      goto error;
+   }
+
+   AVInputFormat *format = av_find_input_format(params->name);
+   if (format == NULL) {
+      av_log(NULL, AV_LOG_ERROR, "Device not found: %s\n", params->name);
+      ret = AVERROR_DEMUXER_NOT_FOUND;
+      goto error;
+   }
+   if ((ret = avformat_open_input(&device->formatCtx, params->input, format, &options)) <
+       0) {
+      av_log(NULL, AV_LOG_ERROR, "Failed to open '%s': %s\n", params->input,
+             av_err2str(ret));
+      goto error;
+   }
+   if (av_dict_count(options) > 0) {
+      const char *unused = av_dict_get(options, "", NULL, AV_DICT_IGNORE_SUFFIX)->key;
+      av_log(device->formatCtx, AV_LOG_ERROR, "Option not found: %s\n", unused);
+      ret = AVERROR_OPTION_NOT_FOUND;
+      goto error;
+   }
+
+   device->stream = device->formatCtx->streams[0];
+   AVCodecParameters *codecpar = device->stream->codecpar;
+   AVCodec *codec = avcodec_find_decoder(codecpar->codec_id);
+   if (codec == NULL) {
+      av_log(device->formatCtx, AV_LOG_ERROR, "Failed to find decoder: %s\n",
+             avcodec_get_name(codecpar->codec_id));
+      ret = AVERROR_DECODER_NOT_FOUND;
+      goto error;
+   }
+
+   device->codecCtx = avcodec_alloc_context3(codec);
+   if (device->codecCtx == NULL) {
+      ret = AVERROR(ENOMEM);
+      goto error;
+   }
+   if ((ret = avcodec_parameters_to_context(device->codecCtx, codecpar)) < 0) {
+      goto error;
+   }
+   if ((ret = avcodec_open2(device->codecCtx, codec, NULL)) < 0) {
+      av_log(device->codecCtx, AV_LOG_ERROR, "Failed to open decoder: %s\n",
+             av_err2str(ret));
+      goto error;
+   }
+   av_init_packet(&device->packet);
+
+   return 0;
+error:
+   av_dict_free(&options);
+   rsDeviceDestroy(device);
+   return ret;
+}
+
+void rsDeviceDestroy(RSDevice *device) {
+   avcodec_free_context(&device->codecCtx);
+   avformat_close_input(&device->formatCtx);
 }
 
 int rsVideoDeviceCreate(RSDevice *device) {
@@ -39,4 +103,31 @@ int rsVideoDeviceCreate(RSDevice *device) {
    av_log(NULL, AV_LOG_WARNING, "Failed to create X11 device: %s\n", av_err2str(ret));
 
    return AVERROR(ENOSYS);
+}
+
+int rsDeviceGetFrame(RSDevice *device, AVFrame *frame) {
+   int ret;
+   while ((ret = avcodec_receive_frame(device->codecCtx, frame)) == AVERROR(EAGAIN)) {
+      if ((ret = av_read_frame(device->formatCtx, &device->packet)) < 0) {
+         av_log(device->formatCtx, AV_LOG_ERROR, "Failed to read packet: %s\n",
+                av_err2str(ret));
+         goto error;
+      }
+      if ((ret = avcodec_send_frame(device->codecCtx, frame)) < 0) {
+         av_log(device->codecCtx, AV_LOG_ERROR, "Failed to send packet to decoder: %s\n",
+                av_err2str(ret));
+         goto error;
+      }
+   }
+
+   if (ret < 0) {
+      av_log(device->codecCtx, AV_LOG_ERROR, "Failed to receive frame from decoder: %s\n",
+             av_err2str(ret));
+      goto error;
+   }
+
+   return 0;
+error:
+   av_packet_unref(&device->packet);
+   return ret;
 }

@@ -93,10 +93,10 @@ int rsCodecEncoderCreate(RSEncoder *encoder, const RSDevice *input, const char *
       goto error;
    }
 
-   codec->codecCtx->time_base = input->info.v.timebase;
-   codec->codecCtx->pix_fmt = input->info.v.pixfmt;
-   codec->codecCtx->width = input->info.v.width;
-   codec->codecCtx->height = input->info.v.height;
+   // codec->codecCtx->time_base = input->info.v.timebase;
+   // codec->codecCtx->pix_fmt = input->info.v.pixfmt;
+   // codec->codecCtx->width = input->info.v.width;
+   // codec->codecCtx->height = input->info.v.height;
    if ((ret = avcodec_open2(codec->codecCtx, avCodec, options)) < 0) {
       av_log(codec->codecCtx, AV_LOG_ERROR, "Failed to open decoder: %s\n",
              av_err2str(ret));

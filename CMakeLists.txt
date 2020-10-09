@@ -11,7 +11,6 @@ set(sources
    src/util/log.c
    src/util/filter.c
    src/device/device.c
-   src/device/demux.c
    src/device/x11.c
    src/encoder/encoder.c
    src/encoder/codec.c
@@ -24,7 +23,6 @@ set(headers
    src/util/streaminfo.h
    src/util/filter.h
    src/device/device.h
-   src/device/demux.h
    src/device/x11.h
    src/encoder/encoder.h
    src/encoder/codec.h
