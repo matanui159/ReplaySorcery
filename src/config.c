@@ -23,6 +23,7 @@
 #include <libavutil/avstring.h>
 #include <libavutil/bprint.h>
 #include <libavutil/opt.h>
+#include <libswscale/swscale.h>
 
 #define CONFIG_CONST(name, value, group)                                                 \
    { #name, NULL, 0, AV_OPT_TYPE_CONST, {.i64 = (value) }, 0, 0, 0, #group }
@@ -60,7 +61,17 @@ static const AVOption configOptions[] = {
                videoEncoder),
     CONFIG_CONST(auto, RS_CONFIG_AUTO, videoEncoder),
     CONFIG_CONST(x264, RS_CONFIG_VIDEO_X264, videoEncoder),
-    CONFIG_CONST(x264l, RS_CONFIG_VIDEO_X264L, videoEncoder),
+    CONFIG_INT(videoScaler, SWS_FAST_BILINEAR, SWS_FAST_BILINEAR, SWS_SPLINE, videoScaler),
+    CONFIG_CONST(fast, SWS_FAST_BILINEAR, videoScaler),
+    CONFIG_CONST(bilinear, SWS_BILINEAR, videoScaler),
+    CONFIG_CONST(bicubic, SWS_BICUBIC, videoScaler),
+    CONFIG_CONST(point, SWS_POINT, videoScaler),
+    CONFIG_CONST(area, SWS_AREA, videoScaler),
+    CONFIG_CONST(bicublin, SWS_BICUBLIN, videoScaler),
+    CONFIG_CONST(gauss, SWS_GAUSS, videoScaler),
+    CONFIG_CONST(sinc, SWS_SINC, videoScaler),
+    CONFIG_CONST(lanczos, SWS_LANCZOS, videoScaler),
+    CONFIG_CONST(spline, SWS_SPLINE, videoScaler),
     CONFIG_INT(videoQuality, RS_CONFIG_QUALITY_LOW, RS_CONFIG_QUALITY_LOW,
                RS_CONFIG_QUALITY_HIGH, quality),
     {NULL}};
@@ -88,7 +99,6 @@ static char *configTrim(char *str) {
 int rsConfigInit(void) {
    int ret;
    av_opt_set_defaults(&rsConfig);
-
    AVIOContext *file;
    if ((ret = avio_open(&file, RS_BUILD_CONFIG_FILE, AVIO_FLAG_READ)) < 0) {
       av_log(NULL, AV_LOG_WARNING, "Failed to open config file: %s\n", av_err2str(ret));

@@ -28,7 +28,6 @@
 
 #define RS_CONFIG_VIDEO_X11 0
 #define RS_CONFIG_VIDEO_X264 0
-#define RS_CONFIG_VIDEO_X264L 1
 
 typedef struct RSConfig {
    const AVClass *avClass;
@@ -40,6 +39,7 @@ typedef struct RSConfig {
    int videoFramerate;
    int videoInput;
    int videoEncoder;
+   int videoScaler;
    int videoQuality;
 } RSConfig;
 

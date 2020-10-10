@@ -22,27 +22,32 @@
 #include "../device/device.h"
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
+#include <libavutil/dict.h>
+#include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
+
+typedef struct RSEncoderParams {
+   const char *name;
+   const AVDictionary *options;
+   RSDevice *input;
+   enum AVPixelFormat swFormat;
+} RSEncoderParams;
 
 typedef struct RSEncoder {
-   void *extra;
-   void (*destroy)(struct RSEncoder *encoder);
-   int (*getPacket)(struct RSEncoder *encoder, AVPacket *packet);
+   RSDevice *input;
+   AVCodecContext *codecCtx;
+   AVFrame *frame;
+   struct SwsContext *scaleCtx;
+   AVFrame *scaleFrame;
 } RSEncoder;
 
-static av_always_inline void rsEncoderDestroy(RSEncoder *encoder) {
-   if (encoder->destroy != NULL) {
-      encoder->destroy(encoder);
-   }
-}
+#define RS_ENCODER_INIT { NULL }
 
-static av_always_inline int rsEncoderGetPacket(RSEncoder *encoder, AVPacket *packet) {
-   if (encoder->getPacket == NULL) {
-      return AVERROR(ENOSYS);
-   } else {
-      encoder->getPacket(encoder, packet);
-   }
-}
+int rsEncoderCreate(RSEncoder *encoder, const RSEncoderParams *params);
+void rsEncoderDestroy(RSEncoder *encoder);
+int rsEncoderGetPacket(RSEncoder *encoder, AVPacket *packet);
 
-int rsVideoEncoderCreate(RSEncoder *encoder, const RSDevice *input);
+int rsX264EncoderCreate(RSEncoder *encoder, RSDevice *input);
+int rsVideoEncoderCreate(RSEncoder *encoder, RSDevice *input);
 
 #endif

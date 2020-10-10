@@ -27,7 +27,7 @@ static int mainRun(void) {
    int ret;
    rsLogInit();
    if ((ret = rsConfigInit()) < 0) {
-      return ret;
+      goto error;
    }
    rsDeviceInit();
 
@@ -38,14 +38,20 @@ static int mainRun(void) {
           "under certain conditions; see COPYING for details.\n");
    av_log(NULL, AV_LOG_INFO, "FFmpeg version: %s\n", av_version_info());
 
-   RSDevice device;
-   rsVideoDeviceCreate(&device);
-   RSEncoder encoder;
-   rsVideoEncoderCreate(&encoder, &device);
+   RSDevice device = RS_DEVICE_INIT;
+   RSEncoder encoder = RS_ENCODER_INIT;
+   if ((ret = rsVideoDeviceCreate(&device)) < 0) {
+      goto error;
+   }
+   if ((ret = rsVideoEncoderCreate(&encoder, &device)) < 0) {
+      goto error;
+   }
 
+   ret = 0;
+error:
    rsEncoderDestroy(&encoder);
    rsDeviceDestroy(&device);
-   return 0;
+   return ret;
 }
 
 int main(int argc, char *argv[]) {

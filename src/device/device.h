@@ -46,7 +46,7 @@ int rsDeviceCreate(RSDevice *device, const RSDeviceParams *params);
 void rsDeviceDestroy(RSDevice *device);
 int rsDeviceGetFrame(RSDevice *device, AVFrame *frame);
 
-int rxX11DeviceCreate(RSDevice *device);
+int rsX11DeviceCreate(RSDevice *device);
 int rsVideoDeviceCreate(RSDevice *device);
 
 #endif

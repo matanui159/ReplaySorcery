@@ -31,7 +31,6 @@ static int filterLink(RSFilter *filter, AVFilterContext **filterCtx, AVFilterInO
       av_log(filter->graph, AV_LOG_ERROR, "Failed to find filter: %s\n", name);
       return AVERROR_FILTER_NOT_FOUND;
    }
-
    if ((ret = avfilter_graph_create_filter(filterCtx, avFilter, NULL, options, NULL,
                                            filter->graph)) < 0) {
       av_log(filter->graph, AV_LOG_ERROR, "Failed to create filter: %s\n",

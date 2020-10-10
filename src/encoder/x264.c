@@ -17,13 +17,10 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "x264.h"
+#include "encoder.h"
 #include "../config.h"
-#include "codec.h"
-#include <libavutil/avutil.h>
-#include <libavutil/dict.h>
 
-int rsX264EncoderCreate(RSEncoder *encoder, const RSDevice *input, int lowLatency) {
+int rsX264EncoderCreate(RSEncoder *encoder, RSDevice *input) {
    AVDictionary *options = NULL;
    switch (rsConfig.videoQuality) {
    case RS_CONFIG_QUALITY_LOW:
@@ -36,15 +33,17 @@ int rsX264EncoderCreate(RSEncoder *encoder, const RSDevice *input, int lowLatenc
       av_dict_set(&options, "preset", "slower", 0);
       break;
    }
-   if (lowLatency) {
-      av_dict_set(&options, "tune", "zerolatency", 0);
-   } else {
-      // So there is always two options
-      av_dict_set(&options, "profile", "high", 0);
-   }
-   if (av_dict_count(options) != 2) {
+   if (av_dict_count(options) != 1) {
       av_dict_free(&options);
       return AVERROR(ENOMEM);
    }
-   return rsCodecEncoderCreate(encoder, input, "libx264", &options);
+
+   int ret = rsEncoderCreate(encoder, &(RSEncoderParams){
+      .name = "libx264",
+      .options = options,
+      .input = input,
+      .swFormat = AV_PIX_FMT_YUV420P,
+   });
+   av_dict_free(&options);
+   return ret;
 }

@@ -13,7 +13,6 @@ set(sources
    src/device/device.c
    src/device/x11.c
    src/encoder/encoder.c
-   src/encoder/codec.c
    src/encoder/x264.c
 )
 set(headers
@@ -23,9 +22,7 @@ set(headers
    src/util/streaminfo.h
    src/util/filter.h
    src/device/device.h
-   src/device/x11.h
    src/encoder/encoder.h
-   src/encoder/codec.h
    src/encoder/x264.h
 )
 
@@ -96,6 +93,7 @@ pkg_check_modules(FFMPEG
    libavcodec
    libavdevice
    libavfilter
+   libswscale
 )
 target_link_libraries(${binary} PRIVATE PkgConfig::FFMPEG)
 

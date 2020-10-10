@@ -17,43 +17,41 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "x11.h"
+#include "device.h"
 #include "../config.h"
 #include "rsbuild.h"
 #include <libavutil/avstring.h>
-#include <libavutil/avutil.h>
-#include <libavutil/dict.h>
 
 #ifdef RS_BUILD_X11_FOUND
 #include <X11/Xlib.h>
 #endif
 
 int rsX11DeviceCreate(RSDevice *device) {
-   const char *display = getenv("DISPLAY");
-   if (display == NULL) {
-      display = ":0";
+   const char *input = getenv("DISPLAY");
+   if (input == NULL) {
+      input = ":0";
    }
 
    int width = rsConfig.videoWidth;
    int height = rsConfig.videoHeight;
 #ifdef RS_BUILD_X11_FOUND
    if (width == RS_CONFIG_AUTO || height == RS_CONFIG_AUTO) {
-      Display *connection = XOpenDisplay(display);
-      if (connection == NULL) {
+      Display *display = XOpenDisplay(input);
+      if (display == NULL) {
          av_log(NULL, AV_LOG_WARNING, "Failed to open X11 display\n");
       } else {
-         av_log(NULL, AV_LOG_INFO, "X11 version: %i.%i\n", ProtocolVersion(connection),
-                ProtocolRevision(connection));
-         av_log(NULL, AV_LOG_INFO, "X11 vendor: %s v%i\n", ServerVendor(connection),
-                VendorRelease(connection));
-         Screen *screen = DefaultScreenOfDisplay(connection);
+         av_log(NULL, AV_LOG_INFO, "X11 version: %i.%i\n", ProtocolVersion(display),
+                ProtocolRevision(display));
+         av_log(NULL, AV_LOG_INFO, "X11 vendor: %s v%i\n", ServerVendor(display),
+                VendorRelease(display));
+         Screen *screen = DefaultScreenOfDisplay(display);
          if (width == RS_CONFIG_AUTO) {
             width = WidthOfScreen(screen) - rsConfig.videoX;
          }
          if (height == RS_CONFIG_AUTO) {
             height = HeightOfScreen(screen) - rsConfig.videoY;
          }
-         XCloseDisplay(connection);
+         XCloseDisplay(display);
          av_log(NULL, AV_LOG_INFO, "Video size: %ix%i\n", width, height);
       }
    }
@@ -83,7 +81,7 @@ int rsX11DeviceCreate(RSDevice *device) {
 
    int ret = rsDeviceCreate(
        device,
-       &(RSDeviceParams){.name = "x11grab", .options = options, .input = display});
+       &(RSDeviceParams){.name = "x11grabx", .options = options, .input = input});
    av_dict_free(&options);
    return ret;
 }

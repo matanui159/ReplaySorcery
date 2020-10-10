@@ -19,9 +19,7 @@
 
 #include "device.h"
 #include "../config.h"
-#include "x11.h"
 #include <libavdevice/avdevice.h>
-#include <libavutil/dict.h>
 
 void rsDeviceInit(void) {
    avdevice_register_all();
@@ -57,7 +55,7 @@ int rsDeviceCreate(RSDevice *device, const RSDeviceParams *params) {
    AVCodecParameters *codecpar = device->stream->codecpar;
    AVCodec *codec = avcodec_find_decoder(codecpar->codec_id);
    if (codec == NULL) {
-      av_log(device->formatCtx, AV_LOG_ERROR, "Failed to find decoder: %s\n",
+      av_log(device->formatCtx, AV_LOG_ERROR, "Decoder not found: %s\n",
              avcodec_get_name(codecpar->codec_id));
       ret = AVERROR_DECODER_NOT_FOUND;
       goto error;
@@ -111,23 +109,19 @@ int rsDeviceGetFrame(RSDevice *device, AVFrame *frame) {
       if ((ret = av_read_frame(device->formatCtx, &device->packet)) < 0) {
          av_log(device->formatCtx, AV_LOG_ERROR, "Failed to read packet: %s\n",
                 av_err2str(ret));
-         goto error;
+         return ret;
       }
-      if ((ret = avcodec_send_frame(device->codecCtx, frame)) < 0) {
+      if ((ret = avcodec_send_packet(device->codecCtx, &device->packet)) < 0) {
          av_log(device->codecCtx, AV_LOG_ERROR, "Failed to send packet to decoder: %s\n",
                 av_err2str(ret));
-         goto error;
+         return ret;
       }
    }
 
    if (ret < 0) {
       av_log(device->codecCtx, AV_LOG_ERROR, "Failed to receive frame from decoder: %s\n",
              av_err2str(ret));
-      goto error;
+      return ret;
    }
-
    return 0;
-error:
-   av_packet_unref(&device->packet);
-   return ret;
 }
