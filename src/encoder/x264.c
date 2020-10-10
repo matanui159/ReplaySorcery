@@ -17,8 +17,8 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "encoder.h"
 #include "../config.h"
+#include "encoder.h"
 
 int rsX264EncoderCreate(RSEncoder *encoder, RSDevice *input) {
    AVDictionary *options = NULL;
@@ -39,11 +39,11 @@ int rsX264EncoderCreate(RSEncoder *encoder, RSDevice *input) {
    }
 
    int ret = rsEncoderCreate(encoder, &(RSEncoderParams){
-      .name = "libx264",
-      .options = options,
-      .input = input,
-      .swFormat = AV_PIX_FMT_YUV420P,
-   });
+                                          .name = "libx264",
+                                          .options = options,
+                                          .input = input,
+                                          .swFormat = AV_PIX_FMT_YUV420P,
+                                      });
    av_dict_free(&options);
    return ret;
 }

@@ -21,9 +21,9 @@
 #define RS_ENCODER_H
 #include "../device/device.h"
 #include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libavutil/dict.h>
-#include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
 
 typedef struct RSEncoderParams {
@@ -41,7 +41,8 @@ typedef struct RSEncoder {
    AVFrame *scaleFrame;
 } RSEncoder;
 
-#define RS_ENCODER_INIT { NULL }
+#define RS_ENCODER_INIT                                                                  \
+   { NULL }
 
 int rsEncoderCreate(RSEncoder *encoder, const RSEncoderParams *params);
 void rsEncoderDestroy(RSEncoder *encoder);

@@ -17,8 +17,8 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "device.h"
 #include "../config.h"
+#include "device.h"
 #include "rsbuild.h"
 #include <libavutil/avstring.h>
 
@@ -80,8 +80,7 @@ int rsX11DeviceCreate(RSDevice *device) {
    }
 
    int ret = rsDeviceCreate(
-       device,
-       &(RSDeviceParams){.name = "x11grabx", .options = options, .input = input});
+       device, &(RSDeviceParams){.name = "x11grab", .options = options, .input = input});
    av_dict_free(&options);
    return ret;
 }

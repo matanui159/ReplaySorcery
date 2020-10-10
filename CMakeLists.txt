@@ -23,7 +23,6 @@ set(headers
    src/util/filter.h
    src/device/device.h
    src/encoder/encoder.h
-   src/encoder/x264.h
 )
 
 add_executable(${binary} ${sources})

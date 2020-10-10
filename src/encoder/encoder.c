@@ -49,7 +49,8 @@ int rsEncoderCreate(RSEncoder *encoder, const RSEncoderParams *params) {
    encoder->codecCtx->height = height;
    encoder->codecCtx->time_base = params->input->stream->time_base;
    if ((ret = avcodec_open2(encoder->codecCtx, codec, &options)) < 0) {
-      av_log(encoder->codecCtx, AV_LOG_ERROR, "Failed to open encoder: %s\n", av_err2str(ret));
+      av_log(encoder->codecCtx, AV_LOG_ERROR, "Failed to open encoder: %s\n",
+             av_err2str(ret));
       goto error;
    }
 
@@ -61,9 +62,12 @@ int rsEncoderCreate(RSEncoder *encoder, const RSEncoderParams *params) {
 
    enum AVPixelFormat pixfmt = params->input->codecCtx->pix_fmt;
    if (pixfmt != params->swFormat) {
-      encoder->scaleCtx = sws_getContext(width, height, pixfmt, width, height, params->swFormat, rsConfig.videoScaler, NULL, NULL, NULL);
+      encoder->scaleCtx =
+          sws_getContext(width, height, pixfmt, width, height, params->swFormat,
+                         rsConfig.videoScaler, NULL, NULL, NULL);
       if (encoder->scaleCtx == NULL) {
-         av_log(encoder->codecCtx, AV_LOG_ERROR, "Failed to get scaler: %s -> %s\n", av_get_pix_fmt_name(pixfmt), av_get_pix_fmt_name(params->swFormat));
+         av_log(encoder->codecCtx, AV_LOG_ERROR, "Failed to get scaler: %s -> %s\n",
+                av_get_pix_fmt_name(pixfmt), av_get_pix_fmt_name(params->swFormat));
          ret = AVERROR_EXTERNAL;
          goto error;
       }
@@ -106,21 +110,27 @@ int rsEncoderGetPacket(RSEncoder *encoder, AVPacket *packet) {
       AVFrame *frame = encoder->frame;
 
       if (encoder->scaleCtx != NULL) {
-         if ((ret = sws_scale(encoder->scaleCtx, (const uint8_t **)frame->data, frame->linesize, 0, frame->height, encoder->scaleFrame->data, encoder->scaleFrame->linesize)) < 0) {
-            av_log(encoder->scaleCtx, AV_LOG_ERROR, "Failed to scale frame: %s\n", av_err2str(ret));
+         if ((ret = sws_scale(encoder->scaleCtx, (const uint8_t **)frame->data,
+                              frame->linesize, 0, frame->height,
+                              encoder->scaleFrame->data, encoder->scaleFrame->linesize)) <
+             0) {
+            av_log(encoder->scaleCtx, AV_LOG_ERROR, "Failed to scale frame: %s\n",
+                   av_err2str(ret));
             return ret;
          }
          frame = encoder->scaleFrame;
       }
 
       if ((ret = avcodec_send_frame(encoder->codecCtx, frame)) < 0) {
-         av_log(encoder->codecCtx, AV_LOG_ERROR, "Failed to send frame to encoder: %s\n", av_err2str(ret));
+         av_log(encoder->codecCtx, AV_LOG_ERROR, "Failed to send frame to encoder: %s\n",
+                av_err2str(ret));
          return ret;
       }
    }
 
    if (ret < 0) {
-      av_log(encoder->codecCtx, AV_LOG_ERROR, "Failed to receive packet from encoder: %s\n", av_err2str(ret));
+      av_log(encoder->codecCtx, AV_LOG_ERROR,
+             "Failed to receive packet from encoder: %s\n", av_err2str(ret));
       return ret;
    }
    return 0;
