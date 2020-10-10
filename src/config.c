@@ -19,12 +19,12 @@
 
 #include "config.h"
 #include "rsbuild.h"
+#include <libavcodec/avcodec.h>
 #include <libavformat/avio.h>
 #include <libavutil/avstring.h>
 #include <libavutil/bprint.h>
 #include <libavutil/opt.h>
 #include <libswscale/swscale.h>
-#include <libavcodec/avcodec.h>
 
 #define CONFIG_CONST(name, value, group)                                                 \
    { #name, NULL, 0, AV_OPT_TYPE_CONST, {.i64 = (value) }, 0, 0, 0, #group }
@@ -60,11 +60,13 @@ static const AVOption configOptions[] = {
                videoEncoder),
     CONFIG_CONST(auto, RS_CONFIG_AUTO, videoEncoder),
     CONFIG_CONST(x264, RS_CONFIG_VIDEO_X264, videoEncoder),
-    CONFIG_INT(videoProfile, FF_PROFILE_H264_BASELINE, FF_PROFILE_H264_BASELINE, FF_PROFILE_H264_HIGH, videoProfile),
+    CONFIG_INT(videoProfile, FF_PROFILE_H264_BASELINE, FF_PROFILE_H264_BASELINE,
+               FF_PROFILE_H264_HIGH, videoProfile),
     CONFIG_CONST(baseline, FF_PROFILE_H264_BASELINE, videoProfile),
     CONFIG_CONST(main, FF_PROFILE_H264_MAIN, videoProfile),
     CONFIG_CONST(high, FF_PROFILE_H264_HIGH, videoProfile),
-    CONFIG_INT(videoPreset, RS_CONFIG_PRESET_FAST, RS_CONFIG_PRESET_FAST, RS_CONFIG_PRESET_SLOW, videoPreset),
+    CONFIG_INT(videoPreset, RS_CONFIG_PRESET_FAST, RS_CONFIG_PRESET_FAST,
+               RS_CONFIG_PRESET_SLOW, videoPreset),
     CONFIG_CONST(fast, RS_CONFIG_PRESET_FAST, videoPreset),
     CONFIG_CONST(medium, RS_CONFIG_PRESET_MEDIUM, videoPreset),
     CONFIG_CONST(slow, RS_CONFIG_PRESET_SLOW, videoPreset),
