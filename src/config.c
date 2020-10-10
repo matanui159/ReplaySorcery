@@ -24,6 +24,7 @@
 #include <libavutil/bprint.h>
 #include <libavutil/opt.h>
 #include <libswscale/swscale.h>
+#include <libavcodec/avcodec.h>
 
 #define CONFIG_CONST(name, value, group)                                                 \
    { #name, NULL, 0, AV_OPT_TYPE_CONST, {.i64 = (value) }, 0, 0, 0, #group }
@@ -35,10 +36,8 @@
 
 static const AVOption configOptions[] = {
     CONFIG_CONST(auto, RS_CONFIG_AUTO, auto),
-    CONFIG_CONST(low, RS_CONFIG_QUALITY_LOW, quality),
-    CONFIG_CONST(medium, RS_CONFIG_QUALITY_MEDIUM, quality),
-    CONFIG_CONST(high, RS_CONFIG_QUALITY_HIGH, quality),
     CONFIG_INT(logLevel, AV_LOG_INFO, AV_LOG_QUIET, AV_LOG_TRACE, logLevel),
+    CONFIG_INT(traceLevel, AV_LOG_ERROR, AV_LOG_QUIET, AV_LOG_TRACE, logLevel),
     CONFIG_CONST(quiet, AV_LOG_QUIET, logLevel),
     CONFIG_CONST(panic, AV_LOG_PANIC, logLevel),
     CONFIG_CONST(fatal, AV_LOG_FATAL, logLevel),
@@ -61,6 +60,16 @@ static const AVOption configOptions[] = {
                videoEncoder),
     CONFIG_CONST(auto, RS_CONFIG_AUTO, videoEncoder),
     CONFIG_CONST(x264, RS_CONFIG_VIDEO_X264, videoEncoder),
+    CONFIG_INT(videoProfile, FF_PROFILE_H264_BASELINE, FF_PROFILE_H264_BASELINE, FF_PROFILE_H264_HIGH, videoProfile),
+    CONFIG_CONST(baseline, FF_PROFILE_H264_BASELINE, videoProfile),
+    CONFIG_CONST(main, FF_PROFILE_H264_MAIN, videoProfile),
+    CONFIG_CONST(high, FF_PROFILE_H264_HIGH, videoProfile),
+    CONFIG_INT(videoPreset, RS_CONFIG_PRESET_FAST, RS_CONFIG_PRESET_FAST, RS_CONFIG_PRESET_SLOW, videoPreset),
+    CONFIG_CONST(fast, RS_CONFIG_PRESET_FAST, videoPreset),
+    CONFIG_CONST(medium, RS_CONFIG_PRESET_MEDIUM, videoPreset),
+    CONFIG_CONST(slow, RS_CONFIG_PRESET_SLOW, videoPreset),
+    CONFIG_INT(videoQuality, 30, RS_CONFIG_AUTO, 51, auto),
+    CONFIG_INT(videoThreads, 1, RS_CONFIG_AUTO, INT_MAX, auto),
     CONFIG_INT(videoScaler, SWS_FAST_BILINEAR, SWS_FAST_BILINEAR, SWS_SPLINE,
                videoScaler),
     CONFIG_CONST(fast, SWS_FAST_BILINEAR, videoScaler),
@@ -73,8 +82,6 @@ static const AVOption configOptions[] = {
     CONFIG_CONST(sinc, SWS_SINC, videoScaler),
     CONFIG_CONST(lanczos, SWS_LANCZOS, videoScaler),
     CONFIG_CONST(spline, SWS_SPLINE, videoScaler),
-    CONFIG_INT(videoQuality, RS_CONFIG_QUALITY_LOW, RS_CONFIG_QUALITY_LOW,
-               RS_CONFIG_QUALITY_HIGH, quality),
     {NULL}};
 
 static const AVClass configClass = {
@@ -152,7 +159,7 @@ int rsConfigInit(void) {
       av_log_set_level(rsConfig.logLevel);
    }
 
-   return 0;
+   ret = 0;
 error:
    av_freep(&contents);
    av_bprint_finalize(&buffer, NULL);

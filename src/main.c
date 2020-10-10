@@ -47,8 +47,18 @@ static int mainRun(void) {
       goto error;
    }
 
+   AVPacket packet;
+   av_init_packet(&packet);
+   for (;;) {
+      if ((ret = rsEncoderGetPacket(&encoder, &packet)) < 0) {
+         goto error;
+      }
+      av_packet_unref(&packet);
+   }
+
    ret = 0;
 error:
+   av_packet_unref(&packet);
    rsEncoderDestroy(&encoder);
    rsDeviceDestroy(&device);
    return ret;

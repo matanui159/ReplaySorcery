@@ -22,18 +22,19 @@
 
 int rsX264EncoderCreate(RSEncoder *encoder, RSDevice *input) {
    AVDictionary *options = NULL;
-   switch (rsConfig.videoQuality) {
-   case RS_CONFIG_QUALITY_LOW:
+   av_dict_set_int(&options, "qp", rsConfig.videoQuality, 0);
+   switch (rsConfig.videoPreset) {
+   case RS_CONFIG_PRESET_FAST:
       av_dict_set(&options, "preset", "ultrafast", 0);
       break;
-   case RS_CONFIG_QUALITY_MEDIUM:
+   case RS_CONFIG_PRESET_MEDIUM:
       av_dict_set(&options, "preset", "medium", 0);
       break;
-   case RS_CONFIG_QUALITY_HIGH:
+   case RS_CONFIG_PRESET_SLOW:
       av_dict_set(&options, "preset", "slower", 0);
       break;
    }
-   if (av_dict_count(options) != 1) {
+   if (av_dict_count(options) != 2) {
       av_dict_free(&options);
       return AVERROR(ENOMEM);
    }

@@ -22,16 +22,18 @@
 #include <libavutil/avutil.h>
 
 #define RS_CONFIG_AUTO -1
-#define RS_CONFIG_QUALITY_LOW 0
-#define RS_CONFIG_QUALITY_MEDIUM 1
-#define RS_CONFIG_QUALITY_HIGH 2
 
 #define RS_CONFIG_VIDEO_X11 0
 #define RS_CONFIG_VIDEO_X264 0
 
+#define RS_CONFIG_PRESET_FAST 0
+#define RS_CONFIG_PRESET_MEDIUM 1
+#define RS_CONFIG_PRESET_SLOW 2
+
 typedef struct RSConfig {
    const AVClass *avClass;
    int logLevel;
+   int traceLevel;
    int videoX;
    int videoY;
    int videoWidth;
@@ -39,8 +41,11 @@ typedef struct RSConfig {
    int videoFramerate;
    int videoInput;
    int videoEncoder;
-   int videoScaler;
+   int videoProfile;
+   int videoPreset;
    int videoQuality;
+   int videoThreads;
+   int videoScaler;
 } RSConfig;
 
 extern RSConfig rsConfig;

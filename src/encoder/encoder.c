@@ -48,6 +48,14 @@ int rsEncoderCreate(RSEncoder *encoder, const RSEncoderParams *params) {
    encoder->codecCtx->width = width;
    encoder->codecCtx->height = height;
    encoder->codecCtx->time_base = params->input->stream->time_base;
+   encoder->codecCtx->profile = rsConfig.videoProfile;
+   // TODO: add config for gop_size to reduce memory usage
+   encoder->codecCtx->gop_size = 0;
+   if (rsConfig.videoThreads == RS_CONFIG_AUTO) {
+      encoder->codecCtx->thread_count = 0;
+   } else {
+      encoder->codecCtx->thread_count = rsConfig.videoThreads;
+   }
    if ((ret = avcodec_open2(encoder->codecCtx, codec, &options)) < 0) {
       av_log(encoder->codecCtx, AV_LOG_ERROR, "Failed to open encoder: %s\n",
              av_err2str(ret));
@@ -118,6 +126,7 @@ int rsEncoderGetPacket(RSEncoder *encoder, AVPacket *packet) {
                    av_err2str(ret));
             return ret;
          }
+         av_frame_copy_props(encoder->scaleFrame, frame);
          frame = encoder->scaleFrame;
       }
 

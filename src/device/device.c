@@ -106,6 +106,7 @@ int rsVideoDeviceCreate(RSDevice *device) {
 int rsDeviceGetFrame(RSDevice *device, AVFrame *frame) {
    int ret;
    while ((ret = avcodec_receive_frame(device->codecCtx, frame)) == AVERROR(EAGAIN)) {
+      av_packet_unref(&device->packet);
       if ((ret = av_read_frame(device->formatCtx, &device->packet)) < 0) {
          av_log(device->formatCtx, AV_LOG_ERROR, "Failed to read packet: %s\n",
                 av_err2str(ret));

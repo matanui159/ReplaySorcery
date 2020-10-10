@@ -18,6 +18,7 @@
  */
 
 #include "log.h"
+#include "../config.h"
 #include <backtrace.h>
 #include <libavutil/avutil.h>
 #include <signal.h>
@@ -41,23 +42,22 @@ static void logTraceError(void *extra, const char *message, int error) {
 
 static int logTrace(void *extra, uintptr_t pc, const char *file, int line,
                     const char *func) {
-   (void)extra;
    (void)pc;
+   int *level = extra;
    if (file == NULL) {
       file = "[unknown file]";
    }
    if (func == NULL) {
       func = "unknown function";
    }
-   logDefault(NULL, AV_LOG_DEBUG, " - %s:%i (%s)\n", file, line, func);
+   logDefault(NULL, *level, " - %s:%i (%s)\n", file, line, func);
    return 0;
 }
 
 static void logCallback(void *ctx, int level, const char *format, va_list args) {
    av_log_default_callback(ctx, level, format, args);
-   if (level <= AV_LOG_ERROR && traceState != NULL &&
-       av_log_get_level() >= AV_LOG_DEBUG) {
-      backtrace_full(traceState, 0, logTrace, logTraceError, NULL);
+   if (level <= rsConfig.traceLevel && traceState != NULL) {
+      backtrace_full(traceState, 0, logTrace, logTraceError, &level);
    }
 }
 
