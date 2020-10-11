@@ -118,19 +118,24 @@ int rsEncoderGetPacket(RSEncoder *encoder, AVPacket *packet) {
       AVFrame *frame = encoder->frame;
 
       if (encoder->scaleCtx != NULL) {
-         if ((ret = sws_scale(encoder->scaleCtx, (const uint8_t **)frame->data,
-                              frame->linesize, 0, frame->height,
-                              encoder->scaleFrame->data, encoder->scaleFrame->linesize)) <
-             0) {
+         ret = sws_scale(encoder->scaleCtx, (const uint8_t **)frame->data,
+                         frame->linesize, 0, frame->height, encoder->scaleFrame->data,
+                         encoder->scaleFrame->linesize);
+         av_frame_copy_props(encoder->scaleFrame, frame);
+         av_frame_unref(frame);
+         frame = encoder->scaleFrame;
+         if (ret < 0) {
             av_log(encoder->scaleCtx, AV_LOG_ERROR, "Failed to scale frame: %s\n",
                    av_err2str(ret));
             return ret;
          }
-         av_frame_copy_props(encoder->scaleFrame, frame);
-         frame = encoder->scaleFrame;
       }
 
-      if ((ret = avcodec_send_frame(encoder->codecCtx, frame)) < 0) {
+      ret = avcodec_send_frame(encoder->codecCtx, frame);
+      if (frame == encoder->frame) {
+         av_frame_unref(frame);
+      }
+      if (ret < 0) {
          av_log(encoder->codecCtx, AV_LOG_ERROR, "Failed to send frame to encoder: %s\n",
                 av_err2str(ret));
          return ret;

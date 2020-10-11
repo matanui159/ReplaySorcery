@@ -17,40 +17,24 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_CONFIG_H
-#define RS_CONFIG_H
+#ifndef RS_UTIL_PKTCIRCLE_H
+#define RS_UTIL_PKTCIRCLE_H
+#include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
 
-#define RS_CONFIG_AUTO -1
+typedef struct RSPktCircle {
+   AVPacket *packets;
+   size_t capacity;
+   size_t offset;
+   size_t size;
+} RSPktCircle;
 
-#define RS_CONFIG_VIDEO_X11 0
-#define RS_CONFIG_VIDEO_X264 0
+#define RS_PKTCIRCLE_INIT                                                                \
+   { NULL }
 
-#define RS_CONFIG_PRESET_FAST 0
-#define RS_CONFIG_PRESET_MEDIUM 1
-#define RS_CONFIG_PRESET_SLOW 2
-
-typedef struct RSConfig {
-   const AVClass *avClass;
-   int logLevel;
-   int traceLevel;
-   int recordSeconds;
-   int videoX;
-   int videoY;
-   int videoWidth;
-   int videoHeight;
-   int videoFramerate;
-   int videoInput;
-   int videoEncoder;
-   int videoProfile;
-   int videoPreset;
-   int videoQuality;
-   int videoThreads;
-   int videoScaler;
-} RSConfig;
-
-extern RSConfig rsConfig;
-
-int rsConfigInit(void);
+int rsPktCircleCreate(RSPktCircle *circle, size_t capacity);
+void rsPktCircleDestroy(RSPktCircle *circle);
+AVPacket *rsPktCircleNext(RSPktCircle *circle);
+int rsPktCircleClone(RSPktCircle *circle, const RSPktCircle *source);
 
 #endif

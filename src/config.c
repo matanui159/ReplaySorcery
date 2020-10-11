@@ -27,11 +27,11 @@
 #include <libswscale/swscale.h>
 
 #define CONFIG_CONST(name, value, group)                                                 \
-   { #name, NULL, 0, AV_OPT_TYPE_CONST, {.i64 = (value) }, 0, 0, 0, #group }
+   { #name, NULL, 0, AV_OPT_TYPE_CONST, {.i64 = value }, 0, 0, 0, #group }
 #define CONFIG_INT(name, def, min, max, group)                                           \
    {                                                                                     \
 #name, NULL, offsetof(RSConfig, name), AV_OPT_TYPE_INT,                            \
-          {.i64 = (def) }, (min), (max), 0, #group                                       \
+          {.i64 = def }, min, max, 0, #group                                             \
    }
 
 static const AVOption configOptions[] = {
@@ -47,6 +47,7 @@ static const AVOption configOptions[] = {
     CONFIG_CONST(verbose, AV_LOG_VERBOSE, logLevel),
     CONFIG_CONST(debug, AV_LOG_DEBUG, logLevel),
     CONFIG_CONST(trace, AV_LOG_TRACE, logLevel),
+    CONFIG_INT(recordSeconds, 30, 0, INT_MAX, ),
     CONFIG_INT(videoX, 0, 0, INT_MAX, NULL),
     CONFIG_INT(videoY, 0, 0, INT_MAX, NULL),
     CONFIG_INT(videoWidth, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX, auto),

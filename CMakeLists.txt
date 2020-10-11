@@ -10,6 +10,7 @@ set(sources
    src/config.c
    src/util/log.c
    src/util/filter.c
+   src/util/pktcircle.c
    src/device/device.c
    src/device/x11.c
    src/encoder/encoder.c
@@ -21,6 +22,7 @@ set(headers
    src/util/log.h
    src/util/streaminfo.h
    src/util/filter.h
+   src/util/pktcircle.h
    src/device/device.h
    src/encoder/encoder.h
 )

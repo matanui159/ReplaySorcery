@@ -21,7 +21,16 @@
 #include "device/device.h"
 #include "encoder/encoder.h"
 #include "util/log.h"
+#include "util/pktcircle.h"
 #include <libavutil/avutil.h>
+#include <signal.h>
+
+static sig_atomic_t mainRunning = 1;
+
+static void mainSignal(int signal) {
+   (void)signal;
+   mainRunning = 0;
+}
 
 static int mainRun(void) {
    int ret;
@@ -40,6 +49,7 @@ static int mainRun(void) {
 
    RSDevice device = RS_DEVICE_INIT;
    RSEncoder encoder = RS_ENCODER_INIT;
+   RSPktCircle videoCircle = RS_PKTCIRCLE_INIT;
    if ((ret = rsVideoDeviceCreate(&device)) < 0) {
       goto error;
    }
@@ -47,18 +57,23 @@ static int mainRun(void) {
       goto error;
    }
 
-   AVPacket packet;
-   av_init_packet(&packet);
-   for (;;) {
-      if ((ret = rsEncoderGetPacket(&encoder, &packet)) < 0) {
+   size_t videoCapacity = (size_t)(rsConfig.recordSeconds * rsConfig.videoFramerate);
+   if ((ret = rsPktCircleCreate(&videoCircle, videoCapacity)) < 0) {
+      goto error;
+   }
+
+   signal(SIGINT, mainSignal);
+   signal(SIGTERM, mainSignal);
+   while (mainRunning) {
+      AVPacket *packet = rsPktCircleNext(&videoCircle);
+      if ((ret = rsEncoderGetPacket(&encoder, packet)) < 0) {
          goto error;
       }
-      av_packet_unref(&packet);
    }
 
    ret = 0;
 error:
-   av_packet_unref(&packet);
+   rsPktCircleDestroy(&videoCircle);
    rsEncoderDestroy(&encoder);
    rsDeviceDestroy(&device);
    return ret;
