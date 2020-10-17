@@ -88,21 +88,6 @@ void rsDeviceDestroy(RSDevice *device) {
    avformat_close_input(&device->formatCtx);
 }
 
-int rsVideoDeviceCreate(RSDevice *device) {
-   int ret;
-   switch (rsConfig.videoInput) {
-   case RS_CONFIG_VIDEO_X11:
-      return rsX11DeviceCreate(device);
-   }
-
-   if ((ret = rsX11DeviceCreate(device)) >= 0) {
-      return 0;
-   }
-   av_log(NULL, AV_LOG_WARNING, "Failed to create X11 device: %s\n", av_err2str(ret));
-
-   return AVERROR(ENOSYS);
-}
-
 int rsDeviceGetFrame(RSDevice *device, AVFrame *frame) {
    int ret;
    while ((ret = avcodec_receive_frame(device->codecCtx, frame)) == AVERROR(EAGAIN)) {
@@ -127,4 +112,19 @@ int rsDeviceGetFrame(RSDevice *device, AVFrame *frame) {
       return ret;
    }
    return 0;
+}
+
+int rsVideoDeviceCreate(RSDevice *device) {
+   int ret;
+   switch (rsConfig.videoInput) {
+   case RS_CONFIG_VIDEO_X11:
+      return rsX11DeviceCreate(device);
+   }
+
+   if ((ret = rsX11DeviceCreate(device)) >= 0) {
+      return 0;
+   }
+   av_log(NULL, AV_LOG_WARNING, "Failed to create X11 device: %s\n", av_err2str(ret));
+
+   return AVERROR(ENOSYS);
 }

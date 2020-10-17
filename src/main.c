@@ -20,6 +20,7 @@
 #include "config.h"
 #include "device/device.h"
 #include "encoder/encoder.h"
+#include "control/control.h"
 #include "util/log.h"
 #include "util/pktcircle.h"
 #include <libavutil/avutil.h>
@@ -50,10 +51,14 @@ static int mainRun(void) {
    RSDevice device = RS_DEVICE_INIT;
    RSEncoder encoder = RS_ENCODER_INIT;
    RSPktCircle videoCircle = RS_PKTCIRCLE_INIT;
+   RSControl controller = RS_CONTROL_INIT;
    if ((ret = rsVideoDeviceCreate(&device)) < 0) {
       goto error;
    }
    if ((ret = rsVideoEncoderCreate(&encoder, &device)) < 0) {
+      goto error;
+   }
+   if ((ret = rsDefaultControlCreate(&controller)) < 0) {
       goto error;
    }
 
@@ -69,10 +74,18 @@ static int mainRun(void) {
       if ((ret = rsEncoderGetPacket(&encoder, packet)) < 0) {
          goto error;
       }
+      if ((ret = rsControlWantsSave(&controller)) < 0) {
+         goto error;
+      }
+      if (ret > 0) {
+         av_log(NULL, AV_LOG_INFO, "Saving video...\n");
+      }
    }
+   av_log(NULL, AV_LOG_INFO, "\nExiting...\n");
 
    ret = 0;
 error:
+   rsControlDestroy(&controller);
    rsPktCircleDestroy(&videoCircle);
    rsEncoderDestroy(&encoder);
    rsDeviceDestroy(&device);

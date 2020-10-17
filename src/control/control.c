@@ -17,13 +17,15 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_BUILD_H
-#define RS_BUILD_H
+#include "control.h"
+#include "../config.h"
 
-#define RS_BUILD_CONFIG_FILE "@CMAKE_INSTALL_PREFIX@/etc/replay-sorcery.conf"
+int rsDefaultControlCreate(RSControl *control) {
+   // int ret;
+   switch (rsConfig.controller) {
+      case RS_CONFIG_CONTROL_DEBUG:
+         return rsDebugControlCreate(control);
+   }
 
-#cmakedefine RS_BUILD_X11_FOUND
-#cmakedefine RS_BUILD_UNISTD_FOUND
-#cmakedefine RS_BUILD_FCNTL_FOUND
-
-#endif
+   return AVERROR(ENOSYS);
+}

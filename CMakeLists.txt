@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(ReplaySorcery VERSION 0.4.0)
 include(CheckCCompilerFlag)
+include(CheckIncludeFile)
 include(ExternalProject)
 find_package(PkgConfig REQUIRED)
 
@@ -15,6 +16,8 @@ set(sources
    src/device/x11.c
    src/encoder/encoder.c
    src/encoder/x264.c
+   src/control/control.c
+   src/control/debug.c
 )
 set(headers
    src/rsbuild.h.in
@@ -25,6 +28,7 @@ set(headers
    src/util/pktcircle.h
    src/device/device.h
    src/encoder/encoder.h
+   src/control/control.h
 )
 
 add_executable(${binary} ${sources})
@@ -50,7 +54,7 @@ target_c_flag(${binary} -Wmissing-prototypes HAVE_MISSING_PROTOTYPES_WARN)
 # Used for CI. I do not like warnings in my code but during development its fine
 option(RS_WARN_ERROR "Fail on compiler warning" OFF)
 if (RS_WARN_ERROR)
-   target_c_flag(${binary} -Werror HAVE_WARN_ERROR)
+   target_c_flag(${binary} -Werror HAVE_ERROR_WARN)
 endif()
 option(RS_PROFILE "Enable code profiling" OFF)
 if (RS_PROFILE)
@@ -107,6 +111,8 @@ if (X11_FOUND)
 endif()
 
 # Build configuration
+check_include_file(unistd.h RS_BUILD_UNISTD_FOUND)
+check_include_file(fcntl.h RS_BUILD_FCNTL_FOUND)
 configure_file(src/rsbuild.h.in rsbuild.h)
 target_include_directories(${binary} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 

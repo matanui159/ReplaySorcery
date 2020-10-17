@@ -21,7 +21,6 @@
 #include "device.h"
 #include "rsbuild.h"
 #include <libavutil/avstring.h>
-
 #ifdef RS_BUILD_X11_FOUND
 #include <X11/Xlib.h>
 #endif

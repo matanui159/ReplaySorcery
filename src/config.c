@@ -85,6 +85,9 @@ static const AVOption configOptions[] = {
     CONFIG_CONST(sinc, SWS_SINC, videoScaler),
     CONFIG_CONST(lanczos, SWS_LANCZOS, videoScaler),
     CONFIG_CONST(spline, SWS_SPLINE, videoScaler),
+    CONFIG_INT(controller, RS_CONFIG_AUTO, RS_CONFIG_AUTO, RS_CONFIG_CONTROL_DEBUG, controller),
+    CONFIG_CONST(auto, RS_CONFIG_AUTO, controller),
+    CONFIG_CONST(debug, RS_CONFIG_CONTROL_DEBUG, controller),
     {NULL}};
 
 static const AVClass configClass = {

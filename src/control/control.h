@@ -17,13 +17,33 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_BUILD_H
-#define RS_BUILD_H
+#ifndef RS_CONTROL_H
+#define RS_CONTROL_H
+#include <libavutil/avutil.h>
 
-#define RS_BUILD_CONFIG_FILE "@CMAKE_INSTALL_PREFIX@/etc/replay-sorcery.conf"
+typedef struct RSControl {
+   void *extra;
+   void (*destroy)(struct RSControl *control);
+   int (*wantsSave)(struct RSControl *control);
+} RSControl;
 
-#cmakedefine RS_BUILD_X11_FOUND
-#cmakedefine RS_BUILD_UNISTD_FOUND
-#cmakedefine RS_BUILD_FCNTL_FOUND
+#define RS_CONTROL_INIT { NULL }
+
+static av_always_inline void rsControlDestroy(RSControl *control) {
+   if (control->destroy != NULL) {
+      control->destroy(control);
+   }
+}
+
+static av_always_inline int rsControlWantsSave(RSControl *control) {
+   if (control->wantsSave == NULL) {
+      return AVERROR(ENOSYS);
+   } else {
+      return control->wantsSave(control);
+   }
+}
+
+int rsDebugControlCreate(RSControl *control);
+int rsDefaultControlCreate(RSControl *control);
 
 #endif

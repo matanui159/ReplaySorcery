@@ -30,6 +30,8 @@
 #define RS_CONFIG_PRESET_MEDIUM 1
 #define RS_CONFIG_PRESET_SLOW 2
 
+#define RS_CONFIG_CONTROL_DEBUG 0
+
 typedef struct RSConfig {
    const AVClass *avClass;
    int logLevel;
@@ -47,6 +49,7 @@ typedef struct RSConfig {
    int videoQuality;
    int videoThreads;
    int videoScaler;
+   int controller;
 } RSConfig;
 
 extern RSConfig rsConfig;
