@@ -75,20 +75,20 @@ target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
 target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libbacktrace.a")
 
 # libjpeg-turbo git submodule
-ExternalProject_Add(jpeg
-   STEP_TARGETS jpeg
-   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dep/libjpeg-turbo"
-   CMAKE_ARGS
-      -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-      -DCMAKE_INSTALL_LIBDIR=<INSTALL_DIR>/lib
-      -DENABLE_SHARED=OFF
-      -DWITH_TURBOJPEG=OFF
-      -DCMAKE_C_FLAGS=-O3
-)
-add_dependencies(${binary} jpeg)
-ExternalProject_Get_Property(jpeg INSTALL_DIR)
-target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
-target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libjpeg.a")
+# ExternalProject_Add(jpeg
+#    STEP_TARGETS jpeg
+#    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dep/libjpeg-turbo"
+#    CMAKE_ARGS
+#       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+#       -DCMAKE_INSTALL_LIBDIR=<INSTALL_DIR>/lib
+#       -DENABLE_SHARED=OFF
+#       -DWITH_TURBOJPEG=OFF
+#       -DCMAKE_C_FLAGS=-O3
+# )
+# add_dependencies(${binary} jpeg)
+# ExternalProject_Get_Property(jpeg INSTALL_DIR)
+# target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
+# target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libjpeg.a")
 
 # FFmpeg
 pkg_check_modules(FFMPEG

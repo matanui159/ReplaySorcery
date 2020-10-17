@@ -1,4 +1,4 @@
 /bin/
-/replay-sorcery.conf
-/*.mp4
-/gmon.out
+/etc/
+*.mp4
+gmon.out
