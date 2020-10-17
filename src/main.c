@@ -18,9 +18,9 @@
  */
 
 #include "config.h"
+#include "control/control.h"
 #include "device/device.h"
 #include "encoder/encoder.h"
-#include "control/control.h"
 #include "util/log.h"
 #include "util/pktcircle.h"
 #include <libavutil/avutil.h>

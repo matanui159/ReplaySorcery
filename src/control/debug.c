@@ -36,7 +36,8 @@ static int debugControlWantsSave(RSControl *control) {
       if (result < 0) {
          if (errno != EAGAIN) {
             ret = AVERROR(errno);
-            av_log(NULL, AV_LOG_ERROR, "Failed to read from stdin: %s\n", av_err2str(ret));
+            av_log(NULL, AV_LOG_ERROR, "Failed to read from stdin: %s\n",
+                   av_err2str(ret));
          }
          return ret;
       }

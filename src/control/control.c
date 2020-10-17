@@ -23,8 +23,8 @@
 int rsDefaultControlCreate(RSControl *control) {
    // int ret;
    switch (rsConfig.controller) {
-      case RS_CONFIG_CONTROL_DEBUG:
-         return rsDebugControlCreate(control);
+   case RS_CONFIG_CONTROL_DEBUG:
+      return rsDebugControlCreate(control);
    }
 
    return AVERROR(ENOSYS);

@@ -27,7 +27,8 @@ typedef struct RSControl {
    int (*wantsSave)(struct RSControl *control);
 } RSControl;
 
-#define RS_CONTROL_INIT { NULL }
+#define RS_CONTROL_INIT                                                                  \
+   { NULL }
 
 static av_always_inline void rsControlDestroy(RSControl *control) {
    if (control->destroy != NULL) {
