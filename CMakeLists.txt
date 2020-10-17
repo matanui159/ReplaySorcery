@@ -18,6 +18,7 @@ set(sources
    src/encoder/x264.c
    src/control/control.c
    src/control/debug.c
+   src/control/x11control.c
 )
 set(headers
    src/rsbuild.h.in

@@ -89,6 +89,7 @@ static const AVOption configOptions[] = {
                controller),
     CONFIG_CONST(auto, RS_CONFIG_AUTO, controller),
     CONFIG_CONST(debug, RS_CONFIG_CONTROL_DEBUG, controller),
+    CONFIG_CONST(x11, RS_CONFIG_CONTROL_X11, controller),
     {NULL}};
 
 static const AVClass configClass = {

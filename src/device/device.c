@@ -122,6 +122,7 @@ int rsVideoDeviceCreate(RSDevice *device) {
    }
 
    if ((ret = rsX11DeviceCreate(device)) >= 0) {
+      av_log(NULL, AV_LOG_INFO, "Created X11 device\n");
       return 0;
    }
    av_log(NULL, AV_LOG_WARNING, "Failed to create X11 device: %s\n", av_err2str(ret));

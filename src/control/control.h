@@ -45,6 +45,7 @@ static av_always_inline int rsControlWantsSave(RSControl *control) {
 }
 
 int rsDebugControlCreate(RSControl *control);
+int rsX11ControlCreate(RSControl *control);
 int rsDefaultControlCreate(RSControl *control);
 
 #endif

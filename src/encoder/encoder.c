@@ -158,6 +158,7 @@ int rsVideoEncoderCreate(RSEncoder *encoder, RSDevice *input) {
    }
 
    if ((ret = rsX264EncoderCreate(encoder, input)) >= 0) {
+      av_log(NULL, AV_LOG_INFO, "Created x264 encoder\n");
       return 0;
    }
    av_log(NULL, AV_LOG_WARNING, "Failed to create x264 encoder: %s\n", av_err2str(ret));

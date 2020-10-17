@@ -31,6 +31,7 @@
 #define RS_CONFIG_PRESET_SLOW 2
 
 #define RS_CONFIG_CONTROL_DEBUG 0
+#define RS_CONFIG_CONTROL_X11 1
 
 typedef struct RSConfig {
    const AVClass *avClass;
