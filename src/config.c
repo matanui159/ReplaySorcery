@@ -28,6 +28,11 @@
 
 #define CONFIG_CONST(name, value, group)                                                 \
    { #name, NULL, 0, AV_OPT_TYPE_CONST, {.i64 = value }, 0, 0, 0, #group }
+#define CONFIG_STRING(name, def)                                                         \
+   {                                                                                     \
+#name, NULL, offsetof(RSConfig, name), AV_OPT_TYPE_STRING,                         \
+          {.str = def }, 0, 0, 0, NULL                                                   \
+   }
 #define CONFIG_INT(name, def, min, max, group)                                           \
    {                                                                                     \
 #name, NULL, offsetof(RSConfig, name), AV_OPT_TYPE_INT,                            \
@@ -90,6 +95,7 @@ static const AVOption configOptions[] = {
     CONFIG_CONST(auto, RS_CONFIG_AUTO, controller),
     CONFIG_CONST(debug, RS_CONFIG_CONTROL_DEBUG, controller),
     CONFIG_CONST(x11, RS_CONFIG_CONTROL_X11, controller),
+    CONFIG_STRING(outputPath, "~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4"),
     {NULL}};
 
 static const AVClass configClass = {
@@ -122,12 +128,14 @@ int rsConfigInit(void) {
    }
 
    AVBPrint buffer;
-   char *contents = NULL;
    av_bprint_init(&buffer, 0, AV_BPRINT_SIZE_UNLIMITED);
+   char *contents = NULL;
    if ((ret = avio_read_to_bprint(file, &buffer, INT_MAX)) < 0) {
       av_log(NULL, AV_LOG_ERROR, "Failed to read config file: %s\n", av_err2str(ret));
       goto error;
    }
+   avio_closep(&file);
+
    if ((ret = av_bprint_finalize(&buffer, &contents)) < 0) {
       goto error;
    }
@@ -167,10 +175,16 @@ int rsConfigInit(void) {
       av_log_set_level(rsConfig.logLevel);
    }
 
-   ret = 0;
+   av_freep(&contents);
+   return 0;
 error:
    av_freep(&contents);
    av_bprint_finalize(&buffer, NULL);
    avio_closep(&file);
+   rsConfigExit();
    return ret;
+}
+
+void rsConfigExit(void) {
+   av_opt_free(&rsConfig);
 }

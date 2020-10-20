@@ -56,9 +56,17 @@ int rsEncoderCreate(RSEncoder *encoder, const RSEncoderParams *params) {
    } else {
       encoder->codecCtx->thread_count = rsConfig.videoThreads;
    }
+   encoder->codecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+
    if ((ret = avcodec_open2(encoder->codecCtx, codec, &options)) < 0) {
       av_log(encoder->codecCtx, AV_LOG_ERROR, "Failed to open encoder: %s\n",
              av_err2str(ret));
+      goto error;
+   }
+   if (av_dict_count(options) > 0) {
+      const char *unused = av_dict_get(options, "", NULL, AV_DICT_IGNORE_SUFFIX)->key;
+      av_log(encoder->codecCtx, AV_LOG_ERROR, "Option not found: %s\n", unused);
+      ret = AVERROR_OPTION_NOT_FOUND;
       goto error;
    }
 

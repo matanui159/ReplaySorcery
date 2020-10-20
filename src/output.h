@@ -17,18 +17,37 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_UTIL_STREAMINFO_H
-#define RS_UTIL_STREAMINFO_H
+#ifndef RS_OUTPUT_H
+#define RS_OUTPUT_H
+#include "encoder/encoder.h"
+#include "rsbuild.h"
+#include "util/pktcircle.h"
+#include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
+#ifdef RS_BUILD_PTHREAD_FOUND
+#include <pthread.h>
+#endif
 
-typedef union RSStreamInfo {
-   struct {
-      enum AVMediaType type;
-      AVRational timebase;
-      enum AVPixelFormat pixfmt;
-      int width;
-      int height;
-   } v;
-} RSStreamInfo;
+typedef struct RSOutputParams {
+   const RSEncoder *videoEncoder;
+   const RSPktCircle *videoCircle;
+} RSOutputParams;
+
+typedef struct RSOutput {
+   AVFormatContext *formatCtx;
+   RSPktCircle videoCircle;
+   size_t index;
+   volatile int ret;
+#ifdef RS_BUILD_PTHREAD_FOUND
+   pthread_t thread;
+#endif
+} RSOutput;
+
+#define RS_OUTPUT_INIT                                                                   \
+   { NULL }
+
+int rsOutputCreate(RSOutput *output, const RSOutputParams *params);
+void rsOutputDestroy(RSOutput *output);
+int rsOutputRun(RSOutput *output);
 
 #endif

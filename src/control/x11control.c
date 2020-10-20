@@ -36,11 +36,11 @@ static void x11ControlGrabKey(RSControl *control, int key, unsigned mods) {
 
 static void x11ControlDestroy(RSControl *control) {
    X11Control *x11 = control->extra;
-   if (x11 != NULL) {
+   if (x11 != NULL && x11->display != NULL) {
       XCloseDisplay(x11->display);
       x11->display = NULL;
-      av_freep(&control->extra);
    }
+   av_freep(&control->extra);
 }
 
 static int x11ControlWantsSave(RSControl *control) {

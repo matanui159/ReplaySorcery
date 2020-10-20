@@ -51,10 +51,12 @@ typedef struct RSConfig {
    int videoThreads;
    int videoScaler;
    int controller;
+   char *outputPath;
 } RSConfig;
 
 extern RSConfig rsConfig;
 
 int rsConfigInit(void);
+void rsConfigExit(void);
 
 #endif

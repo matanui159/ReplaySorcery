@@ -10,7 +10,6 @@ set(sources
    src/main.c
    src/config.c
    src/util/log.c
-   src/util/filter.c
    src/util/pktcircle.c
    src/device/device.c
    src/device/x11.c
@@ -19,17 +18,17 @@ set(sources
    src/control/control.c
    src/control/debug.c
    src/control/x11control.c
+   src/output.c
 )
 set(headers
    src/rsbuild.h.in
    src/config.h
    src/util/log.h
-   src/util/streaminfo.h
-   src/util/filter.h
    src/util/pktcircle.h
    src/device/device.h
    src/encoder/encoder.h
    src/control/control.h
+   src/output.h
 )
 
 add_executable(${binary} ${sources})
@@ -103,10 +102,18 @@ pkg_check_modules(FFMPEG
 )
 target_link_libraries(${binary} PRIVATE PkgConfig::FFMPEG)
 
+# PThreads
+set(CMAKE_THREAD_PREFER_PTHREAD ON)
+find_package(Threads)
+if (CMAKE_USE_PTHREADS_INIT)
+   set(RS_BUILD_PTHREAD_FOUND ON)
+   target_link_libraries(${binary} PRIVATE Threads::Threads)
+endif()
+
 # X11
 find_package(X11)
 if (X11_FOUND)
-   set(RS_BUILD_X11_FOUND true)
+   set(RS_BUILD_X11_FOUND ON)
    target_include_directories(${binary} SYSTEM PRIVATE ${X11_INCLUDE_DIRS})
    target_link_libraries(${binary} PRIVATE ${X11_LIBRARIES})
 endif()

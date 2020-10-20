@@ -22,6 +22,7 @@
 
 #define RS_BUILD_CONFIG_FILE "@CMAKE_INSTALL_PREFIX@/etc/replay-sorcery.conf"
 
+#cmakedefine RS_BUILD_PTHREAD_FOUND
 #cmakedefine RS_BUILD_X11_FOUND
 #cmakedefine RS_BUILD_UNISTD_FOUND
 #cmakedefine RS_BUILD_FCNTL_FOUND

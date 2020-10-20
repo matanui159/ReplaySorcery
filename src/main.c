@@ -89,6 +89,7 @@ error:
    rsPktCircleDestroy(&videoCircle);
    rsEncoderDestroy(&encoder);
    rsDeviceDestroy(&device);
+   rsConfigExit();
    return ret;
 }
 
