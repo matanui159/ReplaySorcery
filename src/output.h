@@ -44,10 +44,14 @@ typedef struct RSOutput {
 } RSOutput;
 
 #define RS_OUTPUT_INIT                                                                   \
-   { NULL }
+   { .ret = AVERROR(EAGAIN) }
 
 int rsOutputCreate(RSOutput *output, const RSOutputParams *params);
 void rsOutputDestroy(RSOutput *output);
 int rsOutputRun(RSOutput *output);
+
+static av_always_inline int rsOutputIsCreated(const RSOutput *output) {
+   return output->formatCtx != NULL;
+}
 
 #endif

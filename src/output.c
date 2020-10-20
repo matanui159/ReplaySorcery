@@ -105,6 +105,11 @@ int rsOutputCreate(RSOutput *output, const RSOutputParams *params) {
              av_err2str(ret));
       goto error;
    }
+   if ((ret = avio_open(&output->formatCtx->pb, path, AVIO_FLAG_WRITE)) < 0) {
+      av_log(output->formatCtx, AV_LOG_ERROR, "Failed to open output: %s\n",
+             av_err2str(ret));
+      goto error;
+   }
    av_freep(&path);
 
    AVStream *stream = avformat_new_stream(output->formatCtx, NULL);
@@ -141,7 +146,6 @@ int rsOutputCreate(RSOutput *output, const RSOutputParams *params) {
    for (size_t i = 0; i < output->videoCircle.size; ++i) {
       output->videoCircle.packets[0].pts -= offset;
    }
-   output->ret = AVERROR(EAGAIN);
 
 #ifdef RS_BUILD_PTHREAD_FOUND
    if ((ret = pthread_create(&output->thread, NULL, outputThread, output)) != 0) {
@@ -170,7 +174,7 @@ void rsOutputDestroy(RSOutput *output) {
 #endif
    rsPktCircleDestroy(&output->videoCircle);
    avformat_free_context(output->formatCtx);
-   memset(output, 0, sizeof(RSOutput));
+   *output = (RSOutput)RS_OUTPUT_INIT;
 }
 
 int rsOutputRun(RSOutput *output) {
