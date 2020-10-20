@@ -2,4 +2,3 @@ BasedOnStyle: LLVM
 IndentWidth: 3
 ColumnLimit: 90
 AllowShortFunctionsOnASingleLine: Empty
-AllowShortBlocksOnASingleLine: Empty

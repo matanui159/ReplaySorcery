@@ -24,6 +24,7 @@
 #include <X11/keysym.h>
 #endif
 
+#ifdef RS_BUILD_X11_FOUND
 typedef struct X11Control {
    Display *display;
 } X11Control;
@@ -55,6 +56,7 @@ static int x11ControlWantsSave(RSControl *control) {
    }
    return ret;
 }
+#endif
 
 int rsX11ControlCreate(RSControl *control) {
    int ret = 0;

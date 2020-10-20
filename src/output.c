@@ -59,7 +59,8 @@ error:
 static void *outputThread(void *extra) {
    int ret;
    RSOutput *output = extra;
-   while ((ret = outputRun(output)) == AVERROR(EAGAIN)) {}
+   while ((ret = outputRun(output)) == AVERROR(EAGAIN)) {
+   }
    return NULL;
 }
 #endif

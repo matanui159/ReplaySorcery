@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #endif
 
+#if defined(RS_BUILD_UNISTD_FOUND) && defined(RS_BUILD_FCNTL_FOUND)
 static int debugControlWantsSave(RSControl *control) {
    (void)control;
    int ret = 0;
@@ -46,6 +47,7 @@ static int debugControlWantsSave(RSControl *control) {
       }
    }
 }
+#endif
 
 int rsDebugControlCreate(RSControl *control) {
 #if defined(RS_BUILD_UNISTD_FOUND) && defined(RS_BUILD_FCNTL_FOUND)
