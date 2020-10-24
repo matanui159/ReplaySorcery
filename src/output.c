@@ -144,7 +144,11 @@ int rsOutputCreate(RSOutput *output, const RSOutputParams *params) {
 
    int64_t offset = output->videoCircle.packets[0].pts;
    for (size_t i = 0; i < output->videoCircle.size; ++i) {
-      output->videoCircle.packets[0].pts -= offset;
+      AVPacket *packet = &output->videoCircle.packets[i];
+      packet->pts -= offset;
+      packet->dts -= offset;
+      av_packet_rescale_ts(packet, params->videoEncoder->codecCtx->time_base,
+                           stream->time_base);
    }
 
 #ifdef RS_BUILD_PTHREAD_FOUND
@@ -173,7 +177,10 @@ void rsOutputDestroy(RSOutput *output) {
    }
 #endif
    rsPktCircleDestroy(&output->videoCircle);
-   avformat_free_context(output->formatCtx);
+   if (output->formatCtx != NULL) {
+      avio_close(output->formatCtx->pb);
+      avformat_free_context(output->formatCtx);
+   }
    *output = (RSOutput)RS_OUTPUT_INIT;
 }
 

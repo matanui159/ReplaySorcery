@@ -98,6 +98,7 @@ static int mainRun(void) {
                goto error;
             }
             rsOutputDestroy(&output);
+            av_log(NULL, AV_LOG_INFO, "Finished saving video\n");
          }
       }
    }
