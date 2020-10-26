@@ -71,7 +71,8 @@ static void *outputThread(void *data) {
    x264_param_default(&params);
    x264_param_default_preset(&params, output->config->outputX264Preset, NULL);
    x264_param_apply_profile(&params, "high");
-   params.i_width = (output->config->width / 2 ) * 2;
+   // The resolution has to be even for the encoder to work
+   params.i_width = (output->config->width / 2) * 2;
    params.i_height = (output->config->height / 2) * 2;
    params.i_csp = X264_CSP_I420;
    params.i_frame_total = (int)output->frameCount;
