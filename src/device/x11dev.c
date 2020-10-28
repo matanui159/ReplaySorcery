@@ -18,10 +18,10 @@
  */
 
 #include "../config.h"
+#include "../util.h"
 #include "device.h"
 #include "ffdev.h"
 #include "rsbuild.h"
-#include "../util.h"
 
 int rsX11DeviceCreate(RSDevice **device) {
    int ret;

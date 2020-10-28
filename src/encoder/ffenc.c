@@ -20,8 +20,8 @@
 #include "ffenc.h"
 #include "../util.h"
 #include <libavfilter/avfilter.h>
-#include <libavfilter/buffersrc.h>
 #include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
 #include <libavutil/bprint.h>
 
 typedef struct FFmpegEncoder {
@@ -53,24 +53,28 @@ static int ffmpegEncoderGetPacket(RSEncoder *encoder, AVPacket *packet) {
          return ret;
       }
       if ((ret = av_buffersrc_add_frame(ffmpeg->filterSrc, ffmpeg->frame)) < 0) {
-         av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to send frame to filter graph: %s\n", av_err2str(ret));
+         av_log(ffmpeg->filterGraph, AV_LOG_ERROR,
+                "Failed to send frame to filter graph: %s\n", av_err2str(ret));
          return ret;
       }
       if ((ret = av_buffersink_get_frame(ffmpeg->filterSink, ffmpeg->frame)) < 0) {
-         av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to receive frame from filter graph: %s\n", av_err2str(ret));
+         av_log(ffmpeg->filterGraph, AV_LOG_ERROR,
+                "Failed to receive frame from filter graph: %s\n", av_err2str(ret));
          return ret;
       }
 
       ret = avcodec_send_frame(ffmpeg->codecCtx, ffmpeg->frame);
       av_frame_unref(ffmpeg->frame);
       if (ret < 0) {
-         av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to send frame to encoder: %s\n", av_err2str(ret));
+         av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to send frame to encoder: %s\n",
+                av_err2str(ret));
          return ret;
       }
    }
 
    if (ret < 0) {
-      av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to receive packet from encoder: %s\n", av_err2str(ret));
+      av_log(ffmpeg->codecCtx, AV_LOG_ERROR,
+             "Failed to receive packet from encoder: %s\n", av_err2str(ret));
       return ret;
    }
    return 0;
@@ -152,12 +156,14 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
       goto error;
    }
    if ((ret = avcodec_open2(ffmpeg->codecCtx, NULL, &ffmpeg->options)) < 0) {
-      av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to open decoder: %s\n", av_err2str(ret));
+      av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to open decoder: %s\n",
+             av_err2str(ret));
       return ret;
    }
    rsOptionsDestroy(&ffmpeg->options);
 
-   if ((ret = avcodec_parameters_from_context(ffmpeg->encoder.params, ffmpeg->codecCtx)) < 0) {
+   if ((ret = avcodec_parameters_from_context(ffmpeg->encoder.params, ffmpeg->codecCtx)) <
+       0) {
       return ret;
    }
    ffmpeg->encoder.timebase = ffmpeg->codecCtx->time_base;
@@ -165,11 +171,13 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
    AVCodecParameters *params = ffmpeg->input->params;
    AVRational timebase = ffmpeg->input->timebase;
    switch (params->codec_type) {
-      case AVMEDIA_TYPE_VIDEO:
-         av_bprintf(&buffer, "buffer@src=video_size=%ix%i:pix_fmt=%i:time_base=%i/%i,", params->width, params->height, params->format, timebase.num, timebase.den);
-         break;
-      default:
-         break;
+   case AVMEDIA_TYPE_VIDEO:
+      av_bprintf(&buffer, "buffer@src=video_size=%ix%i:pix_fmt=%i:time_base=%i/%i,",
+                 params->width, params->height, params->format, timebase.num,
+                 timebase.den);
+      break;
+   default:
+      break;
    }
 
    va_list args;
@@ -178,11 +186,11 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
    va_end(args);
    AVCodecContext *codecCtx = ffmpeg->codecCtx;
    switch (codecCtx->codec_type) {
-      case AVMEDIA_TYPE_VIDEO:
-         av_bprintf(&buffer, ",buffersink@sink");
-         break;
-      default:
-         break;
+   case AVMEDIA_TYPE_VIDEO:
+      av_bprintf(&buffer, ",buffersink@sink");
+      break;
+   default:
+      break;
    }
 
    if (!av_bprint_is_complete(&buffer)) {
@@ -195,15 +203,18 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
 
    AVFilterInOut *inputs;
    AVFilterInOut *outputs;
-   if ((ret = avfilter_graph_parse2(ffmpeg->filterGraph, filterDesc, &inputs, &outputs)) < 0) {
-      av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to parse filter graph: %s\n", av_err2str(ret));
+   if ((ret = avfilter_graph_parse2(ffmpeg->filterGraph, filterDesc, &inputs, &outputs)) <
+       0) {
+      av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to parse filter graph: %s\n",
+             av_err2str(ret));
       goto error;
    }
    avfilter_inout_free(&inputs);
    avfilter_inout_free(&outputs);
 
    if ((ret = avfilter_graph_config(ffmpeg->filterGraph, ffmpeg->filterGraph)) < 0) {
-      av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to configure filter graph: %s\n", av_err2str(ret));
+      av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to configure filter graph: %s\n",
+             av_err2str(ret));
       goto error;
    }
 

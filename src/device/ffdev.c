@@ -18,11 +18,11 @@
  */
 
 #include "ffdev.h"
-#include <libavdevice/avdevice.h>
-#include <libavutil/avutil.h>
-#include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
 #include "../util.h"
+#include <libavcodec/avcodec.h>
+#include <libavdevice/avdevice.h>
+#include <libavformat/avformat.h>
+#include <libavutil/avutil.h>
 
 typedef struct FFmpegDevice {
    RSDevice device;
@@ -46,20 +46,23 @@ static int ffmpegDeviceGetFrame(RSDevice *device, AVFrame *frame) {
    FFmpegDevice *ffmpeg = (FFmpegDevice *)device;
    while ((ret = avcodec_receive_frame(ffmpeg->codecCtx, frame)) == AVERROR(EAGAIN)) {
       if ((ret = av_read_frame(ffmpeg->formatCtx, &ffmpeg->packet)) < 0) {
-         av_log(ffmpeg->formatCtx, AV_LOG_ERROR, "Failed to read frame: %s\n", av_err2str(ret));
+         av_log(ffmpeg->formatCtx, AV_LOG_ERROR, "Failed to read frame: %s\n",
+                av_err2str(ret));
          return ret;
       }
 
       ret = avcodec_send_packet(ffmpeg->codecCtx, &ffmpeg->packet);
       av_packet_unref(&ffmpeg->packet);
       if (ret < 0) {
-         av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to send packet to decoder: %s\n", av_err2str(ret));
+         av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to send packet to decoder: %s\n",
+                av_err2str(ret));
          return ret;
       }
    }
 
    if (ret < 0) {
-      av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to receive frame from decoder: %s\n", av_err2str(ret));
+      av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to receive frame from decoder: %s\n",
+             av_err2str(ret));
    }
    return 0;
 }
@@ -104,7 +107,8 @@ int rsFFmpegDeviceOpen(RSDevice *device, const char *input) {
    if (ffmpeg->error < 0) {
       return ffmpeg->error;
    }
-   if ((ret = avformat_open_input(&ffmpeg->formatCtx, input, ffmpeg->format, &ffmpeg->options)) < 0) {
+   if ((ret = avformat_open_input(&ffmpeg->formatCtx, input, ffmpeg->format,
+                                  &ffmpeg->options)) < 0) {
       return ret;
    }
    rsOptionsDestroy(&ffmpeg->options);
@@ -114,7 +118,8 @@ int rsFFmpegDeviceOpen(RSDevice *device, const char *input) {
    ffmpeg->device.timebase = stream->time_base;
    AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
    if (codec == NULL) {
-      av_log(ffmpeg->formatCtx, AV_LOG_ERROR, "Decoder not found: %s\n", avcodec_get_name(stream->codecpar->codec_id));
+      av_log(ffmpeg->formatCtx, AV_LOG_ERROR, "Decoder not found: %s\n",
+             avcodec_get_name(stream->codecpar->codec_id));
       return AVERROR_DECODER_NOT_FOUND;
    }
 
@@ -126,7 +131,8 @@ int rsFFmpegDeviceOpen(RSDevice *device, const char *input) {
       return ret;
    }
    if ((ret = avcodec_open2(ffmpeg->codecCtx, codec, NULL)) < 0) {
-      av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to open decoder: %s\n", av_err2str(ret));
+      av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to open decoder: %s\n",
+             av_err2str(ret));
       return ret;
    }
    return 0;

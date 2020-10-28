@@ -19,9 +19,9 @@
 
 #ifndef RS_UTIL_H
 #define RS_UTIL_H
+#include "rsbuild.h"
 #include <libavutil/avutil.h>
 #include <libavutil/dict.h>
-#include "rsbuild.h"
 #ifdef RS_BUILD_X11_FOUND
 #include <X11/Xlib.h>
 #endif
@@ -35,8 +35,10 @@ typedef char RSXDisplay;
 char *rsFormat(const char *fmt, ...);
 char *rsFormatv(const char *fmt, va_list args);
 
-void rsOptionsSet(AVDictionary **options, int *error, const char *key, const char *fmt, ...);
-void rsOptionsSetv(AVDictionary **options, int *error, const char *key, const char *fmt, va_list ars);
+void rsOptionsSet(AVDictionary **options, int *error, const char *key, const char *fmt,
+                  ...);
+void rsOptionsSetv(AVDictionary **options, int *error, const char *key, const char *fmt,
+                   va_list ars);
 void rsOptionsDestroy(AVDictionary **options);
 
 int rsXDisplayOpen(RSXDisplay **display, const char *name);

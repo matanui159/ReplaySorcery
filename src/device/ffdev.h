@@ -22,7 +22,8 @@
 #include "device.h"
 
 int rsFFmpegDeviceCreate(RSDevice **device, const char *name);
-void rsFFmpegDeviceOption(RSDevice *device, const char *key, const char *fmt, ...) av_printf_format(3, 4);
+void rsFFmpegDeviceOption(RSDevice *device, const char *key, const char *fmt, ...)
+    av_printf_format(3, 4);
 int rsFFmpegDeviceOpen(RSDevice *device, const char *input);
 
 #endif

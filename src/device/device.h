@@ -19,8 +19,8 @@
 
 #ifndef RS_DEVICE_H
 #define RS_DEVICE_H
-#include <libavutil/avutil.h>
 #include <libavcodec/avcodec.h>
+#include <libavutil/avutil.h>
 
 typedef struct RSDevice {
    AVCodecParameters *params;

@@ -40,19 +40,21 @@ char *rsFormatv(const char *fmt, va_list args) {
    size_t size = (size_t)ret + 1;
    char *value = av_malloc(size);
    if (value != NULL) {
-      vsnprintf(value ,size, fmt, args);
+      vsnprintf(value, size, fmt, args);
    }
    return value;
 }
 
-void rsOptionsSet(AVDictionary **options, int *error, const char *key, const char *fmt, ...) {
+void rsOptionsSet(AVDictionary **options, int *error, const char *key, const char *fmt,
+                  ...) {
    va_list args;
    va_start(args, fmt);
    rsOptionsSetv(options, error, key, fmt, args);
    va_end(args);
 }
 
-void rsOptionsSetv(AVDictionary **options, int *error, const char *key, const char *fmt, va_list args) {
+void rsOptionsSetv(AVDictionary **options, int *error, const char *key, const char *fmt,
+                   va_list args) {
    if (*error < 0) {
       return;
    }
@@ -79,8 +81,10 @@ int rsXDisplayOpen(RSXDisplay **display, const char *name) {
       av_log(NULL, AV_LOG_ERROR, "Failed to open X11 display\n");
       return AVERROR_EXTERNAL;
    } else {
-      av_log(NULL, AV_LOG_INFO, "X11 version: %i.%i\n", ProtocolVersion(*display), ProtocolRevision(*display));
-      av_log(NULL, AV_LOG_INFO, "X11 vendor: %s v%i\n", ServerVendor(*display), VendorRelease(*display));
+      av_log(NULL, AV_LOG_INFO, "X11 version: %i.%i\n", ProtocolVersion(*display),
+             ProtocolRevision(*display));
+      av_log(NULL, AV_LOG_INFO, "X11 vendor: %s v%i\n", ServerVendor(*display),
+             VendorRelease(*display));
       return 0;
    }
 #else

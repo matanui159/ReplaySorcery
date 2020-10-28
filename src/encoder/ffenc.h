@@ -19,14 +19,16 @@
 
 #ifndef RS_ENCODER_FFENC_H
 #define RS_ENCODER_FFENC_H
-#include "encoder.h"
 #include "../device/device.h"
-#include <libavutil/avutil.h>
+#include "encoder.h"
 #include <libavcodec/avcodec.h>
+#include <libavutil/avutil.h>
 
 int rsFFmpegEncoderCreate(RSEncoder **encoder, const char *name, RSDevice *input);
-void rsFFmpegEncoderOption(RSEncoder *encoder, const char *key, const char *fmt, ...) av_printf_format(3, 4);
+void rsFFmpegEncoderOption(RSEncoder *encoder, const char *key, const char *fmt, ...)
+    av_printf_format(3, 4);
 AVCodecContext *rsFFmpegEncoderGetContext(RSEncoder *encoder);
-int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) av_printf_format(2, 3);
+int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...)
+    av_printf_format(2, 3);
 
 #endif
