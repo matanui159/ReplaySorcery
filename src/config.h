@@ -48,8 +48,6 @@ typedef struct RSConfig {
    int videoProfile;
    int videoPreset;
    int videoQuality;
-   int videoThreads;
-   int videoScaler;
    int controller;
    char *outputPath;
 } RSConfig;

@@ -19,34 +19,23 @@
 
 #ifndef RS_DEVICE_H
 #define RS_DEVICE_H
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
-#include <libavutil/dict.h>
-
-typedef struct RSDeviceParams {
-   const char *name;
-   const AVDictionary *options;
-   const char *input;
-} RSDeviceParams;
+#include <libavcodec/avcodec.h>
 
 typedef struct RSDevice {
-   AVFormatContext *formatCtx;
-   AVStream *stream;
-   AVCodecContext *codecCtx;
-   AVPacket packet;
+   AVCodecParameters *params;
+   AVRational timebase;
+   void (*destroy)(struct RSDevice *device);
+   int (*getFrame)(struct RSDevice *device, AVFrame *frame);
 } RSDevice;
 
-#define RS_DEVICE_INIT                                                                   \
-   { NULL }
+static av_always_inline int rsDeviceGetFrame(RSDevice *device, AVFrame *frame) {
+   return device->getFrame(device, frame);
+}
 
-void rsDeviceInit(void);
+void rsDeviceDestroy(RSDevice **device);
 
-int rsDeviceCreate(RSDevice *device, const RSDeviceParams *params);
-void rsDeviceDestroy(RSDevice *device);
-int rsDeviceGetFrame(RSDevice *device, AVFrame *frame);
-
-int rsX11DeviceCreate(RSDevice *device);
-int rsVideoDeviceCreate(RSDevice *device);
+int rsX11DeviceCreate(RSDevice **device);
+int rsVideoDeviceCreate(RSDevice **device);
 
 #endif

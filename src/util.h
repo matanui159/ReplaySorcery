@@ -17,26 +17,28 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_ENCODER_H
-#define RS_ENCODER_H
-#include "../device/device.h"
+#ifndef RS_UTIL_H
+#define RS_UTIL_H
 #include <libavutil/avutil.h>
-#include <libavcodec/avcodec.h>
+#include <libavutil/dict.h>
+#include "rsbuild.h"
+#ifdef RS_BUILD_X11_FOUND
+#include <X11/Xlib.h>
+#endif
 
-typedef struct RSEncoder {
-   AVCodecParameters *params;
-   AVRational timebase;
-   void (*destroy)(struct RSEncoder *encoder);
-   int (*getPacket)(struct RSEncoder *encoder, AVPacket *packet);
-} RSEncoder;
+#ifdef RS_BUILD_X11_FOUND
+typedef Display RSXDisplay;
+#else
+typedef char RSXDisplay;
+#endif
 
-static av_always_inline int rsEncoderGetPacket(RSEncoder *encoder, AVPacket *packet) {
-   return encoder->getPacket(encoder, packet);
-}
+char *rsFormat(const char *fmt, ...);
+char *rsFormatv(const char *fmt, va_list args);
 
-void rsEncoderDestroy(RSEncoder **encoder);
+void rsOptionsSet(AVDictionary **options, int *error, const char *key, const char *fmt, ...);
+void rsOptionsSetv(AVDictionary **options, int *error, const char *key, const char *fmt, va_list ars);
+void rsOptionsDestroy(AVDictionary **options);
 
-int rsX264EncoderCreate(RSEncoder **encoder, RSDevice *input);
-int rsVideoEncoderCreate(RSEncoder **encoder, RSDevice *input);
+int rsXDisplayOpen(RSXDisplay **display, const char *name);
 
 #endif

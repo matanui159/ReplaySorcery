@@ -40,7 +40,6 @@ static int mainRun(void) {
    if ((ret = rsConfigInit()) < 0) {
       goto error;
    }
-   rsDeviceInit();
 
    av_log(NULL, AV_LOG_INFO,
           "ReplaySorcery  Copyright (C) 2020  ReplaySorcery developers\n"
@@ -49,8 +48,8 @@ static int mainRun(void) {
           "under certain conditions; see COPYING for details.\n");
    av_log(NULL, AV_LOG_INFO, "FFmpeg version: %s\n", av_version_info());
 
-   RSDevice device = RS_DEVICE_INIT;
-   RSEncoder encoder = RS_ENCODER_INIT;
+   RSDevice *device = NULL;
+   RSEncoder *encoder = NULL;
    RSPktCircle videoCircle = RS_PKTCIRCLE_INIT;
 
    RSControl controller = RS_CONTROL_INIT;
@@ -59,7 +58,7 @@ static int mainRun(void) {
    if ((ret = rsVideoDeviceCreate(&device)) < 0) {
       goto error;
    }
-   if ((ret = rsVideoEncoderCreate(&encoder, &device)) < 0) {
+   if ((ret = rsVideoEncoderCreate(&encoder, device)) < 0) {
       goto error;
    }
    if ((ret = rsDefaultControlCreate(&controller)) < 0) {
@@ -75,7 +74,7 @@ static int mainRun(void) {
    signal(SIGTERM, mainSignal);
    while (mainRunning) {
       AVPacket *packet = rsPktCircleNext(&videoCircle);
-      if ((ret = rsEncoderGetPacket(&encoder, packet)) < 0) {
+      if ((ret = rsEncoderGetPacket(encoder, packet)) < 0) {
          goto error;
       }
       if ((ret = rsControlWantsSave(&controller)) < 0) {
@@ -85,7 +84,7 @@ static int mainRun(void) {
       if (ret > 0) {
          av_log(NULL, AV_LOG_INFO, "Saving video...\n");
          if ((ret = rsOutputCreate(&output, &(RSOutputParams){
-                                                .videoEncoder = &encoder,
+                                                .videoEncoder = encoder,
                                                 .videoCircle = &videoCircle,
                                             })) < 0) {
             goto error;

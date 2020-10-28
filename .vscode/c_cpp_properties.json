@@ -7,11 +7,7 @@
          "includePath": [
             "${workspaceFolder}/bin",
             "${workspaceFolder}/bin/backtrace-prefix/include",
-            "${workspaceFolder}/bin/jpeg-prefix/include",
             "/usr/include/ffmpeg"
-         ],
-         "defines": [
-            "_GNU_SOURCE"
          ]
       }
    ]

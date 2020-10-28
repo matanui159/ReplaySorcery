@@ -117,10 +117,10 @@ int rsOutputCreate(RSOutput *output, const RSOutputParams *params) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
-   if ((ret = avcodec_parameters_from_context(stream->codecpar,
-                                              params->videoEncoder->codecCtx)) < 0) {
-      goto error;
-   }
+   // if ((ret = avcodec_parameters_from_context(stream->codecpar,
+   //                                            params->videoEncoder->codecCtx)) < 0) {
+   //    goto error;
+   // }
    if ((ret = avformat_init_output(output->formatCtx, &options)) < 0) {
       av_log(output->formatCtx, AV_LOG_ERROR, "Failed to open output format: %s\n",
              av_err2str(ret));
@@ -147,8 +147,8 @@ int rsOutputCreate(RSOutput *output, const RSOutputParams *params) {
       AVPacket *packet = &output->videoCircle.packets[i];
       packet->pts -= offset;
       packet->dts -= offset;
-      av_packet_rescale_ts(packet, params->videoEncoder->codecCtx->time_base,
-                           stream->time_base);
+      // av_packet_rescale_ts(packet, params->videoEncoder->codecCtx->time_base,
+      //                      stream->time_base);
    }
 
 #ifdef RS_BUILD_PTHREAD_FOUND

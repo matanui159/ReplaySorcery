@@ -7,14 +7,17 @@ find_package(PkgConfig REQUIRED)
 
 set(binary replay-sorcery)
 set(sources
+   src/util.c
    src/main.c
    src/config.c
    src/util/log.c
    src/util/pktcircle.c
    src/device/device.c
-   src/device/x11.c
+   src/device/ffdev.c
+   src/device/x11dev.c
    src/encoder/encoder.c
-   src/encoder/x264.c
+   src/encoder/ffenc.c
+   src/encoder/x264enc.c
    src/control/control.c
    src/control/debug.c
    src/control/x11control.c
@@ -23,10 +26,13 @@ set(sources
 set(headers
    src/rsbuild.h.in
    src/config.h
+   src/util.h
    src/util/log.h
    src/util/pktcircle.h
    src/device/device.h
+   src/device/ffdev.h
    src/encoder/encoder.h
+   src/encoder/ffenc.h
    src/control/control.h
    src/output.h
 )
@@ -95,10 +101,9 @@ pkg_check_modules(FFMPEG
    REQUIRED IMPORTED_TARGET
    libavutil
    libavformat
-   libavcodec
    libavdevice
+   libavcodec
    libavfilter
-   libswscale
 )
 target_link_libraries(${binary} PRIVATE PkgConfig::FFMPEG)
 

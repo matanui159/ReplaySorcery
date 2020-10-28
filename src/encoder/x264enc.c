@@ -19,32 +19,37 @@
 
 #include "../config.h"
 #include "encoder.h"
+#include "ffenc.h"
 
-int rsX264EncoderCreate(RSEncoder *encoder, RSDevice *input) {
-   AVDictionary *options = NULL;
-   av_dict_set_int(&options, "qp", rsConfig.videoQuality, 0);
+int rsX264EncoderCreate(RSEncoder **encoder, RSDevice *input) {
+   int ret;
+   if ((ret = rsFFmpegEncoderCreate(encoder, "libx264", input)) < 0) {
+      goto error;
+   }
+
+   AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(*encoder);
+   codecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
+   codecCtx->thread_count = 1;
+   codecCtx->gop_size = 0;
+   codecCtx->profile = rsConfig.videoProfile;
+   rsFFmpegEncoderOption(*encoder, "qp", "%i", rsConfig.videoQuality);
    switch (rsConfig.videoPreset) {
    case RS_CONFIG_PRESET_FAST:
-      av_dict_set(&options, "preset", "ultrafast", 0);
+      rsFFmpegEncoderOption(*encoder, "preset", "ultrafast");
       break;
    case RS_CONFIG_PRESET_MEDIUM:
-      av_dict_set(&options, "preset", "medium", 0);
+      rsFFmpegEncoderOption(*encoder, "preset", "medium");
       break;
    case RS_CONFIG_PRESET_SLOW:
-      av_dict_set(&options, "preset", "slower", 0);
+      rsFFmpegEncoderOption(*encoder, "preset", "slower");
       break;
    }
-   if (av_dict_count(options) != 2) {
-      av_dict_free(&options);
-      return AVERROR(ENOMEM);
+   if ((ret = rsFFmpegEncoderOpen(*encoder, "format=yuv420p")) < 0) {
+      goto error;
    }
 
-   int ret = rsEncoderCreate(encoder, &(RSEncoderParams){
-                                          .name = "libx264",
-                                          .options = options,
-                                          .input = input,
-                                          .swFormat = AV_PIX_FMT_YUV420P,
-                                      });
-   av_dict_free(&options);
+   return 0;
+error:
+   rsEncoderDestroy(encoder);
    return ret;
 }

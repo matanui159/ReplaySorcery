@@ -19,146 +19,15 @@
 
 #include "encoder.h"
 #include "../config.h"
-#include <libavutil/pixdesc.h>
 
-int rsEncoderCreate(RSEncoder *encoder, const RSEncoderParams *params) {
-   int ret;
-   encoder->input = params->input;
-   AVDictionary *options = NULL;
-   if ((ret = av_dict_copy(&options, params->options, 0)) < 0) {
-      goto error;
+void rsEncoderDestroy(RSEncoder **encoder) {
+   if (*encoder != NULL && (*encoder)->destroy != NULL) {
+      (*encoder)->destroy(*encoder);
    }
-
-   AVCodec *codec = avcodec_find_encoder_by_name(params->name);
-   if (codec == NULL) {
-      av_log(NULL, AV_LOG_ERROR, "Encoder not found: %s\n", params->name);
-      ret = AVERROR_ENCODER_NOT_FOUND;
-      goto error;
-   }
-
-   encoder->codecCtx = avcodec_alloc_context3(codec);
-   if (encoder->codecCtx == NULL) {
-      ret = AVERROR(ENOMEM);
-      goto error;
-   }
-
-   int width = params->input->codecCtx->width;
-   int height = params->input->codecCtx->height;
-   encoder->codecCtx->pix_fmt = params->swFormat;
-   encoder->codecCtx->width = width;
-   encoder->codecCtx->height = height;
-   encoder->codecCtx->time_base = params->input->stream->time_base;
-   encoder->codecCtx->profile = rsConfig.videoProfile;
-   // TODO: add config for gop_size to reduce memory usage
-   encoder->codecCtx->gop_size = 0;
-   if (rsConfig.videoThreads == RS_CONFIG_AUTO) {
-      encoder->codecCtx->thread_count = 0;
-   } else {
-      encoder->codecCtx->thread_count = rsConfig.videoThreads;
-   }
-   encoder->codecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-
-   if ((ret = avcodec_open2(encoder->codecCtx, codec, &options)) < 0) {
-      av_log(encoder->codecCtx, AV_LOG_ERROR, "Failed to open encoder: %s\n",
-             av_err2str(ret));
-      goto error;
-   }
-   if (av_dict_count(options) > 0) {
-      const char *unused = av_dict_get(options, "", NULL, AV_DICT_IGNORE_SUFFIX)->key;
-      av_log(encoder->codecCtx, AV_LOG_ERROR, "Option not found: %s\n", unused);
-      ret = AVERROR_OPTION_NOT_FOUND;
-      goto error;
-   }
-
-   encoder->frame = av_frame_alloc();
-   if (encoder->frame == NULL) {
-      ret = AVERROR(ENOMEM);
-      goto error;
-   }
-
-   enum AVPixelFormat pixfmt = params->input->codecCtx->pix_fmt;
-   if (pixfmt != params->swFormat) {
-      encoder->scaleCtx =
-          sws_getContext(width, height, pixfmt, width, height, params->swFormat,
-                         rsConfig.videoScaler, NULL, NULL, NULL);
-      if (encoder->scaleCtx == NULL) {
-         av_log(encoder->codecCtx, AV_LOG_ERROR, "Failed to get scaler: %s -> %s\n",
-                av_get_pix_fmt_name(pixfmt), av_get_pix_fmt_name(params->swFormat));
-         ret = AVERROR_EXTERNAL;
-         goto error;
-      }
-
-      encoder->scaleFrame = av_frame_alloc();
-      if (encoder->scaleFrame == NULL) {
-         ret = AVERROR(ENOMEM);
-         goto error;
-      }
-
-      encoder->scaleFrame->format = params->swFormat;
-      encoder->scaleFrame->width = width;
-      encoder->scaleFrame->height = height;
-      if ((ret = av_frame_get_buffer(encoder->scaleFrame, 0)) < 0) {
-         goto error;
-      }
-   }
-
-   return 0;
-error:
-   av_dict_free(&options);
-   rsEncoderDestroy(encoder);
-   return ret;
+   av_freep(encoder);
 }
 
-void rsEncoderDestroy(RSEncoder *encoder) {
-   av_frame_free(&encoder->scaleFrame);
-   sws_freeContext(encoder->scaleCtx);
-   encoder->scaleCtx = NULL;
-   av_frame_free(&encoder->frame);
-   avcodec_free_context(&encoder->codecCtx);
-}
-
-int rsEncoderGetPacket(RSEncoder *encoder, AVPacket *packet) {
-   int ret;
-   while ((ret = avcodec_receive_packet(encoder->codecCtx, packet)) == AVERROR(EAGAIN)) {
-      if ((ret = rsDeviceGetFrame(encoder->input, encoder->frame)) < 0) {
-         return ret;
-      }
-      AVFrame *frame = encoder->frame;
-
-      if (encoder->scaleCtx != NULL) {
-         ret = sws_scale(encoder->scaleCtx, (const uint8_t **)frame->data,
-                         frame->linesize, 0, frame->height, encoder->scaleFrame->data,
-                         encoder->scaleFrame->linesize);
-         av_frame_copy_props(encoder->scaleFrame, frame);
-         av_frame_unref(frame);
-         frame = encoder->scaleFrame;
-         if (ret < 0) {
-            av_log(encoder->scaleCtx, AV_LOG_ERROR, "Failed to scale frame: %s\n",
-                   av_err2str(ret));
-            return ret;
-         }
-      }
-
-      ret = avcodec_send_frame(encoder->codecCtx, frame);
-      if (frame == encoder->frame) {
-         av_frame_unref(frame);
-      }
-      if (ret < 0) {
-         av_log(encoder->codecCtx, AV_LOG_ERROR, "Failed to send frame to encoder: %s\n",
-                av_err2str(ret));
-         return ret;
-      }
-   }
-
-   if (ret < 0) {
-      av_log(encoder->codecCtx, AV_LOG_ERROR,
-             "Failed to receive packet from encoder: %s\n", av_err2str(ret));
-      return ret;
-   }
-   return 0;
-}
-
-int rsVideoEncoderCreate(RSEncoder *encoder, RSDevice *input) {
+int rsVideoEncoderCreate(RSEncoder **encoder, RSDevice *input) {
    int ret;
    switch (rsConfig.videoEncoder) {
    case RS_CONFIG_VIDEO_X264:
