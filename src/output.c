@@ -19,12 +19,12 @@
 
 #include "output.h"
 #include "config.h"
+#include "rsbuild.h"
 #include "util.h"
+#include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libavutil/bprint.h>
-#include <libavformat/avformat.h>
 #include <time.h>
-#include "rsbuild.h"
 #ifdef RS_BUILD_PTHREAD_FOUND
 #include <pthread.h>
 #endif
@@ -40,7 +40,8 @@ static void *outputThread(void *data) {
    int ret;
    RSOutput *output = data;
    if ((ret = avformat_write_header(output->formatCtx, NULL)) < 0) {
-      av_log(output->formatCtx, AV_LOG_ERROR, "Failed to write header: %s\n", av_err2str(ret));
+      av_log(output->formatCtx, AV_LOG_ERROR, "Failed to write header: %s\n",
+             av_err2str(ret));
    }
 
    int64_t offset = output->circle.packets[0].pts;
@@ -49,12 +50,14 @@ static void *outputThread(void *data) {
       packet->pts -= offset;
       packet->dts -= offset;
       if ((ret = av_interleaved_write_frame(output->formatCtx, packet)) < 0) {
-         av_log(output->formatCtx, AV_LOG_ERROR, "Failed to write frame: %s\n", av_err2str(ret));
+         av_log(output->formatCtx, AV_LOG_ERROR, "Failed to write frame: %s\n",
+                av_err2str(ret));
          goto error;
       }
    }
    if ((ret = av_write_trailer(output->formatCtx)) < 0) {
-      av_log(output->formatCtx, AV_LOG_ERROR, "Failed to write trailer: %s\n", av_err2str(ret));
+      av_log(output->formatCtx, AV_LOG_ERROR, "Failed to write trailer: %s\n",
+             av_err2str(ret));
    }
 
    ret = 0;
@@ -101,8 +104,7 @@ int rsOutputCreate(RSOutput **output) {
    if ((ret = av_bprint_finalize(&buffer, &path)) < 0) {
       goto error;
    }
-   if ((ret = avformat_alloc_output_context2(&out->formatCtx, NULL, "mp4", path)) <
-       0) {
+   if ((ret = avformat_alloc_output_context2(&out->formatCtx, NULL, "mp4", path)) < 0) {
       av_log(NULL, AV_LOG_ERROR, "Failed to allocate output format: %s\n",
              av_err2str(ret));
       goto error;
