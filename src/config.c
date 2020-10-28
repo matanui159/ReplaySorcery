@@ -82,7 +82,7 @@ static const AVOption configOptions[] = {
     CONFIG_CONST(auto, RS_CONFIG_AUTO, controller),
     CONFIG_CONST(debug, RS_CONFIG_CONTROL_DEBUG, controller),
     CONFIG_CONST(x11, RS_CONFIG_CONTROL_X11, controller),
-    CONFIG_STRING(outputPath, "~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4"),
+    CONFIG_STRING(outputFile, "~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4"),
     {NULL}};
 
 static const AVClass configClass = {

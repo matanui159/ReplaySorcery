@@ -19,79 +19,81 @@
 
 #include "output.h"
 #include "config.h"
-#include <libavutil/avstring.h>
+#include "util.h"
+#include <libavutil/avutil.h>
 #include <libavutil/bprint.h>
+#include <libavformat/avformat.h>
 #include <time.h>
-
-static int outputRun(RSOutput *output) {
-   int ret;
-   size_t end = output->index + (size_t)rsConfig.recordSeconds;
-   if (end > output->videoCircle.size) {
-      end = output->videoCircle.size;
-   }
-   for (; output->index < end; ++output->index) {
-      AVPacket *packet = &output->videoCircle.packets[output->index];
-      if ((ret = av_interleaved_write_frame(output->formatCtx, packet)) < 0) {
-         av_log(output->formatCtx, AV_LOG_ERROR, "Failed to write frame: %s\n",
-                av_err2str(ret));
-         goto error;
-      }
-   }
-   if (end == output->videoCircle.size) {
-      if ((ret = av_write_trailer(output->formatCtx)) < 0) {
-         av_log(output->formatCtx, AV_LOG_ERROR, "Failed to write trailer: %s\n",
-                av_err2str(ret));
-         goto error;
-      }
-      ret = 0;
-   } else {
-      ret = AVERROR(EAGAIN);
-   }
-
-error:
-   if (output->ret != ret) {
-      output->ret = ret;
-   }
-   return ret;
-}
-
+#include "rsbuild.h"
 #ifdef RS_BUILD_PTHREAD_FOUND
-static void *outputThread(void *extra) {
-   int ret;
-   RSOutput *output = extra;
-   while ((ret = outputRun(output)) == AVERROR(EAGAIN)) {
-   }
-   return NULL;
-}
+#include <pthread.h>
 #endif
 
-int rsOutputCreate(RSOutput *output, const RSOutputParams *params) {
+struct RSOutput {
+   AVFormatContext *formatCtx;
+   RSPktCircle circle;
+   int refs;
+   int error;
+};
+
+static void *outputThread(void *data) {
    int ret;
-   AVDictionary *options = NULL;
+   RSOutput *output = data;
+   if ((ret = avformat_write_header(output->formatCtx, NULL)) < 0) {
+      av_log(output->formatCtx, AV_LOG_ERROR, "Failed to write header: %s\n", av_err2str(ret));
+   }
+
+   int64_t offset = output->circle.packets[0].pts;
+   for (size_t i = 0; i < output->circle.size; ++i) {
+      AVPacket *packet = &output->circle.packets[i];
+      packet->pts -= offset;
+      packet->dts -= offset;
+      if ((ret = av_interleaved_write_frame(output->formatCtx, packet)) < 0) {
+         av_log(output->formatCtx, AV_LOG_ERROR, "Failed to write frame: %s\n", av_err2str(ret));
+         goto error;
+      }
+   }
+   if ((ret = av_write_trailer(output->formatCtx)) < 0) {
+      av_log(output->formatCtx, AV_LOG_ERROR, "Failed to write trailer: %s\n", av_err2str(ret));
+   }
+
+   ret = 0;
+error:
+   if (ret < 0) {
+      av_log(NULL, AV_LOG_FATAL, "%s\n", av_err2str(ret));
+   }
+   rsOutputDestroy(&output);
+   return NULL;
+}
+
+int rsOutputCreate(RSOutput **output) {
+   int ret;
+   char *path = NULL;
    AVBPrint buffer;
    av_bprint_init(&buffer, 0, AV_BPRINT_SIZE_UNLIMITED);
-   char *path = NULL;
-   av_dict_set(&options, "movflags", "+faststart", 0);
-   if (av_dict_count(options) != 1) {
+   RSOutput *out = av_mallocz(sizeof(RSOutput));
+   *output = out;
+   if (out == NULL) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
+   out->refs = 1;
 
-   const char *configPath = rsConfig.outputPath;
-   if (configPath[0] == '~') {
+   const char *configOutput = rsConfig.outputFile;
+   if (configOutput[0] == '~') {
       const char *home = getenv("HOME");
       if (home == NULL) {
-         av_log(NULL, AV_LOG_ERROR, "Could not find $HOME variable\n");
+         av_log(NULL, AV_LOG_ERROR, "Failed to get $HOME variable\n");
          ret = AVERROR_EXTERNAL;
          goto error;
       }
       av_bprintf(&buffer, "%s", home);
-      ++configPath;
+      ++configOutput;
    }
 
    time_t timeNum = time(NULL);
    const struct tm *timeObj = localtime(&timeNum);
-   av_bprint_strftime(&buffer, configPath, timeObj);
+   av_bprint_strftime(&buffer, configOutput, timeObj);
    if (!av_bprint_is_complete(&buffer)) {
       ret = AVERROR(ENOMEM);
       goto error;
@@ -99,96 +101,84 @@ int rsOutputCreate(RSOutput *output, const RSOutputParams *params) {
    if ((ret = av_bprint_finalize(&buffer, &path)) < 0) {
       goto error;
    }
-   if ((ret = avformat_alloc_output_context2(&output->formatCtx, NULL, "mp4", path)) <
+   if ((ret = avformat_alloc_output_context2(&out->formatCtx, NULL, "mp4", path)) <
        0) {
       av_log(NULL, AV_LOG_ERROR, "Failed to allocate output format: %s\n",
              av_err2str(ret));
       goto error;
    }
-   if ((ret = avio_open(&output->formatCtx->pb, path, AVIO_FLAG_WRITE)) < 0) {
-      av_log(output->formatCtx, AV_LOG_ERROR, "Failed to open output: %s\n",
+   if ((ret = avio_open(&out->formatCtx->pb, path, AVIO_FLAG_WRITE)) < 0) {
+      av_log(out->formatCtx, AV_LOG_ERROR, "Failed to open output: %s\n",
              av_err2str(ret));
       goto error;
    }
    av_freep(&path);
-
-   AVStream *stream = avformat_new_stream(output->formatCtx, NULL);
-   if (stream == NULL) {
-      ret = AVERROR(ENOMEM);
-      goto error;
-   }
-   // if ((ret = avcodec_parameters_from_context(stream->codecpar,
-   //                                            params->videoEncoder->codecCtx)) < 0) {
-   //    goto error;
-   // }
-   if ((ret = avformat_init_output(output->formatCtx, &options)) < 0) {
-      av_log(output->formatCtx, AV_LOG_ERROR, "Failed to open output format: %s\n",
-             av_err2str(ret));
-      goto error;
-   }
-   av_dict_free(&options);
-
-   if ((ret = avformat_write_header(output->formatCtx, NULL)) < 0) {
-      av_log(output->formatCtx, AV_LOG_ERROR, "Failed to write header: %s\n",
-             av_err2str(ret));
-      goto error;
-   }
-   if ((ret = rsPktCircleCreate(&output->videoCircle, params->videoCircle->capacity)) <
-       0) {
-      goto error;
-   }
-   if ((ret = rsPktCircleClone(&output->videoCircle, params->videoCircle)) < 0) {
-      av_log(NULL, AV_LOG_ERROR, "Failed to clone packet circle: %s\n", av_err2str(ret));
-      goto error;
-   }
-
-   int64_t offset = output->videoCircle.packets[0].pts;
-   for (size_t i = 0; i < output->videoCircle.size; ++i) {
-      AVPacket *packet = &output->videoCircle.packets[i];
-      packet->pts -= offset;
-      packet->dts -= offset;
-      // av_packet_rescale_ts(packet, params->videoEncoder->codecCtx->time_base,
-      //                      stream->time_base);
-   }
-
-#ifdef RS_BUILD_PTHREAD_FOUND
-   if ((ret = pthread_create(&output->thread, NULL, outputThread, output)) != 0) {
-      av_log(NULL, AV_LOG_WARNING, "Failed to create thread: %s\n",
-             av_err2str(AVERROR(ret)));
-      output->thread = 0;
-   }
-#else
-   av_log(NULL, AV_LOG_WARNING, "PThreads was not found during compilaton\n");
-#endif
 
    return 0;
 error:
    av_freep(&path);
    av_bprint_finalize(&buffer, NULL);
-   av_dict_free(&options);
    rsOutputDestroy(output);
    return ret;
 }
 
-void rsOutputDestroy(RSOutput *output) {
-#ifdef RS_BUILD_PTHREAD_FOUND
-   if (output->thread != 0) {
-      pthread_join(output->thread, NULL);
+void rsOutputStream(RSOutput *output, RSEncoder *encoder) {
+   if (output->error < 0) {
+      return;
    }
-#endif
-   rsPktCircleDestroy(&output->videoCircle);
-   if (output->formatCtx != NULL) {
-      avio_close(output->formatCtx->pb);
-      avformat_free_context(output->formatCtx);
+   AVStream *stream = avformat_new_stream(output->formatCtx, NULL);
+   if (stream == NULL) {
+      output->error = AVERROR(ENOMEM);
+      return;
    }
-   *output = (RSOutput)RS_OUTPUT_INIT;
+   output->error = avcodec_parameters_copy(stream->codecpar, encoder->params);
+   stream->time_base = encoder->timebase;
 }
 
-int rsOutputRun(RSOutput *output) {
+// TODO: this function really needs a cleanup
+int rsOutputRun(RSOutput *output, RSPktCircle *circle) {
+   int ret;
+   AVDictionary *options = NULL;
+   rsOptionsSet(&options, &output->error, "movflags", "+faststart");
+   if (output->error < 0) {
+      return output->error;
+   }
+   if ((ret = avformat_init_output(output->formatCtx, &options)) < 0) {
+      av_log(NULL, AV_LOG_ERROR, "Failed to setup output: %s\n", av_err2str(ret));
+      return ret;
+   }
+   rsOptionsDestroy(&options);
+
+   if ((ret = rsPktCircleCreate(&output->circle, circle->capacity)) < 0) {
+      return ret;
+   }
+   if ((ret = rsPktCircleClone(&output->circle, circle)) < 0) {
+      return ret;
+   }
+
 #ifdef RS_BUILD_PTHREAD_FOUND
-   if (output->thread != 0) {
-      return output->ret;
+   pthread_t thread;
+   if (pthread_create(&thread, NULL, outputThread, output) == 0) {
+      pthread_detach(thread);
+      ++output->refs;
+      return 0;
    }
 #endif
-   return outputRun(output);
+   outputThread(output);
+   return 0;
+}
+
+void rsOutputDestroy(RSOutput **output) {
+   RSOutput *out = *output;
+   if (out == NULL) {
+      return;
+   }
+   --out->refs;
+   if (out->refs > 0) {
+      *output = NULL;
+      return;
+   }
+   rsPktCircleDestroy(&out->circle);
+   avformat_free_context(out->formatCtx);
+   av_freep(output);
 }

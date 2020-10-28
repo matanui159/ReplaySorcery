@@ -53,7 +53,7 @@ static int mainRun(void) {
    RSPktCircle videoCircle = RS_PKTCIRCLE_INIT;
 
    RSControl controller = RS_CONTROL_INIT;
-   RSOutput output = RS_OUTPUT_INIT;
+   RSOutput *output = NULL;
 
    if ((ret = rsVideoDeviceCreate(&device)) < 0) {
       goto error;
@@ -83,29 +83,16 @@ static int mainRun(void) {
 
       if (ret > 0) {
          av_log(NULL, AV_LOG_INFO, "Saving video...\n");
-         if ((ret = rsOutputCreate(&output, &(RSOutputParams){
-                                                .videoEncoder = encoder,
-                                                .videoCircle = &videoCircle,
-                                            })) < 0) {
-            goto error;
-         }
-      }
-
-      if (rsOutputIsCreated(&output)) {
-         if ((ret = rsOutputRun(&output)) != AVERROR(EAGAIN)) {
-            if (ret < 0) {
-               goto error;
-            }
-            rsOutputDestroy(&output);
-            av_log(NULL, AV_LOG_INFO, "Finished saving video\n");
-         }
+         rsOutputCreate(&output);
+         rsOutputStream(output, encoder);
+         rsOutputRun(output, &videoCircle);
+         rsOutputDestroy(&output);
       }
    }
    av_log(NULL, AV_LOG_INFO, "\nExiting...\n");
 
    ret = 0;
 error:
-   rsOutputDestroy(&output);
    rsControlDestroy(&controller);
    rsPktCircleDestroy(&videoCircle);
    rsEncoderDestroy(&encoder);

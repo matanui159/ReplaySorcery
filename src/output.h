@@ -20,38 +20,13 @@
 #ifndef RS_OUTPUT_H
 #define RS_OUTPUT_H
 #include "encoder/encoder.h"
-#include "rsbuild.h"
 #include "util/pktcircle.h"
-#include <libavformat/avformat.h>
-#include <libavutil/avutil.h>
-#ifdef RS_BUILD_PTHREAD_FOUND
-#include <pthread.h>
-#endif
 
-typedef struct RSOutputParams {
-   const RSEncoder *videoEncoder;
-   const RSPktCircle *videoCircle;
-} RSOutputParams;
+typedef struct RSOutput RSOutput;
 
-typedef struct RSOutput {
-   AVFormatContext *formatCtx;
-   RSPktCircle videoCircle;
-   size_t index;
-   volatile int ret;
-#ifdef RS_BUILD_PTHREAD_FOUND
-   pthread_t thread;
-#endif
-} RSOutput;
-
-#define RS_OUTPUT_INIT                                                                   \
-   { .ret = AVERROR(EAGAIN) }
-
-int rsOutputCreate(RSOutput *output, const RSOutputParams *params);
-void rsOutputDestroy(RSOutput *output);
-int rsOutputRun(RSOutput *output);
-
-static av_always_inline int rsOutputIsCreated(const RSOutput *output) {
-   return output->formatCtx != NULL;
-}
+int rsOutputCreate(RSOutput **output);
+void rsOutputStream(RSOutput *output, RSEncoder *encoder);
+int rsOutputRun(RSOutput *output, RSPktCircle *circle);
+void rsOutputDestroy(RSOutput **output);
 
 #endif

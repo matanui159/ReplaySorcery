@@ -29,9 +29,10 @@ int rsX264EncoderCreate(RSEncoder **encoder, RSDevice *input) {
 
    AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(*encoder);
    codecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
+   codecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
    codecCtx->thread_count = 1;
-   codecCtx->gop_size = 0;
    codecCtx->profile = rsConfig.videoProfile;
+   codecCtx->gop_size = 0;
    rsFFmpegEncoderOption(*encoder, "qp", "%i", rsConfig.videoQuality);
    switch (rsConfig.videoPreset) {
    case RS_CONFIG_PRESET_FAST:

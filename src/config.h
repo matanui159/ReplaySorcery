@@ -49,7 +49,7 @@ typedef struct RSConfig {
    int videoPreset;
    int videoQuality;
    int controller;
-   char *outputPath;
+   char *outputFile;
 } RSConfig;
 
 extern RSConfig rsConfig;
