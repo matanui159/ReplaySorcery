@@ -63,6 +63,7 @@ static int ffmpegEncoderGetPacket(RSEncoder *encoder, AVPacket *packet) {
          return ret;
       }
 
+      ffmpeg->frame->pict_type = AV_PICTURE_TYPE_NONE;
       ret = avcodec_send_frame(ffmpeg->codecCtx, ffmpeg->frame);
       av_frame_unref(ffmpeg->frame);
       if (ret < 0) {

@@ -44,9 +44,17 @@ static void *outputThread(void *data) {
              av_err2str(ret));
    }
 
-   int64_t offset = output->circle.packets[0].pts;
-   for (size_t i = 0; i < output->circle.size; ++i) {
-      AVPacket *packet = &output->circle.packets[i];
+   size_t index;
+   for (index = 0; index < output->circle.size; ++index) {
+      AVPacket *packet = &output->circle.packets[index];
+      if (packet->flags & AV_PKT_FLAG_KEY) {
+         break;
+      }
+   }
+
+   int64_t offset = output->circle.packets[index].pts;
+   for (; index < output->circle.size; ++index) {
+      AVPacket *packet = &output->circle.packets[index];
       packet->pts -= offset;
       packet->dts -= offset;
       if ((ret = av_interleaved_write_frame(output->formatCtx, packet)) < 0) {

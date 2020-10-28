@@ -77,6 +77,7 @@ static const AVOption configOptions[] = {
     CONFIG_CONST(medium, RS_CONFIG_PRESET_MEDIUM, videoPreset),
     CONFIG_CONST(slow, RS_CONFIG_PRESET_SLOW, videoPreset),
     CONFIG_INT(videoQuality, 25, RS_CONFIG_AUTO, 51, auto),
+    CONFIG_INT(videoGOP, 30, 0, INT_MAX, videoGOP),
     CONFIG_INT(controller, RS_CONFIG_AUTO, RS_CONFIG_AUTO, RS_CONFIG_CONTROL_DEBUG,
                controller),
     CONFIG_CONST(auto, RS_CONFIG_AUTO, controller),
