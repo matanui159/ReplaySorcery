@@ -17,26 +17,33 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_DEVICE_H
-#define RS_DEVICE_H
+#ifndef RS_STREAM_H
+#define RS_STREAM_H
+#include "encoder/encoder.h"
+#include "rsbuild.h"
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
+#ifdef RS_BUILD_PTHREAD_FOUND
+#include <pthread.h>
+#endif
 
-typedef struct RSDevice {
-   AVCodecParameters *params;
-   // TODO: this is unnecesary since now it always uses AV_TIME_BASE_Q
-   AVRational timebase;
-   void (*destroy)(struct RSDevice *device);
-   int (*getFrame)(struct RSDevice *device, AVFrame *frame);
-} RSDevice;
+typedef struct RSStream {
+   RSEncoder *input;
+   AVPacket buffer;
+   AVPacket *packets;
+   int64_t duration;
+   size_t capacity;
+   size_t size;
+   size_t index;
+#ifdef RS_BUILD_PTHREAD_FOUND
+   pthread_mutex_t mutex;
+   int mutexCreated;
+#endif
+} RSStream;
 
-static av_always_inline int rsDeviceGetFrame(RSDevice *device, AVFrame *frame) {
-   return device->getFrame(device, frame);
-}
-
-void rsDeviceDestroy(RSDevice **device);
-
-int rsX11DeviceCreate(RSDevice **device);
-int rsVideoDeviceCreate(RSDevice **device);
+int rsStreamCreate(RSStream **stream, RSEncoder *input);
+void rsStreamDestroy(RSStream **stream);
+int rsStreamUpdate(RSStream *stream);
+AVPacket *rsStreamGetPackets(RSStream *stream, size_t *size);
 
 #endif

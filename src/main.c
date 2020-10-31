@@ -17,25 +17,35 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "main.h"
 #include "config.h"
-#include "control/control.h"
 #include "device/device.h"
 #include "encoder/encoder.h"
-#include "output.h"
+#include "stream.h"
 #include "util/log.h"
-#include "util/pktcircle.h"
 #include <libavutil/avutil.h>
 #include <signal.h>
 
-static sig_atomic_t mainRunning = 1;
+static volatile int mainError = 0;
 
 static void mainSignal(int signal) {
    (void)signal;
-   mainRunning = 0;
+   putchar('\n');
+   rsMainError(AVERROR_EXIT);
 }
 
-static int mainRun(void) {
+void rsMainError(int error) {
+   mainError = error;
+}
+
+int main(int argc, char *argv[]) {
+   (void)argc;
+   (void)argv;
    int ret;
+   RSDevice *device = NULL;
+   RSEncoder *encoder = NULL;
+   RSStream *stream = NULL;
+
    rsLogInit();
    if ((ret = rsConfigInit()) < 0) {
       goto error;
@@ -48,64 +58,34 @@ static int mainRun(void) {
           "under certain conditions; see COPYING for details.\n");
    av_log(NULL, AV_LOG_INFO, "FFmpeg version: %s\n", av_version_info());
 
-   RSDevice *device = NULL;
-   RSEncoder *encoder = NULL;
-   RSPktCircle videoCircle = RS_PKTCIRCLE_INIT;
-
-   RSControl controller = RS_CONTROL_INIT;
-   RSOutput *output = NULL;
-
    if ((ret = rsVideoDeviceCreate(&device)) < 0) {
       goto error;
    }
    if ((ret = rsVideoEncoderCreate(&encoder, device)) < 0) {
       goto error;
    }
-   if ((ret = rsDefaultControlCreate(&controller)) < 0) {
-      goto error;
-   }
-
-   size_t videoCapacity = (size_t)(rsConfig.recordSeconds * rsConfig.videoFramerate);
-   if ((ret = rsPktCircleCreate(&videoCircle, videoCapacity)) < 0) {
+   if ((ret = rsStreamCreate(&stream, encoder)) < 0) {
       goto error;
    }
 
    signal(SIGINT, mainSignal);
    signal(SIGTERM, mainSignal);
-   while (mainRunning) {
-      AVPacket *packet = rsPktCircleNext(&videoCircle);
-      if ((ret = rsEncoderGetPacket(encoder, packet)) < 0) {
+   while (mainError == 0) {
+      if ((ret = rsStreamUpdate(stream)) < 0) {
          goto error;
-      }
-      if ((ret = rsControlWantsSave(&controller)) < 0) {
-         goto error;
-      }
-
-      if (ret > 0) {
-         av_log(NULL, AV_LOG_INFO, "Saving video...\n");
-         rsOutputCreate(&output);
-         rsOutputStream(output, encoder);
-         rsOutputRun(output, &videoCircle);
-         rsOutputDestroy(&output);
       }
    }
-   av_log(NULL, AV_LOG_INFO, "\nExiting...\n");
+   if (mainError != AVERROR_EXIT) {
+      ret = mainError;
+      goto error;
+   }
 
    ret = 0;
 error:
-   rsControlDestroy(&controller);
-   rsPktCircleDestroy(&videoCircle);
+   rsStreamDestroy(&stream);
    rsEncoderDestroy(&encoder);
    rsDeviceDestroy(&device);
-   rsConfigExit();
-   return ret;
-}
-
-int main(int argc, char *argv[]) {
-   (void)argc;
-   (void)argv;
-   int ret;
-   if ((ret = mainRun()) < 0) {
+   if (ret < 0) {
       av_log(NULL, AV_LOG_FATAL, "%s\n", av_err2str(ret));
       return EXIT_FAILURE;
    }

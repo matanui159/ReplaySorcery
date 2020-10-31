@@ -23,6 +23,7 @@
 #include <libavdevice/avdevice.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
+#include <libavutil/time.h>
 
 typedef struct FFmpegDevice {
    RSDevice device;
@@ -44,6 +45,7 @@ static void ffmpegDeviceDestroy(RSDevice *device) {
 static int ffmpegDeviceGetFrame(RSDevice *device, AVFrame *frame) {
    int ret;
    FFmpegDevice *ffmpeg = (FFmpegDevice *)device;
+   int64_t pts = av_gettime_relative();
    while ((ret = avcodec_receive_frame(ffmpeg->codecCtx, frame)) == AVERROR(EAGAIN)) {
       if ((ret = av_read_frame(ffmpeg->formatCtx, &ffmpeg->packet)) < 0) {
          av_log(ffmpeg->formatCtx, AV_LOG_ERROR, "Failed to read frame: %s\n",
@@ -64,6 +66,7 @@ static int ffmpegDeviceGetFrame(RSDevice *device, AVFrame *frame) {
       av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to receive frame from decoder: %s\n",
              av_err2str(ret));
    }
+   frame->pts = pts;
    return 0;
 }
 
@@ -77,6 +80,7 @@ int rsFFmpegDeviceCreate(RSDevice **device, const char *name) {
       goto error;
    }
 
+   ffmpeg->device.timebase = AV_TIME_BASE_Q;
    ffmpeg->device.destroy = ffmpegDeviceDestroy;
    ffmpeg->device.getFrame = ffmpegDeviceGetFrame;
    ffmpeg->format = av_find_input_format(name);
@@ -115,7 +119,6 @@ int rsFFmpegDeviceOpen(RSDevice *device, const char *input) {
 
    AVStream *stream = ffmpeg->formatCtx->streams[0];
    ffmpeg->device.params = stream->codecpar;
-   ffmpeg->device.timebase = stream->time_base;
    AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
    if (codec == NULL) {
       av_log(ffmpeg->formatCtx, AV_LOG_ERROR, "Decoder not found: %s\n",

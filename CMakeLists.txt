@@ -10,6 +10,7 @@ set(sources
    src/util.c
    src/main.c
    src/config.c
+   src/stream.c
    src/util/log.c
    src/util/pktcircle.c
    src/device/device.c
@@ -27,6 +28,8 @@ set(headers
    src/rsbuild.h.in
    src/config.h
    src/util.h
+   src/main.h
+   src/stream.h
    src/util/log.h
    src/util/pktcircle.h
    src/device/device.h
@@ -108,7 +111,6 @@ pkg_check_modules(FFMPEG
 target_link_libraries(${binary} PRIVATE PkgConfig::FFMPEG)
 
 # PThreads
-set(CMAKE_THREAD_PREFER_PTHREAD ON)
 find_package(Threads)
 if (CMAKE_USE_PTHREADS_INIT)
    set(RS_BUILD_PTHREAD_FOUND ON)

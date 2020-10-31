@@ -17,26 +17,9 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_DEVICE_H
-#define RS_DEVICE_H
-#include <libavcodec/avcodec.h>
-#include <libavutil/avutil.h>
+#ifndef RS_MAIN_H
+#define RS_MAIN_H
 
-typedef struct RSDevice {
-   AVCodecParameters *params;
-   // TODO: this is unnecesary since now it always uses AV_TIME_BASE_Q
-   AVRational timebase;
-   void (*destroy)(struct RSDevice *device);
-   int (*getFrame)(struct RSDevice *device, AVFrame *frame);
-} RSDevice;
-
-static av_always_inline int rsDeviceGetFrame(RSDevice *device, AVFrame *frame) {
-   return device->getFrame(device, frame);
-}
-
-void rsDeviceDestroy(RSDevice **device);
-
-int rsX11DeviceCreate(RSDevice **device);
-int rsVideoDeviceCreate(RSDevice **device);
+void rsMainError(int error);
 
 #endif
