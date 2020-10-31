@@ -91,6 +91,15 @@ int rsStreamUpdate(RSStream *stream) {
    pthread_mutex_lock(&stream->mutex);
 #endif
    int64_t start = stream->buffer.pts - stream->duration;
+   // Fast code path for if we only remove one packet
+   AVPacket *packet = streamGetPacket(stream, 0);
+   if (packet != NULL && packet->pts < start &&
+       streamGetPacket(stream, 1)->pts >= start) {
+      av_packet_unref(packet);
+      goto insert;
+   }
+
+   // Remove any packets from the start of the buffer that are too old
    size_t remove = 0;
    for (; remove < stream->size; ++remove) {
       AVPacket *packet = streamGetPacket(stream, remove);
@@ -100,12 +109,18 @@ int rsStreamUpdate(RSStream *stream) {
       av_packet_unref(packet);
    }
 
+   // If we only removed one, we can use the new spot for the next packet
+   // If we removed more than one, we have to decrease the size of the buffer
    size_t move = stream->size - stream->index - remove;
    if (remove > 1) {
       memmove(streamGetPacket(stream, 1), streamGetPacket(stream, remove),
               move * sizeof(AVPacket));
       stream->size -= remove - 1;
-   } else if (remove == 0) {
+   }
+
+   // If we did not remove any, we have to increase the size of the buffer for the next
+   // packet
+   if (remove == 0) {
       if (stream->size == stream->capacity) {
          stream->capacity *= 2;
          stream->packets =
@@ -121,6 +136,7 @@ int rsStreamUpdate(RSStream *stream) {
       av_init_packet(streamGetPacket(stream, 0));
    }
 
+insert:
    av_packet_ref(streamGetPacket(stream, 0), &stream->buffer);
    av_packet_unref(&stream->buffer);
    stream->index = (stream->index + 1) % stream->size;
