@@ -7,37 +7,37 @@ find_package(PkgConfig REQUIRED)
 
 set(binary replay-sorcery)
 set(sources
-   src/util.c
-   src/main.c
    src/config.c
+   src/main.c
+   src/output.c
    src/stream.c
-   src/util/log.c
-   src/util/pktcircle.c
+   src/util.c
+   src/control/control.c
+   src/control/debug.c
+   src/control/x11control.c
    src/device/device.c
    src/device/ffdev.c
    src/device/x11dev.c
    src/encoder/encoder.c
    src/encoder/ffenc.c
    src/encoder/x264enc.c
-   src/control/control.c
-   src/control/debug.c
-   src/control/x11control.c
-   src/output.c
+   src/util/log.c
+   src/util/pktcircle.c
 )
 set(headers
-   src/rsbuild.h.in
    src/config.h
-   src/util.h
    src/main.h
+   src/output.h
+   src/rsbuild.h.in
    src/stream.h
-   src/util/log.h
-   src/util/pktcircle.h
+   src/util.h
+   src/control/control.h
    src/device/device.h
    src/device/ffdev.h
    src/encoder/encoder.h
    src/encoder/ffenc.h
-   src/control/control.h
-   src/output.h
+   src/util/log.h
+   src/util/pktcircle.h
 )
 
 add_executable(${binary} ${sources})
