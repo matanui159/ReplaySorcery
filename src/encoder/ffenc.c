@@ -149,9 +149,9 @@ AVCodecContext *rsFFmpegEncoderGetContext(RSEncoder *encoder) {
 int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
    int ret;
    FFmpegEncoder *ffmpeg = (FFmpegEncoder *)encoder;
-   char *filterDesc = NULL;
    AVBPrint buffer;
    av_bprint_init(&buffer, 0, AV_BPRINT_SIZE_UNLIMITED);
+   char *filterDesc = NULL;
    if (ffmpeg->error < 0) {
       ret = ffmpeg->error;
       goto error;

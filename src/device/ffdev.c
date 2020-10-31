@@ -117,12 +117,12 @@ int rsFFmpegDeviceOpen(RSDevice *device, const char *input) {
    }
    rsOptionsDestroy(&ffmpeg->options);
 
-   AVStream *stream = ffmpeg->formatCtx->streams[0];
-   ffmpeg->device.params = stream->codecpar;
-   AVCodec *codec = avcodec_find_decoder(stream->codecpar->codec_id);
+   AVCodecParameters *params = ffmpeg->formatCtx->streams[0]->codecpar;
+   ffmpeg->device.params = params;
+   AVCodec *codec = avcodec_find_decoder(params->codec_id);
    if (codec == NULL) {
       av_log(ffmpeg->formatCtx, AV_LOG_ERROR, "Decoder not found: %s\n",
-             avcodec_get_name(stream->codecpar->codec_id));
+             avcodec_get_name(params->codec_id));
       return AVERROR_DECODER_NOT_FOUND;
    }
 
@@ -130,7 +130,7 @@ int rsFFmpegDeviceOpen(RSDevice *device, const char *input) {
    if (ffmpeg->codecCtx == NULL) {
       return AVERROR(ENOMEM);
    }
-   if ((ret = avcodec_parameters_to_context(ffmpeg->codecCtx, stream->codecpar)) < 0) {
+   if ((ret = avcodec_parameters_to_context(ffmpeg->codecCtx, params)) < 0) {
       return ret;
    }
    if ((ret = avcodec_open2(ffmpeg->codecCtx, codec, NULL)) < 0) {

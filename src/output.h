@@ -19,14 +19,10 @@
 
 #ifndef RS_OUTPUT_H
 #define RS_OUTPUT_H
-#include "encoder/encoder.h"
-#include "util/pktcircle.h"
+#include "stream.h"
 
 typedef struct RSOutput RSOutput;
 
-int rsOutputCreate(RSOutput **output);
-void rsOutputStream(RSOutput *output, RSEncoder *encoder);
-int rsOutputRun(RSOutput *output, RSPktCircle *circle);
-void rsOutputDestroy(RSOutput **output);
+int rsOutput(RSStream *videoStream);
 
 #endif

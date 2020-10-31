@@ -81,6 +81,7 @@ void rsStreamDestroy(RSStream **stream) {
    }
 }
 
+// TODO: probably cleaner as a linked list
 int rsStreamUpdate(RSStream *stream) {
    int ret;
    if ((ret = rsEncoderGetPacket(stream->input, &stream->buffer)) < 0) {
@@ -147,4 +148,28 @@ error:
    pthread_mutex_unlock(&stream->mutex);
 #endif
    return ret;
+}
+
+AVPacket *rsStreamGetPackets(RSStream *stream, size_t *size) {
+   int ret;
+#ifdef RS_BUILD_PTHREAD_FOUND
+   pthread_mutex_lock(&stream->mutex);
+#endif
+   *size = stream->size;
+   AVPacket *packets = av_malloc_array(stream->size, sizeof(AVPacket));
+   if (packets == NULL) {
+      return NULL;
+   }
+   for (size_t i = 0; i < stream->size; ++i) {
+      if ((ret = av_packet_ref(&packets[i], streamGetPacket(stream, i))) < 0) {
+         av_freep(&packets);
+         goto error;
+      }
+   }
+
+error:
+#ifdef RS_BUILD_PTHREAD_FOUND
+   pthread_mutex_unlock(&stream->mutex);
+#endif
+   return packets;
 }
