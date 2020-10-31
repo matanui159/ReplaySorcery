@@ -80,7 +80,6 @@ int rsFFmpegDeviceCreate(RSDevice **device, const char *name) {
       goto error;
    }
 
-   ffmpeg->device.timebase = AV_TIME_BASE_Q;
    ffmpeg->device.destroy = ffmpegDeviceDestroy;
    ffmpeg->device.getFrame = ffmpegDeviceGetFrame;
    ffmpeg->format = av_find_input_format(name);

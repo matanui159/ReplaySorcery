@@ -37,8 +37,7 @@ int rsStreamCreate(RSStream **stream, RSEncoder *input) {
    }
 
    strm->input = input;
-   strm->duration =
-       av_rescale_q(rsConfig.recordSeconds, av_make_q(1, 1), input->timebase);
+   strm->duration = (int64_t)rsConfig.recordSeconds * AV_TIME_BASE;
    av_init_packet(&strm->buffer);
    strm->capacity = 8;
    strm->packets = av_malloc_array(strm->capacity, sizeof(AVPacket));

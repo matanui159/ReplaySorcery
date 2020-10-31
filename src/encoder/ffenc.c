@@ -109,7 +109,7 @@ int rsFFmpegEncoderCreate(RSEncoder **encoder, const char *name, RSDevice *input
       goto error;
    }
    ffmpeg->codecCtx->codec_id = codec->id;
-   ffmpeg->codecCtx->time_base = input->timebase;
+   ffmpeg->codecCtx->time_base = AV_TIME_BASE_Q;
 
    ffmpeg->encoder.params = avcodec_parameters_alloc();
    if (ffmpeg->encoder.params == NULL) {
@@ -167,15 +167,12 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
        0) {
       return ret;
    }
-   ffmpeg->encoder.timebase = ffmpeg->codecCtx->time_base;
 
    AVCodecParameters *params = ffmpeg->input->params;
-   AVRational timebase = ffmpeg->input->timebase;
    switch (params->codec_type) {
    case AVMEDIA_TYPE_VIDEO:
-      av_bprintf(&buffer, "buffer@src=video_size=%ix%i:pix_fmt=%i:time_base=%i/%i,",
-                 params->width, params->height, params->format, timebase.num,
-                 timebase.den);
+      av_bprintf(&buffer, "buffer@src=video_size=%ix%i:pix_fmt=%i:time_base=1/%i,",
+                 params->width, params->height, params->format, AV_TIME_BASE);
       break;
    default:
       break;
@@ -185,8 +182,7 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
    va_start(args, filter);
    av_vbprintf(&buffer, filter, args);
    va_end(args);
-   AVCodecContext *codecCtx = ffmpeg->codecCtx;
-   switch (codecCtx->codec_type) {
+   switch (ffmpeg->codecCtx->codec_type) {
    case AVMEDIA_TYPE_VIDEO:
       av_bprintf(&buffer, ",buffersink@sink");
       break;

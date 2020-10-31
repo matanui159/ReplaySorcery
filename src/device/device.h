@@ -24,8 +24,6 @@
 
 typedef struct RSDevice {
    AVCodecParameters *params;
-   // TODO: this is unnecesary since now it always uses AV_TIME_BASE_Q
-   AVRational timebase;
    void (*destroy)(struct RSDevice *device);
    int (*getFrame)(struct RSDevice *device, AVFrame *frame);
 } RSDevice;

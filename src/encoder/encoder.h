@@ -25,7 +25,6 @@
 
 typedef struct RSEncoder {
    AVCodecParameters *params;
-   AVRational timebase;
    void (*destroy)(struct RSEncoder *encoder);
    int (*getPacket)(struct RSEncoder *encoder, AVPacket *packet);
 } RSEncoder;
