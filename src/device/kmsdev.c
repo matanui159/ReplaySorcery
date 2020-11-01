@@ -17,25 +17,23 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_DEVICE_H
-#define RS_DEVICE_H
-#include <libavcodec/avcodec.h>
-#include <libavutil/avutil.h>
+#include "../config.h"
+#include "device.h"
+#include "ffdev.h"
 
-typedef struct RSDevice {
-   AVCodecParameters *params;
-   void (*destroy)(struct RSDevice *device);
-   int (*getFrame)(struct RSDevice *device, AVFrame *frame);
-} RSDevice;
+int rsKMSDeviceCreate(RSDevice **device) {
+   int ret;
+   if ((ret = rsFFmpegDeviceCreate(device, "kmsgrab")) < 0) {
+      goto error;
+   }
 
-static av_always_inline int rsDeviceGetFrame(RSDevice *device, AVFrame *frame) {
-   return device->getFrame(device, frame);
+   rsFFmpegDeviceOption(*device, "framerate", "%i", rsConfig.videoFramerate);
+   if ((ret = rsFFmpegDeviceOpen(*device, "")) < 0) {
+      goto error;
+   }
+
+   return 0;
+error:
+   rsDeviceDestroy(device);
+   return ret;
 }
-
-void rsDeviceDestroy(RSDevice **device);
-
-int rsX11DeviceCreate(RSDevice **device);
-int rsKMSDeviceCreate(RSDevice **device);
-int rsVideoDeviceCreate(RSDevice **device);
-
-#endif

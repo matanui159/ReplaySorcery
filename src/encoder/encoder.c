@@ -32,6 +32,8 @@ int rsVideoEncoderCreate(RSEncoder **encoder, RSDevice *input) {
    switch (rsConfig.videoEncoder) {
    case RS_CONFIG_ENCODER_X264:
       return rsX264EncoderCreate(encoder, input);
+   case RS_CONFIG_ENCODER_VAAPI:
+      return rsVaapiEncoderCreate(encoder, input);
    }
 
    if ((ret = rsX264EncoderCreate(encoder, input)) >= 0) {

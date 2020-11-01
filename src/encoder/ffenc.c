@@ -27,22 +27,22 @@
 typedef struct FFmpegEncoder {
    RSEncoder encoder;
    RSDevice *input;
+   AVDictionary *options;
+   int error;
    AVCodecContext *codecCtx;
    AVFilterGraph *filterGraph;
    AVFilterContext *filterSrc;
    AVFilterContext *filterSink;
    AVFrame *frame;
-   AVDictionary *options;
-   int error;
 } FFmpegEncoder;
 
 static void ffmpegEncoderDestroy(RSEncoder *encoder) {
    FFmpegEncoder *ffmpeg = (FFmpegEncoder *)encoder;
-   rsOptionsDestroy(&ffmpeg->options);
    av_frame_free(&ffmpeg->frame);
    avfilter_graph_free(&ffmpeg->filterGraph);
-   avcodec_parameters_free(&ffmpeg->encoder.params);
    avcodec_free_context(&ffmpeg->codecCtx);
+   rsOptionsDestroy(&ffmpeg->options);
+   avcodec_parameters_free(&ffmpeg->encoder.params);
 }
 
 static int ffmpegEncoderGetPacket(RSEncoder *encoder, AVPacket *packet) {

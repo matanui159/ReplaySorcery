@@ -36,6 +36,7 @@ static av_always_inline int rsEncoderGetPacket(RSEncoder *encoder, AVPacket *pac
 void rsEncoderDestroy(RSEncoder **encoder);
 
 int rsX264EncoderCreate(RSEncoder **encoder, RSDevice *input);
+int rsVaapiEncoderCreate(RSEncoder **encoder, RSDevice *input);
 int rsVideoEncoderCreate(RSEncoder **encoder, RSDevice *input);
 
 #endif

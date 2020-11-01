@@ -32,6 +32,8 @@ int rsVideoDeviceCreate(RSDevice **device) {
    switch (rsConfig.videoInput) {
    case RS_CONFIG_DEVICE_X11:
       return rsX11DeviceCreate(device);
+   case RS_CONFIG_DEVICE_KMS:
+      return rsKMSDeviceCreate(device);
    }
 
    if ((ret = rsX11DeviceCreate(device)) >= 0) {

@@ -27,12 +27,12 @@
 
 typedef struct FFmpegDevice {
    RSDevice device;
-   AVInputFormat *format;
-   AVPacket packet;
    AVDictionary *options;
    int error;
+   AVInputFormat *format;
    AVFormatContext *formatCtx;
    AVCodecContext *codecCtx;
+   AVPacket packet;
 } FFmpegDevice;
 
 static void ffmpegDeviceDestroy(RSDevice *device) {

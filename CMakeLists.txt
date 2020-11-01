@@ -18,9 +18,11 @@ set(sources
    src/control/x11ctrl.c
    src/device/device.c
    src/device/ffdev.c
+   src/device/kmsdev.c
    src/device/x11dev.c
    src/encoder/encoder.c
    src/encoder/ffenc.c
+   src/encoder/vaapienc.c
    src/encoder/x264enc.c
 )
 set(headers
