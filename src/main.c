@@ -22,9 +22,9 @@
 #include "control/control.h"
 #include "device/device.h"
 #include "encoder/encoder.h"
+#include "log.h"
 #include "output.h"
 #include "stream.h"
-#include "util/log.h"
 #include <libavutil/avutil.h>
 #include <signal.h>
 

@@ -18,7 +18,7 @@
  */
 
 #include "log.h"
-#include "../config.h"
+#include "config.h"
 #include <backtrace.h>
 #include <libavutil/avutil.h>
 #include <signal.h>
