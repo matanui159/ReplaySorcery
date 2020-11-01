@@ -127,17 +127,20 @@ int rsOutput(RSStream *videoStream) {
          goto error;
       }
    }
-   av_freep(&videoPackets);
+   rsStreamPacketsDestroy(&videoPackets, videoSize);
 
    if ((ret = av_write_trailer(formatCtx)) < 0) {
       av_log(formatCtx, AV_LOG_ERROR, "Failed to write trailer: %s\n", av_err2str(ret));
       goto error;
    }
+   avio_closep(&formatCtx->pb);
+   avformat_free_context(formatCtx);
 
    return 0;
 error:
-   av_freep(&videoPackets);
+   rsStreamPacketsDestroy(&videoPackets, videoSize);
    rsOptionsDestroy(&options);
+   avio_closep(&formatCtx->pb);
    avformat_free_context(formatCtx);
    av_freep(&path);
    av_bprint_finalize(&buffer, NULL);

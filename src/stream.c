@@ -20,11 +20,25 @@
 #include "stream.h"
 #include "config.h"
 
-static av_always_inline AVPacket *streamGetPacket(RSStream *stream, size_t index) {
-   if (stream->size == 0) {
+static RSPacketList *streamPacketCreate(RSStream *stream) {
+   if (stream->pool != NULL) {
+      RSPacketList *plist = stream->pool;
+      stream->pool = plist->next;
+      plist->next = NULL;
+      return plist;
+   }
+   RSPacketList *plist = av_mallocz(sizeof(RSPacketList));
+   if (plist == NULL) {
       return NULL;
    }
-   return &stream->packets[(stream->index + index) % stream->size];
+   av_init_packet(&plist->packet);
+   return plist;
+}
+
+static void streamPacketDestroy(RSStream *stream, RSPacketList *plist) {
+   av_packet_unref(&plist->packet);
+   plist->next = stream->pool;
+   stream->pool = plist;
 }
 
 int rsStreamCreate(RSStream **stream, RSEncoder *input) {
@@ -37,15 +51,6 @@ int rsStreamCreate(RSStream **stream, RSEncoder *input) {
    }
 
    strm->input = input;
-   strm->duration = (int64_t)rsConfig.recordSeconds * AV_TIME_BASE;
-   av_init_packet(&strm->buffer);
-   strm->capacity = 8;
-   strm->packets = av_malloc_array(strm->capacity, sizeof(AVPacket));
-   if (strm->packets == NULL) {
-      ret = AVERROR(ENOMEM);
-      goto error;
-   }
-
 #ifdef RS_BUILD_PTHREAD_FOUND
    if ((ret = pthread_mutex_init(&strm->mutex, NULL)) != 0) {
       ret = AVERROR(ret);
@@ -71,11 +76,22 @@ void rsStreamDestroy(RSStream **stream) {
       }
 #endif
 
-      for (size_t i = 0; i < strm->size; ++i) {
-         av_packet_unref(&strm->packets[i]);
+      RSPacketList *plist = strm->tail;
+      while (plist != NULL) {
+         RSPacketList *next = plist->next;
+         streamPacketDestroy(strm, plist);
+         plist = next;
       }
-      strm->size = 0;
-      av_freep(&strm->packets);
+      strm->head = NULL;
+
+      plist = strm->pool;
+      while (plist != NULL) {
+         RSPacketList *next = plist->next;
+         av_freep(&plist);
+         plist = next;
+      }
+      strm->pool = NULL;
+
       av_freep(stream);
    }
 }
@@ -83,70 +99,39 @@ void rsStreamDestroy(RSStream **stream) {
 // TODO: probably cleaner as a linked list
 int rsStreamUpdate(RSStream *stream) {
    int ret;
-   if ((ret = rsEncoderGetPacket(stream->input, &stream->buffer)) < 0) {
+   RSPacketList *plist = streamPacketCreate(stream);
+   if (plist == NULL) {
+      return AVERROR(ENOMEM);
+   }
+   if ((ret = rsEncoderGetPacket(stream->input, &plist->packet)) < 0) {
+      streamPacketDestroy(stream, plist);
       return ret;
    }
 
 #ifdef RS_BUILD_PTHREAD_FOUND
    pthread_mutex_lock(&stream->mutex);
 #endif
-   int64_t start = stream->buffer.pts - stream->duration;
-   // Fast code path for if we only remove one packet
-   AVPacket *packet = streamGetPacket(stream, 0);
-   if (packet != NULL && packet->pts < start &&
-       streamGetPacket(stream, 1)->pts >= start) {
-      av_packet_unref(packet);
-      goto insert;
+   if (stream->head == NULL) {
+      stream->tail = plist;
+      stream->head = plist;
+   } else {
+      stream->head->next = plist;
+      stream->head = plist;
    }
 
-   // Remove any packets from the start of the buffer that are too old
-   size_t remove = 0;
-   for (; remove < stream->size; ++remove) {
-      AVPacket *packet = streamGetPacket(stream, remove);
-      if (packet->pts >= start) {
-         break;
-      }
-      av_packet_unref(packet);
+   int64_t start = plist->packet.pts - (int64_t)rsConfig.recordSeconds * AV_TIME_BASE;
+   RSPacketList *remove = stream->tail;
+   while (remove != NULL && remove->packet.pts < start) {
+      RSPacketList *next = remove->next;
+      streamPacketDestroy(stream, remove);
+      remove = next;
    }
+   stream->tail = remove;
 
-   // If we only removed one, we can use the new spot for the next packet
-   // If we removed more than one, we have to decrease the size of the buffer
-   size_t move = stream->size - stream->index - remove;
-   if (remove > 1) {
-      memmove(streamGetPacket(stream, 1), streamGetPacket(stream, remove),
-              move * sizeof(AVPacket));
-      stream->size -= remove - 1;
-   }
-
-   // If we did not remove any, we have to increase the size of the buffer for the next
-   // packet
-   if (remove == 0) {
-      if (stream->size == stream->capacity) {
-         stream->capacity *= 2;
-         stream->packets =
-             av_realloc_array(stream->packets, stream->capacity, sizeof(AVPacket));
-         if (stream->packets == NULL) {
-            ret = AVERROR(ENOMEM);
-            goto error;
-         }
-      }
-      ++stream->size;
-      memmove(streamGetPacket(stream, 1), streamGetPacket(stream, 0),
-              move * sizeof(AVPacket));
-      av_init_packet(streamGetPacket(stream, 0));
-   }
-
-insert:
-   av_packet_ref(streamGetPacket(stream, 0), &stream->buffer);
-   av_packet_unref(&stream->buffer);
-   stream->index = (stream->index + 1) % stream->size;
-
-   ret = 0;
-error:
 #ifdef RS_BUILD_PTHREAD_FOUND
    pthread_mutex_unlock(&stream->mutex);
 #endif
-   return ret;
+   return 0;
 }
 
 AVPacket *rsStreamGetPackets(RSStream *stream, size_t *size) {
@@ -154,16 +139,23 @@ AVPacket *rsStreamGetPackets(RSStream *stream, size_t *size) {
 #ifdef RS_BUILD_PTHREAD_FOUND
    pthread_mutex_lock(&stream->mutex);
 #endif
-   *size = stream->size;
-   AVPacket *packets = av_malloc_array(stream->size, sizeof(AVPacket));
-   if (packets == NULL) {
-      return NULL;
+   *size = 0;
+   for (RSPacketList *plist = stream->tail; plist != NULL; plist = plist->next) {
+      ++*size;
    }
-   for (size_t i = 0; i < stream->size; ++i) {
-      if ((ret = av_packet_ref(&packets[i], streamGetPacket(stream, i))) < 0) {
+
+   AVPacket *packets = av_malloc_array(*size, sizeof(AVPacket));
+   if (packets == NULL) {
+      goto error;
+   }
+
+   size_t index = 0;
+   for (RSPacketList *plist = stream->tail; plist != NULL; plist = plist->next) {
+      if ((ret = av_packet_ref(&packets[index], &plist->packet)) < 0) {
          av_freep(&packets);
          goto error;
       }
+      ++index;
    }
 
 error:
@@ -171,4 +163,13 @@ error:
    pthread_mutex_unlock(&stream->mutex);
 #endif
    return packets;
+}
+
+void rsStreamPacketsDestroy(AVPacket **packets, size_t size) {
+   if (*packets != NULL) {
+      for (size_t i = 0; i < size; ++i) {
+         av_packet_unref(&(*packets)[i]);
+      }
+      av_freep(packets);
+   }
 }

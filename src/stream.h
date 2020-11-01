@@ -27,14 +27,16 @@
 #include <pthread.h>
 #endif
 
+typedef struct RSPacketList {
+   struct RSPacketList *next;
+   AVPacket packet;
+} RSPacketList;
+
 typedef struct RSStream {
    RSEncoder *input;
-   AVPacket buffer;
-   AVPacket *packets;
-   int64_t duration;
-   size_t capacity;
-   size_t size;
-   size_t index;
+   RSPacketList *pool;
+   RSPacketList *tail;
+   RSPacketList *head;
 #ifdef RS_BUILD_PTHREAD_FOUND
    pthread_mutex_t mutex;
    int mutexCreated;
@@ -45,5 +47,6 @@ int rsStreamCreate(RSStream **stream, RSEncoder *input);
 void rsStreamDestroy(RSStream **stream);
 int rsStreamUpdate(RSStream *stream);
 AVPacket *rsStreamGetPackets(RSStream *stream, size_t *size);
+void rsStreamPacketsDestroy(AVPacket **packets, size_t size);
 
 #endif
