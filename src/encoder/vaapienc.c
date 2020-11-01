@@ -53,6 +53,7 @@ static int vaapiEncoderCreate(RSEncoder **encoder, RSDevice *input, int preset) 
             rsConfig.videoWidth, rsConfig.videoHeight)) < 0) {
       goto error;
    }
+   // TODO: copy extradata from x264 if encoder does not support it
 
    return 0;
 error:

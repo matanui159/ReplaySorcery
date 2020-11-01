@@ -36,6 +36,17 @@ int rsVideoEncoderCreate(RSEncoder **encoder, RSDevice *input) {
       return rsVaapiEncoderCreate(encoder, input);
    }
 
+   if (rsConfig.videoInput == RS_CONFIG_DEVICE_KMS) {
+      if ((ret = rsVaapiEncoderCreate(encoder, input)) >= 0) {
+         av_log(NULL, AV_LOG_INFO, "Created VAAPI encoder\n");
+         return 0;
+      }
+      av_log(NULL, AV_LOG_WARNING, "Failed to create VAAPI encoder: %s\n",
+             av_err2str(ret));
+
+      return AVERROR(ENOSYS);
+   }
+
    if ((ret = rsX264EncoderCreate(encoder, input)) >= 0) {
       av_log(NULL, AV_LOG_INFO, "Created x264 encoder\n");
       return 0;

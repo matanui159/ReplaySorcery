@@ -148,7 +148,6 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
    AVBPrint buffer;
    av_bprint_init(&buffer, 0, AV_BPRINT_SIZE_UNLIMITED);
    char *filterDesc = NULL;
-   AVFrame *hwFrame = NULL;
    if (ffmpeg->error < 0) {
       ret = ffmpeg->error;
       goto error;
@@ -208,30 +207,19 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
 
    // The only way I can consistently get the frames context is by getting the first frame
    // I don't know why, the API is dumb
-   hwFrame = av_frame_alloc();
-   if (hwFrame == NULL) {
-      ret = AVERROR(ENOMEM);
+   if ((ret = rsDeviceGetFrame(ffmpeg->input, ffmpeg->frame)) < 0) {
       goto error;
    }
-   if ((ret = rsDeviceGetFrame(ffmpeg->input, hwFrame)) < 0) {
-      goto error;
-   }
-   if (hwFrame->hw_frames_ctx != NULL) {
+   if (ffmpeg->frame->hw_frames_ctx != NULL) {
       AVBufferSrcParameters *bufpar = av_buffersrc_parameters_alloc();
       if (bufpar == NULL) {
          ret = AVERROR(ENOMEM);
          goto error;
       }
-      bufpar->hw_frames_ctx = av_buffer_ref(hwFrame->hw_frames_ctx);
-      if (bufpar->hw_frames_ctx == NULL) {
-         av_freep(&bufpar);
-         ret = AVERROR(ENOMEM);
-         goto error;
-      }
+      bufpar->hw_frames_ctx = ffmpeg->frame->hw_frames_ctx;
       av_buffersrc_parameters_set(ffmpeg->filterSrc, bufpar);
       av_freep(&bufpar);
    }
-   av_frame_free(&hwFrame);
 
    if ((ret = avfilter_graph_config(ffmpeg->filterGraph, ffmpeg->filterGraph)) < 0) {
       av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to configure filter graph: %s\n",
@@ -267,7 +255,6 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
 
    return 0;
 error:
-   av_frame_free(&hwFrame);
    av_freep(&filterDesc);
    av_bprint_finalize(&buffer, NULL);
    return ret;
