@@ -23,6 +23,7 @@
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
 #include <libavutil/bprint.h>
+#include <libavutil/hwcontext.h>
 
 typedef struct FFmpegEncoder {
    RSEncoder encoder;
