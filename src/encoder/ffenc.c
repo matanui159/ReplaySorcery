@@ -105,10 +105,6 @@ int rsFFmpegEncoderCreate(RSEncoder **encoder, const char *name, RSDevice *input
       ret = AVERROR(ENOMEM);
       goto error;
    }
-   if ((ret = avcodec_parameters_to_context(ffmpeg->codecCtx, input->params)) < 0) {
-      goto error;
-   }
-   ffmpeg->codecCtx->codec_id = codec->id;
    ffmpeg->codecCtx->time_base = AV_TIME_BASE_Q;
 
    ffmpeg->encoder.params = avcodec_parameters_alloc();

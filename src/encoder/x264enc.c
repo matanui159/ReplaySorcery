@@ -29,6 +29,9 @@ int rsX264EncoderCreate(RSEncoder **encoder, RSDevice *input) {
 
    AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(*encoder);
    codecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
+   codecCtx->width = input->params->width;
+   codecCtx->height = input->params->height;
+   codecCtx->framerate = av_make_q(1, rsConfig.videoFramerate);
    codecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
    codecCtx->thread_count = 1;
    codecCtx->profile = rsConfig.videoProfile;
