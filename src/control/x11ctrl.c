@@ -17,36 +17,41 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "../util.h"
 #include "control.h"
 #include "rsbuild.h"
 #ifdef RS_BUILD_X11_FOUND
-#include <X11/Xlib.h>
 #include <X11/keysym.h>
 #endif
 
-#ifdef RS_BUILD_X11_FOUND
 typedef struct X11Control {
-   Display *display;
+   RSControl control;
+   RSXDisplay *display;
 } X11Control;
 
-static void x11ControlGrabKey(RSControl *control, int key, unsigned mods) {
-   X11Control *x11 = control->extra;
+#ifdef RS_BUILD_X11_FOUND
+static void x11ControlGrabKey(X11Control *x11, int key, unsigned mods) {
    Window window = DefaultRootWindow(x11->display);
    XGrabKey(x11->display, key, mods, window, 0, GrabModeAsync, GrabModeAsync);
 }
+#endif
 
 static void x11ControlDestroy(RSControl *control) {
-   X11Control *x11 = control->extra;
-   if (x11 != NULL && x11->display != NULL) {
+#ifdef RS_BUILD_X11_FOUND
+   X11Control *x11 = (X11Control *)control;
+   if (x11->display != NULL) {
       XCloseDisplay(x11->display);
       x11->display = NULL;
    }
-   av_freep(&control->extra);
+#else
+   (void)control;
+#endif
 }
 
 static int x11ControlWantsSave(RSControl *control) {
+#ifdef RS_BUILD_X11_FOUND
    int ret = 0;
-   X11Control *x11 = control->extra;
+   X11Control *x11 = (X11Control *)control;
    while (XPending(x11->display) > 0) {
       XEvent event;
       XNextEvent(x11->display, &event);
@@ -55,41 +60,35 @@ static int x11ControlWantsSave(RSControl *control) {
       }
    }
    return ret;
-}
+#else
+   (void)control;
+   return AVERROR(ENOSYS);
 #endif
+}
 
-int rsX11ControlCreate(RSControl *control) {
+int rsX11ControlCreate(RSControl **control) {
    int ret = 0;
-#ifdef RS_BUILD_X11_FOUND
    X11Control *x11 = av_mallocz(sizeof(X11Control));
-   control->extra = x11;
-   control->destroy = x11ControlDestroy;
-   control->wantsSave = x11ControlWantsSave;
+   *control = &x11->control;
    if (x11 == NULL) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
 
-   x11->display = XOpenDisplay(NULL);
-   if (x11->display == NULL) {
-      av_log(NULL, AV_LOG_ERROR, "Failed to open X11 display\n");
-      ret = AVERROR_EXTERNAL;
+   x11->control.destroy = x11ControlDestroy;
+   x11->control.wantsSave = x11ControlWantsSave;
+   if ((ret = rsXDisplayOpen(&x11->display, NULL)) < 0) {
       goto error;
    }
 
+#ifdef RS_BUILD_X11_FOUND
    int key = XKeysymToKeycode(x11->display, XK_R);
    unsigned mods = ControlMask | ShiftMask;
-   x11ControlGrabKey(control, key, mods);
+   x11ControlGrabKey(x11, key, mods);
    // Also allow capslock and numslock (Mod2) to be enabled
-   x11ControlGrabKey(control, key, mods | LockMask);
-   x11ControlGrabKey(control, key, mods | Mod2Mask);
-   x11ControlGrabKey(control, key, mods | LockMask | Mod2Mask);
-
-#else
-   (void)control;
-   av_log(NULL, AV_LOG_ERROR, "X11 was not found during compilation\n");
-   ret = AVERROR(ENOSYS);
-   goto error;
+   x11ControlGrabKey(x11, key, mods | LockMask);
+   x11ControlGrabKey(x11, key, mods | Mod2Mask);
+   x11ControlGrabKey(x11, key, mods | LockMask | Mod2Mask);
 #endif
 
    return 0;

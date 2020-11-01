@@ -19,7 +19,6 @@
 
 #include "device.h"
 #include "../config.h"
-#include <libavdevice/avdevice.h>
 
 void rsDeviceDestroy(RSDevice **device) {
    if (*device != NULL && (*device)->destroy != NULL) {
@@ -31,7 +30,7 @@ void rsDeviceDestroy(RSDevice **device) {
 int rsVideoDeviceCreate(RSDevice **device) {
    int ret;
    switch (rsConfig.videoInput) {
-   case RS_CONFIG_VIDEO_X11:
+   case RS_CONFIG_DEVICE_X11:
       return rsX11DeviceCreate(device);
    }
 

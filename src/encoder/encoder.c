@@ -30,7 +30,7 @@ void rsEncoderDestroy(RSEncoder **encoder) {
 int rsVideoEncoderCreate(RSEncoder **encoder, RSDevice *input) {
    int ret;
    switch (rsConfig.videoEncoder) {
-   case RS_CONFIG_VIDEO_X264:
+   case RS_CONFIG_ENCODER_X264:
       return rsX264EncoderCreate(encoder, input);
    }
 

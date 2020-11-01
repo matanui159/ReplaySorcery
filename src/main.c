@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
    RSDevice *device = NULL;
    RSEncoder *encoder = NULL;
    RSStream *stream = NULL;
-   RSControl controller = RS_CONTROL_INIT;
+   RSControl *controller = NULL;
 
    rsLogInit();
    if ((ret = rsConfigInit()) < 0) {
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
       if ((ret = rsStreamUpdate(stream)) < 0) {
          goto error;
       }
-      if ((ret = rsControlWantsSave(&controller)) < 0) {
+      if ((ret = rsControlWantsSave(controller)) < 0) {
          goto error;
       }
       if (ret > 0) {

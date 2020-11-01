@@ -49,11 +49,17 @@ static int debugControlWantsSave(RSControl *control) {
 }
 #endif
 
-int rsDebugControlCreate(RSControl *control) {
+int rsDebugControlCreate(RSControl **control) {
 #if defined(RS_BUILD_UNISTD_FOUND) && defined(RS_BUILD_FCNTL_FOUND)
+   RSControl *debug = av_mallocz(sizeof(RSControl));
+   *control = debug;
+   if (debug == NULL) {
+      return AVERROR(ENOMEM);
+   }
+
+   debug->wantsSave = debugControlWantsSave;
    int flags = fcntl(0, F_GETFL);
    fcntl(0, F_SETFL, flags | O_NONBLOCK);
-   control->wantsSave = debugControlWantsSave;
    return 0;
 
 #else

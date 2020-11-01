@@ -13,8 +13,8 @@ set(sources
    src/stream.c
    src/util.c
    src/control/control.c
-   src/control/debug.c
-   src/control/x11control.c
+   src/control/dbgctrl.c
+   src/control/x11ctrl.c
    src/device/device.c
    src/device/ffdev.c
    src/device/x11dev.c

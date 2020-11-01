@@ -22,30 +22,18 @@
 #include <libavutil/avutil.h>
 
 typedef struct RSControl {
-   void *extra;
    void (*destroy)(struct RSControl *control);
    int (*wantsSave)(struct RSControl *control);
 } RSControl;
 
-#define RS_CONTROL_INIT                                                                  \
-   { NULL }
-
-static av_always_inline void rsControlDestroy(RSControl *control) {
-   if (control->destroy != NULL) {
-      control->destroy(control);
-   }
-}
-
 static av_always_inline int rsControlWantsSave(RSControl *control) {
-   if (control->wantsSave == NULL) {
-      return AVERROR(ENOSYS);
-   } else {
-      return control->wantsSave(control);
-   }
+   return control->wantsSave(control);
 }
 
-int rsDebugControlCreate(RSControl *control);
-int rsX11ControlCreate(RSControl *control);
-int rsDefaultControlCreate(RSControl *control);
+void rsControlDestroy(RSControl **control);
+
+int rsDebugControlCreate(RSControl **control);
+int rsX11ControlCreate(RSControl **control);
+int rsDefaultControlCreate(RSControl **control);
 
 #endif
