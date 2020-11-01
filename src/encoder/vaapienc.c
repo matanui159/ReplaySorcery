@@ -29,12 +29,16 @@ static int vaapiEncoderCreate(RSEncoder **encoder, RSDevice *input, int preset) 
 
    AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(*encoder);
    codecCtx->pix_fmt = AV_PIX_FMT_VAAPI;
-   codecCtx->width = input->params->width;
-   codecCtx->height = input->params->height;
+   codecCtx->sw_pix_fmt = AV_PIX_FMT_NV12;
+   codecCtx->width = rsConfig.videoWidth;
+   codecCtx->height = rsConfig.videoHeight;
    codecCtx->framerate = av_make_q(1, rsConfig.videoFramerate);
    codecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
    codecCtx->profile = rsConfig.videoProfile;
    codecCtx->gop_size = rsConfig.videoGOP;
+   if (rsConfig.videoQuality != RS_CONFIG_AUTO) {
+      rsFFmpegEncoderOption(*encoder, "qp", "%i", rsConfig.videoQuality);
+   }
    switch (preset) {
    case RS_CONFIG_PRESET_FAST:
       rsFFmpegEncoderOption(*encoder, "low_power", "true");

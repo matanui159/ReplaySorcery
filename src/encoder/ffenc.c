@@ -148,20 +148,10 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
    AVBPrint buffer;
    av_bprint_init(&buffer, 0, AV_BPRINT_SIZE_UNLIMITED);
    char *filterDesc = NULL;
+   AVFrame *hwFrame = NULL;
    if (ffmpeg->error < 0) {
       ret = ffmpeg->error;
       goto error;
-   }
-   if ((ret = avcodec_open2(ffmpeg->codecCtx, NULL, &ffmpeg->options)) < 0) {
-      av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to open decoder: %s\n",
-             av_err2str(ret));
-      return ret;
-   }
-   rsOptionsDestroy(&ffmpeg->options);
-
-   if ((ret = avcodec_parameters_from_context(ffmpeg->encoder.params, ffmpeg->codecCtx)) <
-       0) {
-      return ret;
    }
 
    AVCodecParameters *params = ffmpeg->input->params;
@@ -178,7 +168,7 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
    va_start(args, filter);
    av_vbprintf(&buffer, filter, args);
    va_end(args);
-   switch (ffmpeg->codecCtx->codec_type) {
+   switch (params->codec_type) {
    case AVMEDIA_TYPE_VIDEO:
       av_bprintf(&buffer, ",buffersink@sink");
       break;
@@ -204,6 +194,44 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
    }
    avfilter_inout_free(&inputs);
    avfilter_inout_free(&outputs);
+   av_freep(&filterDesc);
+
+   switch (params->codec_type) {
+   case AVMEDIA_TYPE_VIDEO:
+      ffmpeg->filterSrc = avfilter_graph_get_filter(ffmpeg->filterGraph, "buffer@src");
+      ffmpeg->filterSink =
+          avfilter_graph_get_filter(ffmpeg->filterGraph, "buffersink@sink");
+      break;
+   default:
+      break;
+   }
+
+   // The only way I can consistently get the frames context is by getting the first frame
+   // I don't know why, the API is dumb
+   hwFrame = av_frame_alloc();
+   if (hwFrame == NULL) {
+      ret = AVERROR(ENOMEM);
+      goto error;
+   }
+   if ((ret = rsDeviceGetFrame(ffmpeg->input, hwFrame)) < 0) {
+      goto error;
+   }
+   if (hwFrame->hw_frames_ctx != NULL) {
+      AVBufferSrcParameters *bufpar = av_buffersrc_parameters_alloc();
+      if (bufpar == NULL) {
+         ret = AVERROR(ENOMEM);
+         goto error;
+      }
+      bufpar->hw_frames_ctx = av_buffer_ref(hwFrame->hw_frames_ctx);
+      if (bufpar->hw_frames_ctx == NULL) {
+         av_freep(&bufpar);
+         ret = AVERROR(ENOMEM);
+         goto error;
+      }
+      av_buffersrc_parameters_set(ffmpeg->filterSrc, bufpar);
+      av_freep(&bufpar);
+   }
+   av_frame_free(&hwFrame);
 
    if ((ret = avfilter_graph_config(ffmpeg->filterGraph, ffmpeg->filterGraph)) < 0) {
       av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to configure filter graph: %s\n",
@@ -211,12 +239,35 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
       goto error;
    }
 
-   av_freep(&filterDesc);
-   ffmpeg->filterSrc = avfilter_graph_get_filter(ffmpeg->filterGraph, "buffer@src");
-   ffmpeg->filterSink = avfilter_graph_get_filter(ffmpeg->filterGraph, "buffersink@sink");
+   AVBufferRef *framesRef = av_buffersink_get_hw_frames_ctx(ffmpeg->filterSink);
+   if (framesRef != NULL) {
+      AVHWFramesContext *framesCtx = (AVHWFramesContext *)framesRef->data;
+      ffmpeg->codecCtx->hw_frames_ctx = av_buffer_ref(framesRef);
+      if (ffmpeg->codecCtx->hw_frames_ctx == NULL) {
+         ret = AVERROR(ENOMEM);
+         goto error;
+      }
+      ffmpeg->codecCtx->hw_device_ctx = av_buffer_ref(framesCtx->device_ref);
+      if (ffmpeg->codecCtx->hw_device_ctx == NULL) {
+         ret = AVERROR(ENOMEM);
+         goto error;
+      }
+   }
+
+   if ((ret = avcodec_open2(ffmpeg->codecCtx, NULL, &ffmpeg->options)) < 0) {
+      av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to open encoder: %s\n",
+             av_err2str(ret));
+      goto error;
+   }
+   if ((ret = avcodec_parameters_from_context(ffmpeg->encoder.params, ffmpeg->codecCtx)) <
+       0) {
+      goto error;
+   }
+   rsOptionsDestroy(&ffmpeg->options);
 
    return 0;
 error:
+   av_frame_free(&hwFrame);
    av_freep(&filterDesc);
    av_bprint_finalize(&buffer, NULL);
    return ret;
