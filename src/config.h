@@ -52,6 +52,8 @@ typedef struct RSConfig {
    int videoPreset;
    int videoQuality;
    int videoGOP;
+   int scaleWidth;
+   int scaleHeight;
    int controller;
    char *outputFile;
 } RSConfig;

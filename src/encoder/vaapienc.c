@@ -18,39 +18,61 @@
  */
 
 #include "../config.h"
+#include "../util.h"
 #include "encoder.h"
 #include "ffenc.h"
 
-static int vaapiEncoderCreate(RSEncoder **encoder, RSDevice *input, int preset) {
+int rsVaapiEncoderCreate(RSEncoder **encoder, RSDevice *input) {
    int ret;
    if ((ret = rsFFmpegEncoderCreate(encoder, "h264_vaapi", input)) < 0) {
       goto error;
    }
 
+   int width = rsConfig.videoWidth;
+   if (width == RS_CONFIG_AUTO) {
+      width = input->params->width - rsConfig.videoX;
+   }
+   int height = rsConfig.videoHeight;
+   if (height == RS_CONFIG_AUTO) {
+      height = input->params->height - rsConfig.videoY;
+   }
+
    AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(*encoder);
    codecCtx->pix_fmt = AV_PIX_FMT_VAAPI;
    codecCtx->sw_pix_fmt = AV_PIX_FMT_NV12;
-   codecCtx->width = rsConfig.videoWidth;
-   codecCtx->height = rsConfig.videoHeight;
    codecCtx->framerate = av_make_q(1, rsConfig.videoFramerate);
    codecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
    codecCtx->profile = rsConfig.videoProfile;
    codecCtx->gop_size = rsConfig.videoGOP;
+   if (rsConfig.scaleWidth == RS_CONFIG_AUTO) {
+      codecCtx->width = width;
+   } else {
+      codecCtx->width = rsConfig.scaleWidth;
+   }
+   if (rsConfig.scaleHeight == RS_CONFIG_AUTO) {
+      codecCtx->height = height;
+   } else {
+      codecCtx->height = rsConfig.scaleHeight;
+   }
    if (rsConfig.videoQuality != RS_CONFIG_AUTO) {
       rsFFmpegEncoderOption(*encoder, "qp", "%i", rsConfig.videoQuality);
    }
-   switch (preset) {
+   switch (rsConfig.videoPreset) {
    case RS_CONFIG_PRESET_FAST:
-      rsFFmpegEncoderOption(*encoder, "low_power", "true");
-      // fallthrough
-   case RS_CONFIG_PRESET_MEDIUM:
+      codecCtx->compression_level = 2;
       rsFFmpegEncoderOption(*encoder, "coder", "cavlc");
+      break;
+   case RS_CONFIG_PRESET_MEDIUM:
+      codecCtx->compression_level = 4;
+      break;
+   case RS_CONFIG_PRESET_SLOW:
+      codecCtx->compression_level = 6;
       break;
    }
    if ((ret = rsFFmpegEncoderOpen(
             *encoder, "hwmap=derive_device=vaapi,crop=%i:%i:%i:%i,scale_vaapi=%i:%i:nv12",
-            rsConfig.videoWidth, rsConfig.videoHeight, rsConfig.videoX, rsConfig.videoY,
-            rsConfig.videoWidth, rsConfig.videoHeight)) < 0) {
+            width, height, rsConfig.videoX, rsConfig.videoY, codecCtx->width,
+            codecCtx->height)) < 0) {
       goto error;
    }
    // TODO: copy extradata from x264 if encoder does not support it
@@ -59,16 +81,4 @@ static int vaapiEncoderCreate(RSEncoder **encoder, RSDevice *input, int preset) 
 error:
    rsEncoderDestroy(encoder);
    return ret;
-}
-
-int rsVaapiEncoderCreate(RSEncoder **encoder, RSDevice *input) {
-   int ret;
-   if ((ret = vaapiEncoderCreate(encoder, input, rsConfig.videoPreset)) < 0) {
-      if (rsConfig.videoPreset == RS_CONFIG_PRESET_FAST) {
-         av_log(NULL, AV_LOG_WARNING, "Low power mode not supported\n");
-         return vaapiEncoderCreate(encoder, input, RS_CONFIG_PRESET_MEDIUM);
-      }
-      return ret;
-   }
-   return 0;
 }

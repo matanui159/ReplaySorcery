@@ -253,6 +253,8 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
       goto error;
    }
    rsOptionsDestroy(&ffmpeg->options);
+   av_log(ffmpeg->codecCtx, AV_LOG_INFO, "Encoded size: %ix%i\n", ffmpeg->codecCtx->width,
+          ffmpeg->codecCtx->height);
 
    return 0;
 error:

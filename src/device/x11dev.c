@@ -43,7 +43,6 @@ int rsX11DeviceCreate(RSDevice **device) {
          height = HeightOfScreen(screen) - rsConfig.videoY;
       }
       XCloseDisplay(display);
-      av_log(NULL, AV_LOG_INFO, "Video size: %ix%i\n", width, height);
 #endif
    }
    if (width == RS_CONFIG_AUTO || height == RS_CONFIG_AUTO) {

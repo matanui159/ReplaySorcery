@@ -29,8 +29,6 @@ int rsX264EncoderCreate(RSEncoder **encoder, RSDevice *input) {
 
    AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(*encoder);
    codecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
-   codecCtx->width = input->params->width;
-   codecCtx->height = input->params->height;
    codecCtx->framerate = av_make_q(1, rsConfig.videoFramerate);
    codecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
    codecCtx->thread_count = 1;
@@ -39,6 +37,16 @@ int rsX264EncoderCreate(RSEncoder **encoder, RSDevice *input) {
    rsFFmpegEncoderOption(*encoder, "forced-idr", "true");
    if (rsConfig.videoQuality != RS_CONFIG_AUTO) {
       rsFFmpegEncoderOption(*encoder, "qp", "%i", rsConfig.videoQuality);
+   }
+   if (rsConfig.scaleWidth == RS_CONFIG_AUTO) {
+      codecCtx->width = input->params->width;
+   } else {
+      codecCtx->width = rsConfig.scaleWidth;
+   }
+   if (rsConfig.scaleHeight == RS_CONFIG_AUTO) {
+      codecCtx->height = input->params->height;
+   } else {
+      codecCtx->height = rsConfig.scaleHeight;
    }
    switch (rsConfig.videoPreset) {
    case RS_CONFIG_PRESET_FAST:
@@ -51,7 +59,8 @@ int rsX264EncoderCreate(RSEncoder **encoder, RSDevice *input) {
       rsFFmpegEncoderOption(*encoder, "preset", "slower");
       break;
    }
-   if ((ret = rsFFmpegEncoderOpen(*encoder, "format=yuv420p")) < 0) {
+   if ((ret = rsFFmpegEncoderOpen(*encoder, "scale=%i:%i,format=yuv420p", codecCtx->width,
+                                  codecCtx->height)) < 0) {
       goto error;
    }
 
