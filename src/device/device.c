@@ -36,6 +36,16 @@ int rsVideoDeviceCreate(RSDevice **device) {
       return rsKMSDeviceCreate(device);
    }
 
+   if (rsConfig.videoInput == RS_CONFIG_DEVICE_HWACCEL) {
+      if ((ret = rsKMSDeviceCreate(device)) >= 0) {
+         av_log(NULL, AV_LOG_INFO, "Created KMS device\n");
+         return 0;
+      }
+      av_log(NULL, AV_LOG_WARNING, "Failed to create KMS device: %s\n", av_err2str(ret));
+
+      return AVERROR(ENOSYS);
+   }
+
    if ((ret = rsX11DeviceCreate(device)) >= 0) {
       av_log(NULL, AV_LOG_INFO, "Created X11 device\n");
       return 0;
