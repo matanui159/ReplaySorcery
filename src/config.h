@@ -26,9 +26,11 @@
 #define RS_CONFIG_DEVICE_HWACCEL -2
 #define RS_CONFIG_DEVICE_X11 0
 #define RS_CONFIG_DEVICE_KMS 1
+#define RS_CONFIG_DEVICE_PULSE 0
 
 #define RS_CONFIG_ENCODER_X264 0
 #define RS_CONFIG_ENCODER_VAAPI 1
+#define RS_CONFIG_ENCODER_AAC 0
 
 #define RS_CONFIG_PRESET_FAST 0
 #define RS_CONFIG_PRESET_MEDIUM 1
@@ -55,6 +57,9 @@ typedef struct RSConfig {
    int videoGOP;
    int scaleWidth;
    int scaleHeight;
+   int audioSamplerate;
+   int audioInput;
+   int audioEncoder;
    int controller;
    char *outputFile;
 } RSConfig;

@@ -13,6 +13,8 @@ set(sources
    src/output.c
    src/stream.c
    src/util.c
+   src/audio/aacenc.c
+   src/audio/aencoder.c
    src/control/control.c
    src/control/dbgctrl.c
    src/control/x11ctrl.c
@@ -33,6 +35,8 @@ set(headers
    src/rsbuild.h.in
    src/stream.h
    src/util.h
+   src/audio/adevice.h
+   src/audio/aencoder.h
    src/control/control.h
    src/device/device.h
    src/device/ffdev.h
