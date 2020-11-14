@@ -14,7 +14,9 @@ set(sources
    src/stream.c
    src/util.c
    src/audio/aacenc.c
+   src/audio/adevice.c
    src/audio/aencoder.c
+   src/audio/pulsedev.c
    src/control/control.c
    src/control/dbgctrl.c
    src/control/x11ctrl.c
@@ -127,6 +129,13 @@ if (X11_FOUND)
    set(RS_BUILD_X11_FOUND ON)
    target_include_directories(${binary} SYSTEM PRIVATE ${X11_INCLUDE_DIRS})
    target_link_libraries(${binary} PRIVATE ${X11_LIBRARIES})
+endif()
+
+# PulseAudio
+pkg_check_modules(PULSE IMPORTED_TARGET libpulse)
+if (PULSE_FOUND)
+   set(RS_BUILD_PULSE_FOUND ON)
+   target_link_libraries(${binary} PRIVATE PkgConfig::PULSE)
 endif()
 
 # Build configuration

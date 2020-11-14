@@ -17,12 +17,22 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_MAIN_H
-#define RS_MAIN_H
+#include "adevice.h"
+#include "../config.h"
 
-extern const char *rsName;
-extern const char *rsLicense;
+int rsAudioDeviceCreate(RSDevice **device) {
+   int ret;
+   switch (rsConfig.audioInput) {
+   case RS_CONFIG_DEVICE_PULSE:
+      return rsPulseDeviceCreate(device);
+   }
 
-void rsMainError(int error);
+   if ((ret = rsPulseDeviceCreate(device)) >= 0) {
+      av_log(NULL, AV_LOG_INFO, "Created pulse audio device\n");
+      return ret;
+   }
+   av_log(NULL, AV_LOG_WARNING, "Failed to create pulse audio device: %s\b",
+          av_err2str(ret));
 
-#endif
+   return AVERROR(ENOSYS);
+}

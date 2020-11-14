@@ -44,12 +44,12 @@ typedef struct RSConfig {
    int logLevel;
    int traceLevel;
    int recordSeconds;
+   int videoInput;
    int videoX;
    int videoY;
    int videoWidth;
    int videoHeight;
    int videoFramerate;
-   int videoInput;
    int videoEncoder;
    int videoProfile;
    int videoPreset;
@@ -57,8 +57,8 @@ typedef struct RSConfig {
    int videoGOP;
    int scaleWidth;
    int scaleHeight;
-   int audioSamplerate;
    int audioInput;
+   int audioSamplerate;
    int audioEncoder;
    int controller;
    char *outputFile;

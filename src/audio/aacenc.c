@@ -29,6 +29,8 @@ int rsAacEncoderCreate(RSEncoder **encoder, RSDevice *input) {
    AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(*encoder);
    codecCtx->sample_fmt = AV_SAMPLE_FMT_FLTP;
    codecCtx->sample_rate = input->params->sample_rate;
+   codecCtx->channels = input->params->channels;
+   codecCtx->channel_layout = input->params->channel_layout;
    if ((ret = rsFFmpegEncoderOpen(*encoder, "aformat=fltp")) < 0) {
       goto error;
    }

@@ -18,6 +18,8 @@
  */
 
 #include "main.h"
+#include "audio/adevice.h"
+#include "audio/aencoder.h"
 #include "config.h"
 #include "control/control.h"
 #include "device/device.h"
@@ -27,6 +29,12 @@
 #include "stream.h"
 #include <libavutil/avutil.h>
 #include <signal.h>
+
+const char *rsName = "ReplaySorcery";
+const char *rsLicense = "ReplaySorcery  Copyright (C) 2020  ReplaySorcery developers\n"
+                        "This program comes with ABSOLUTELY NO WARRANTY.\n"
+                        "This is free software, and you are welcome to redistribute it\n"
+                        "under certain conditions; see COPYING for details.";
 
 static volatile int mainError = 0;
 
@@ -54,11 +62,7 @@ int main(int argc, char *argv[]) {
       goto error;
    }
 
-   av_log(NULL, AV_LOG_INFO,
-          "ReplaySorcery  Copyright (C) 2020  ReplaySorcery developers\n"
-          "This program comes with ABSOLUTELY NO WARRANTY.\n"
-          "This is free software, and you are welcome to redistribute it\n"
-          "under certain conditions; see COPYING for details.\n");
+   av_log(NULL, AV_LOG_INFO, "%s\n", rsLicense);
    av_log(NULL, AV_LOG_INFO, "FFmpeg version: %s\n", av_version_info());
 
    if ((ret = rsVideoDeviceCreate(&device)) < 0) {
@@ -73,6 +77,16 @@ int main(int argc, char *argv[]) {
    if ((ret = rsDefaultControlCreate(&controller)) < 0) {
       goto error;
    }
+
+   // RSDevice *audio = NULL;
+   // RSEncoder *audioEnc = NULL;
+   // AVPacket *packet = av_packet_alloc();
+   // rsAudioDeviceCreate(&audio);
+   // rsAudioEncoderCreate(&audioEnc, audio);
+   // rsEncoderGetPacket(audioEnc, packet);
+   // rsEncoderDestroy(&audioEnc);
+   // rsDeviceDestroy(&audio);
+   // av_packet_free(&packet);
 
    signal(SIGINT, mainSignal);
    signal(SIGTERM, mainSignal);

@@ -155,11 +155,21 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
    }
 
    AVCodecParameters *params = ffmpeg->input->params;
+   char *srcName;
    switch (params->codec_type) {
    case AVMEDIA_TYPE_VIDEO:
-      av_bprintf(&buffer, "buffer@src=video_size=%ix%i:pix_fmt=%i:time_base=1/%i,",
-                 params->width, params->height, params->format, AV_TIME_BASE);
+      av_bprintf(&buffer, "buffer@src=time_base=1/%i:video_size=%ix%i:pix_fmt=%i,",
+                 AV_TIME_BASE, params->width, params->height, params->format);
+      srcName = "buffer@src";
       break;
+   case AVMEDIA_TYPE_AUDIO:
+      av_bprintf(&buffer,
+                 "abuffer@src=time_base=1/"
+                 "%i:sample_fmt=%i:sample_rate=%i:channels=%i:channel_layout=%" PRIu64
+                 ",",
+                 AV_TIME_BASE, params->format, params->sample_rate, params->channels,
+                 params->channel_layout);
+      srcName = "abuffer@src";
    default:
       break;
    }
@@ -168,9 +178,15 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
    va_start(args, filter);
    av_vbprintf(&buffer, filter, args);
    va_end(args);
+   char *sinkName;
    switch (params->codec_type) {
    case AVMEDIA_TYPE_VIDEO:
       av_bprintf(&buffer, ",buffersink@sink");
+      sinkName = "buffersink@sink";
+      break;
+   case AVMEDIA_TYPE_AUDIO:
+      av_bprintf(&buffer, ",abuffersink@sink");
+      sinkName = "abuffersink@sink";
       break;
    default:
       break;
@@ -195,16 +211,8 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
    avfilter_inout_free(&inputs);
    avfilter_inout_free(&outputs);
    av_freep(&filterDesc);
-
-   switch (params->codec_type) {
-   case AVMEDIA_TYPE_VIDEO:
-      ffmpeg->filterSrc = avfilter_graph_get_filter(ffmpeg->filterGraph, "buffer@src");
-      ffmpeg->filterSink =
-          avfilter_graph_get_filter(ffmpeg->filterGraph, "buffersink@sink");
-      break;
-   default:
-      break;
-   }
+   ffmpeg->filterSrc = avfilter_graph_get_filter(ffmpeg->filterGraph, srcName);
+   ffmpeg->filterSink = avfilter_graph_get_filter(ffmpeg->filterGraph, sinkName);
 
    // The only way I can consistently get the frames context is by getting the first frame
    // I don't know why, the API is dumb
