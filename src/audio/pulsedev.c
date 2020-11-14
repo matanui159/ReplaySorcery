@@ -26,23 +26,21 @@
 #include <libavutil/avutil.h>
 #include <libavutil/bprint.h>
 #include <libavutil/time.h>
+
 #ifdef RS_BUILD_PULSE_FOUND
 #include <pulse/pulseaudio.h>
-#endif
 
 typedef struct PulseDevice {
    RSDevice device;
    int error;
    char *streamName;
-#ifdef RS_BUILD_PULSE_FOUND
    pa_mainloop *mainloop;
    pa_context *context;
    pa_stream *stream;
-#endif
 } PulseDevice;
 
 static int pulseDeviceError(int error) {
-   switch (error) {
+   switch (-error) {
    case PA_OK:
       return 0;
    case PA_ERR_ACCESS:
@@ -120,12 +118,22 @@ error:
 static void pulseDeviceDestroy(RSDevice *device) {
    PulseDevice *pulse = (PulseDevice *)device;
    avcodec_parameters_free(&pulse->device.params);
-   pa_stream_disconnect(pulse->stream);
-   pa_stream_unref(pulse->stream);
+   if (pulse->stream != NULL) {
+      if (pa_stream_get_state(pulse->stream) != PA_STREAM_UNCONNECTED) {
+         pa_stream_disconnect(pulse->stream);
+      }
+      pa_stream_unref(pulse->stream);
+   }
    av_freep(&pulse->streamName);
-   pa_context_disconnect(pulse->context);
-   pa_context_unref(pulse->context);
-   pa_mainloop_free(pulse->mainloop);
+   if (pulse->context != NULL) {
+      if (pa_context_get_state(pulse->context) != PA_CONTEXT_UNCONNECTED) {
+         pa_context_disconnect(pulse->context);
+      }
+      pa_context_unref(pulse->context);
+   }
+   if (pulse->mainloop != NULL) {
+      pa_mainloop_free(pulse->mainloop);
+   }
 }
 
 static int pulseDeviceRead(PulseDevice *pulse, AVFrame *frame) {
@@ -192,9 +200,11 @@ static void pulseDeviceServerInfo(pa_context *context, const pa_server_info *inf
       return;
    }
 }
+#endif
 
 int rsPulseDeviceCreate(RSDevice **device) {
    int ret;
+#ifdef RS_BUILD_PULSE_FOUND
    PulseDevice *pulse = av_mallocz(sizeof(PulseDevice));
    *device = &pulse->device;
    if (pulse == NULL) {
@@ -221,7 +231,7 @@ int rsPulseDeviceCreate(RSDevice **device) {
        0) {
       av_log(NULL, AV_LOG_ERROR, "Failed to connect pulse context: %s\n",
              pa_strerror(ret));
-      ret = AVERROR_EXTERNAL;
+      ret = pulseDeviceError(ret);
       goto error;
    }
 
@@ -292,6 +302,13 @@ int rsPulseDeviceCreate(RSDevice **device) {
    params->channel_layout = AV_CH_LAYOUT_MONO;
 
    return 0;
+
+#else
+   (void)device;
+   av_log(NULL, AV_LOG_ERROR, "Pulse was not found during compilation\n");
+   ret = AVERROR(ENOSYS);
+   goto error;
+#endif
 error:
    rsDeviceDestroy(device);
    return ret;

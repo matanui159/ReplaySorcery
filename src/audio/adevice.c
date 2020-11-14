@@ -31,7 +31,7 @@ int rsAudioDeviceCreate(RSDevice **device) {
       av_log(NULL, AV_LOG_INFO, "Created pulse audio device\n");
       return ret;
    }
-   av_log(NULL, AV_LOG_WARNING, "Failed to create pulse audio device: %s\b",
+   av_log(NULL, AV_LOG_WARNING, "Failed to create pulse audio device: %s\n",
           av_err2str(ret));
 
    return AVERROR(ENOSYS);
