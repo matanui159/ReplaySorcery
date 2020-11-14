@@ -16,6 +16,7 @@ set(sources
    src/audio/aacenc.c
    src/audio/adevice.c
    src/audio/aencoder.c
+   src/audio/audio.c
    src/audio/pulsedev.c
    src/control/control.c
    src/control/dbgctrl.c
@@ -39,6 +40,7 @@ set(headers
    src/util.h
    src/audio/adevice.h
    src/audio/aencoder.h
+   src/audio/audio.h
    src/control/control.h
    src/device/device.h
    src/device/ffdev.h

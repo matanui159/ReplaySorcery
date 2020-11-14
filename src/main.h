@@ -23,6 +23,4 @@
 extern const char *rsName;
 extern const char *rsLicense;
 
-void rsMainError(int error);
-
 #endif

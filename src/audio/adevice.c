@@ -23,6 +23,8 @@
 int rsAudioDeviceCreate(RSDevice **device) {
    int ret;
    switch (rsConfig.audioInput) {
+   case RS_CONFIG_DEVICE_NONE:
+      return AVERROR(ENOSYS);
    case RS_CONFIG_DEVICE_PULSE:
       return rsPulseDeviceCreate(device);
    }

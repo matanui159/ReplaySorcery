@@ -39,7 +39,7 @@ static int outputStream(AVFormatContext *formatCtx, RSStream *stream) {
    return 0;
 }
 
-int rsOutput(RSStream *videoStream) {
+int rsOutput(RSStream *videoStream, RSStream *audioStream) {
    int ret;
    AVBPrint buffer;
    av_bprint_init(&buffer, 0, AV_BPRINT_SIZE_UNLIMITED);
@@ -47,6 +47,7 @@ int rsOutput(RSStream *videoStream) {
    AVFormatContext *formatCtx = NULL;
    AVDictionary *options = NULL;
    AVPacket *videoPackets = NULL;
+   AVPacket *audioPackets = NULL;
 
    const char *outputFile = rsConfig.outputFile;
    if (outputFile[0] == '~') {
@@ -86,6 +87,11 @@ int rsOutput(RSStream *videoStream) {
    if ((ret = outputStream(formatCtx, videoStream)) < 0) {
       goto error;
    }
+   if (audioStream != NULL) {
+      if ((ret = outputStream(formatCtx, audioStream)) < 0) {
+         goto error;
+      }
+   }
 
    rsOptionsSet(&options, &ret, "movflags", "+faststart");
    if (ret < 0) {
@@ -110,23 +116,50 @@ int rsOutput(RSStream *videoStream) {
       goto error;
    }
 
-   size_t index = 0;
-   for (; index < videoSize; ++index) {
-      if (videoPackets[index].flags & AV_PKT_FLAG_KEY) {
+   size_t audioSize = 0;
+   if (audioStream != NULL) {
+      audioPackets = rsStreamGetPackets(audioStream, &audioSize);
+      if (audioPackets == NULL) {
+         ret = AVERROR(ENOMEM);
+         goto error;
+      }
+   }
+
+   size_t videoIndex = 0;
+   size_t audioIndex = 0;
+   for (; videoIndex < videoSize; ++videoIndex) {
+      if (videoPackets[videoIndex].flags & AV_PKT_FLAG_KEY) {
          break;
       }
    }
 
-   int64_t startTime = videoPackets[index].pts;
-   for (; index < videoSize; ++index) {
-      AVPacket *packet = &videoPackets[index];
+   int64_t startTime = videoPackets[videoIndex].pts;
+   while (videoIndex < videoSize || audioIndex < audioSize) {
+      AVPacket *packet;
+      if (audioIndex >= audioSize ||
+          (videoIndex < videoSize &&
+           videoPackets[videoIndex].pts <= audioPackets[audioIndex].pts)) {
+         packet = &videoPackets[videoIndex];
+         ++videoIndex;
+      } else {
+         packet = &audioPackets[audioIndex];
+         packet->stream_index = 1;
+         ++audioIndex;
+      }
+
       packet->pts -= startTime;
       packet->dts -= startTime;
-      if ((ret = av_interleaved_write_frame(formatCtx, packet)) < 0) {
-         av_log(formatCtx, AV_LOG_ERROR, "Failed to write frame: %s\n", av_err2str(ret));
-         goto error;
+      AVStream *stream = formatCtx->streams[packet->stream_index];
+      av_packet_rescale_ts(packet, AV_TIME_BASE_Q, stream->time_base);
+      if (packet->pts >= 0) {
+         if ((ret = av_interleaved_write_frame(formatCtx, packet)) < 0) {
+            av_log(formatCtx, AV_LOG_ERROR, "Failed to write frame: %s\n",
+                   av_err2str(ret));
+            goto error;
+         }
       }
    }
+   rsStreamPacketsDestroy(&audioPackets, audioSize);
    rsStreamPacketsDestroy(&videoPackets, videoSize);
 
    if ((ret = av_write_trailer(formatCtx)) < 0) {
@@ -138,6 +171,7 @@ int rsOutput(RSStream *videoStream) {
 
    return 0;
 error:
+   rsStreamPacketsDestroy(&audioPackets, audioSize);
    rsStreamPacketsDestroy(&videoPackets, videoSize);
    rsOptionsDestroy(&options);
    avio_closep(&formatCtx->pb);

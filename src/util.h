@@ -22,11 +22,10 @@
 #include "rsbuild.h"
 #include <libavutil/avutil.h>
 #include <libavutil/dict.h>
-#ifdef RS_BUILD_X11_FOUND
-#include <X11/Xlib.h>
-#endif
 
 #ifdef RS_BUILD_X11_FOUND
+#include <X11/Xlib.h>
+
 typedef Display RSXDisplay;
 #else
 typedef char RSXDisplay;

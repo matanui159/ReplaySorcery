@@ -17,12 +17,27 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_OUTPUT_H
-#define RS_OUTPUT_H
-#include "stream.h"
+#ifndef RS_AUDIO_H
+#define RS_AUDIO_H
+#include "../device/device.h"
+#include "../encoder/encoder.h"
+#include "../stream.h"
+#include "rsbuild.h"
+#ifdef RS_BUILD_PTHREAD_FOUND
+#include <pthread.h>
+#endif
 
-typedef struct RSOutput RSOutput;
+typedef struct RSAudioThread {
+   RSDevice *device;
+   RSEncoder *encoder;
+   RSStream *stream;
+   volatile int running;
+#ifdef RS_BUILD_PTHREAD_FOUND
+   pthread_t thread;
+#endif
+} RSAudioThread;
 
-int rsOutput(RSStream *videoStream, RSStream *audioStream);
+int rsAudioThreadCreate(RSAudioThread **thread);
+void rsAudioThreadDestroy(RSAudioThread **thread);
 
 #endif

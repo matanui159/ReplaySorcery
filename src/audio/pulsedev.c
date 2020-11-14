@@ -37,6 +37,7 @@ typedef struct PulseDevice {
    pa_mainloop *mainloop;
    pa_context *context;
    pa_stream *stream;
+   int64_t offset;
 } PulseDevice;
 
 static int pulseDeviceError(int error) {
@@ -115,6 +116,35 @@ error:
    return ret;
 }
 
+static int pulseDeviceTime(PulseDevice *pulse, int64_t *time) {
+   int ret;
+   pa_operation *op = pa_stream_update_timing_info(pulse->stream, NULL, NULL);
+   if ((ret = pulseDeviceWait(pulse, op)) < 0) {
+      av_log(NULL, AV_LOG_ERROR, "Failed to update pulse timing info: %s\n",
+             pa_strerror(ret));
+      return pulseDeviceError(ret);
+   }
+
+   pa_usec_t pulseTime;
+   if ((ret = pa_stream_get_time(pulse->stream, &pulseTime)) < 0) {
+      av_log(NULL, AV_LOG_ERROR, "Failed to get pulse time: %s\n", pa_strerror(ret));
+      return pulseDeviceError(ret);
+   }
+
+   pa_usec_t latency;
+   int negative;
+   if ((ret = pa_stream_get_latency(pulse->stream, &latency, &negative)) >= 0) {
+      if (negative) {
+         pulseTime += latency;
+      } else {
+         pulseTime -= latency;
+      }
+   }
+
+   *time = (int64_t)pulseTime + pulse->offset;
+   return 0;
+}
+
 static void pulseDeviceDestroy(RSDevice *device) {
    PulseDevice *pulse = (PulseDevice *)device;
    avcodec_parameters_free(&pulse->device.params);
@@ -156,8 +186,9 @@ static int pulseDeviceRead(PulseDevice *pulse, AVFrame *frame) {
    }
 
    frame->nb_samples = (int)(size / sizeof(float));
-   frame->pts = av_gettime_relative() -
-                av_rescale(frame->nb_samples, AV_TIME_BASE, rsConfig.audioSamplerate);
+   if ((ret = pulseDeviceTime(pulse, &frame->pts)) < 0) {
+      goto error;
+   }
    if ((ret = av_frame_get_buffer(frame, 0)) < 0) {
       goto error;
    }
@@ -203,8 +234,8 @@ static void pulseDeviceServerInfo(pa_context *context, const pa_server_info *inf
 #endif
 
 int rsPulseDeviceCreate(RSDevice **device) {
-   int ret;
 #ifdef RS_BUILD_PULSE_FOUND
+   int ret;
    PulseDevice *pulse = av_mallocz(sizeof(PulseDevice));
    *device = &pulse->device;
    if (pulse == NULL) {
@@ -288,6 +319,13 @@ int rsPulseDeviceCreate(RSDevice **device) {
       goto error;
    }
 
+   int64_t time;
+   if ((ret = pulseDeviceTime(pulse, &time)) < 0) {
+      goto error;
+   }
+   pulse->offset = av_gettime_relative() - time;
+   av_log(NULL, AV_LOG_INFO, "Pulse timing offset: %li\n", pulse->offset);
+
    AVCodecParameters *params = avcodec_parameters_alloc();
    params = avcodec_parameters_alloc();
    pulse->device.params = params;
@@ -302,14 +340,13 @@ int rsPulseDeviceCreate(RSDevice **device) {
    params->channel_layout = AV_CH_LAYOUT_MONO;
 
    return 0;
+error:
+   rsDeviceDestroy(device);
+   return ret;
 
 #else
    (void)device;
    av_log(NULL, AV_LOG_ERROR, "Pulse was not found during compilation\n");
-   ret = AVERROR(ENOSYS);
-   goto error;
+   return AVERROR(ENOSYS);
 #endif
-error:
-   rsDeviceDestroy(device);
-   return ret;
 }

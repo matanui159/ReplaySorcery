@@ -82,7 +82,7 @@ void rsStreamDestroy(RSStream **stream) {
          streamPacketDestroy(strm, plist);
          plist = next;
       }
-      strm->head = NULL;
+      strm->tail = NULL;
 
       plist = strm->pool;
       while (plist != NULL) {
@@ -96,7 +96,6 @@ void rsStreamDestroy(RSStream **stream) {
    }
 }
 
-// TODO: probably cleaner as a linked list
 int rsStreamUpdate(RSStream *stream) {
    int ret;
    RSPacketList *plist = streamPacketCreate(stream);
@@ -152,7 +151,7 @@ AVPacket *rsStreamGetPackets(RSStream *stream, size_t *size) {
    size_t index = 0;
    for (RSPacketList *plist = stream->tail; plist != NULL; plist = plist->next) {
       if ((ret = av_packet_ref(&packets[index], &plist->packet)) < 0) {
-         av_freep(&packets);
+         rsStreamPacketsDestroy(&packets, index);
          goto error;
       }
       ++index;

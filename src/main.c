@@ -18,8 +18,7 @@
  */
 
 #include "main.h"
-#include "audio/adevice.h"
-#include "audio/aencoder.h"
+#include "audio/audio.h"
 #include "config.h"
 #include "control/control.h"
 #include "device/device.h"
@@ -36,16 +35,12 @@ const char *rsLicense = "ReplaySorcery  Copyright (C) 2020  ReplaySorcery develo
                         "This is free software, and you are welcome to redistribute it\n"
                         "under certain conditions; see COPYING for details.";
 
-static volatile int mainError = 0;
+static volatile int running = 1;
 
 static void mainSignal(int signal) {
    (void)signal;
-   putchar('\n');
-   rsMainError(AVERROR_EXIT);
-}
-
-void rsMainError(int error) {
-   mainError = error;
+   av_log(NULL, AV_LOG_INFO, "\nExiting...\n");
+   running = 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -56,6 +51,7 @@ int main(int argc, char *argv[]) {
    RSEncoder *encoder = NULL;
    RSStream *stream = NULL;
    RSControl *controller = NULL;
+   RSAudioThread *audioThread = NULL;
 
    rsLogInit();
    if ((ret = rsConfigInit()) < 0) {
@@ -77,20 +73,14 @@ int main(int argc, char *argv[]) {
    if ((ret = rsDefaultControlCreate(&controller)) < 0) {
       goto error;
    }
-
-   // RSDevice *audio = NULL;
-   // RSEncoder *audioEnc = NULL;
-   // AVPacket *packet = av_packet_alloc();
-   // rsAudioDeviceCreate(&audio);
-   // rsAudioEncoderCreate(&audioEnc, audio);
-   // rsEncoderGetPacket(audioEnc, packet);
-   // rsEncoderDestroy(&audioEnc);
-   // rsDeviceDestroy(&audio);
-   // av_packet_free(&packet);
+   if ((ret = rsAudioThreadCreate(&audioThread)) < 0) {
+      av_log(NULL, AV_LOG_WARNING, "Failed to create audio thread: %s\n",
+             av_err2str(ret));
+   }
 
    signal(SIGINT, mainSignal);
    signal(SIGTERM, mainSignal);
-   while (mainError == 0) {
+   while (running) {
       if ((ret = rsStreamUpdate(stream)) < 0) {
          goto error;
       }
@@ -98,18 +88,19 @@ int main(int argc, char *argv[]) {
          goto error;
       }
       if (ret > 0) {
-         if ((ret = rsOutput(stream)) < 0) {
+         RSStream *audioStream = NULL;
+         if (audioThread != NULL) {
+            audioStream = audioThread->stream;
+         }
+         if ((ret = rsOutput(stream, audioStream)) < 0) {
             goto error;
          }
       }
    }
-   if (mainError != AVERROR_EXIT) {
-      ret = mainError;
-      goto error;
-   }
 
    ret = 0;
 error:
+   rsAudioThreadDestroy(&audioThread);
    rsControlDestroy(&controller);
    rsStreamDestroy(&stream);
    rsEncoderDestroy(&encoder);
