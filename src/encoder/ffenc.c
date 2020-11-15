@@ -212,7 +212,7 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
    }
 
    AVCodecParameters *params = ffmpeg->input->params;
-   char *srcName;
+   char *srcName = NULL;
    switch (params->codec_type) {
    case AVMEDIA_TYPE_VIDEO:
       av_bprintf(&buffer, "buffer@src=time_base=1/%i:video_size=%ix%i:pix_fmt=%i,",
@@ -235,7 +235,7 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filter, ...) {
    va_start(args, filter);
    av_vbprintf(&buffer, filter, args);
    va_end(args);
-   char *sinkName;
+   char *sinkName = NULL;
    switch (params->codec_type) {
    case AVMEDIA_TYPE_VIDEO:
       av_bprintf(&buffer, ",buffersink@sink");
