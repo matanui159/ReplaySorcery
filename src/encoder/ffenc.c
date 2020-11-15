@@ -35,6 +35,8 @@ typedef struct FFmpegEncoder {
    AVFilterContext *filterSrc;
    AVFilterContext *filterSink;
    AVFrame *frame;
+   AVFrame *audioFrame;
+   size_t audioFrameUsed;
 } FFmpegEncoder;
 
 static void ffmpegEncoderDestroy(RSEncoder *encoder) {
@@ -44,6 +46,57 @@ static void ffmpegEncoderDestroy(RSEncoder *encoder) {
    avcodec_free_context(&ffmpeg->codecCtx);
    rsOptionsDestroy(&ffmpeg->options);
    avcodec_parameters_free(&ffmpeg->encoder.params);
+}
+
+static int ffmpegEncoderSendFrame(FFmpegEncoder *ffmpeg, AVFrame *frame) {
+   ffmpeg->frame->pict_type = AV_PICTURE_TYPE_NONE;
+   int ret = avcodec_send_frame(ffmpeg->codecCtx, frame);
+   av_frame_unref(frame);
+   if (ret < 0) {
+      av_log(NULL, AV_LOG_ERROR, "Failed to send frame to encoder: %s\n", av_err2str(ret));
+      return ret;
+   }
+   return 0;
+}
+
+static int ffmpegEncoderSendPartialFrame(FFmpegEncoder *ffmpeg, AVFrame *frame) {
+   int ret;
+   if (ffmpeg->input->params->codec_type != AVMEDIA_TYPE_AUDIO) {
+      return ffmpegEncoderSendFrame(ffmpeg, frame);
+   }
+
+   AVFrame *audioFrame = ffmpeg->audioFrame;
+   size_t audioFrameSize = (size_t)ffmpeg->codecCtx->frame_size * sizeof(float);
+   size_t frameSize = (size_t)frame->nb_samples * sizeof(float);
+   size_t frameUsed = 0;
+   while (frameUsed < frameSize) {
+      size_t size = FFMIN(frameSize - frameUsed, audioFrameSize - ffmpeg->audioFrameUsed);
+      if (ffmpeg->audioFrameUsed == 0) {
+         audioFrame->pts = frame->pts + av_rescale((int64_t)frameUsed, AV_TIME_BASE, frame->sample_rate);
+         audioFrame->format = frame->format;
+         audioFrame->channels = frame->channels;
+         audioFrame->channel_layout = frame->channel_layout;
+         audioFrame->nb_samples = ffmpeg->codecCtx->frame_size;
+         if ((ret = av_frame_get_buffer(ffmpeg->audioFrame, 0)) < 0) {
+            goto error;
+         }
+      }
+
+      memcpy(audioFrame->data[0] + ffmpeg->audioFrameUsed, frame->data[0], size);
+      frameUsed += size;
+      ffmpeg->audioFrameUsed += size;
+      if (ffmpeg->audioFrameUsed == audioFrameSize) {
+         ffmpeg->audioFrameUsed = 0;
+         if ((ret = ffmpegEncoderSendFrame(ffmpeg, audioFrame)) < 0) {
+            goto error;
+         }
+      }
+   }
+
+   ret = 0;
+error:
+   av_frame_unref(frame);
+   return ret;
 }
 
 static int ffmpegEncoderGetPacket(RSEncoder *encoder, AVPacket *packet) {
@@ -64,12 +117,7 @@ static int ffmpegEncoderGetPacket(RSEncoder *encoder, AVPacket *packet) {
          return ret;
       }
 
-      ffmpeg->frame->pict_type = AV_PICTURE_TYPE_NONE;
-      ret = avcodec_send_frame(ffmpeg->codecCtx, ffmpeg->frame);
-      av_frame_unref(ffmpeg->frame);
-      if (ret < 0) {
-         av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to send frame to encoder: %s\n",
-                av_err2str(ret));
+      if ((ret = ffmpegEncoderSendPartialFrame(ffmpeg, ffmpeg->frame)) < 0) {
          return ret;
       }
    }
@@ -122,6 +170,13 @@ int rsFFmpegEncoderCreate(RSEncoder **encoder, const char *name, RSDevice *input
    if (ffmpeg->frame == NULL) {
       ret = AVERROR(ENOMEM);
       goto error;
+   }
+   if (input->params->codec_type == AVMEDIA_TYPE_AUDIO) {
+      ffmpeg->audioFrame = av_frame_alloc();
+      if (ffmpeg->audioFrame == NULL) {
+         ret = AVERROR(ENOMEM);
+         goto error;
+      }
    }
 
    return 0;

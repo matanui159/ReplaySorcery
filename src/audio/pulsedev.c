@@ -41,7 +41,7 @@ typedef struct PulseDevice {
 } PulseDevice;
 
 static int pulseDeviceError(int error) {
-   switch (-error) {
+   switch (FFABS(error)) {
    case PA_OK:
       return 0;
    case PA_ERR_ACCESS:
@@ -186,13 +186,13 @@ static int pulseDeviceRead(PulseDevice *pulse, AVFrame *frame) {
    }
 
    frame->nb_samples = (int)(size / sizeof(float));
-   if ((ret = pulseDeviceTime(pulse, &frame->pts)) < 0) {
-      goto error;
-   }
    if ((ret = av_frame_get_buffer(frame, 0)) < 0) {
       goto error;
    }
    memcpy(frame->data[0], data, size);
+   if ((ret = pulseDeviceTime(pulse, &frame->pts)) < 0) {
+      goto error;
+   }
 
    ret = 0;
 error:
