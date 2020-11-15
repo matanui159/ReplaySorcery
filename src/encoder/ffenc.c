@@ -53,7 +53,8 @@ static int ffmpegEncoderSendFrame(FFmpegEncoder *ffmpeg, AVFrame *frame) {
    int ret = avcodec_send_frame(ffmpeg->codecCtx, frame);
    av_frame_unref(frame);
    if (ret < 0) {
-      av_log(NULL, AV_LOG_ERROR, "Failed to send frame to encoder: %s\n", av_err2str(ret));
+      av_log(NULL, AV_LOG_ERROR, "Failed to send frame to encoder: %s\n",
+             av_err2str(ret));
       return ret;
    }
    return 0;
@@ -72,7 +73,8 @@ static int ffmpegEncoderSendPartialFrame(FFmpegEncoder *ffmpeg, AVFrame *frame) 
    while (frameUsed < frameSize) {
       size_t size = FFMIN(frameSize - frameUsed, audioFrameSize - ffmpeg->audioFrameUsed);
       if (ffmpeg->audioFrameUsed == 0) {
-         audioFrame->pts = frame->pts + av_rescale((int64_t)frameUsed, AV_TIME_BASE, frame->sample_rate);
+         audioFrame->pts = frame->pts + av_rescale((int64_t)frameUsed, AV_TIME_BASE,
+                                                   frame->sample_rate);
          audioFrame->format = frame->format;
          audioFrame->channels = frame->channels;
          audioFrame->channel_layout = frame->channel_layout;
