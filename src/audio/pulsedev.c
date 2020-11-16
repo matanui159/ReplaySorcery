@@ -37,7 +37,7 @@ typedef struct PulseDevice {
    pa_mainloop *mainloop;
    pa_context *context;
    pa_stream *stream;
-   int64_t offset;
+   int64_t time;
 } PulseDevice;
 
 static int pulseDeviceError(int error) {
@@ -116,35 +116,6 @@ error:
    return ret;
 }
 
-static int pulseDeviceTime(PulseDevice *pulse, int64_t *time) {
-   int ret;
-   pa_operation *op = pa_stream_update_timing_info(pulse->stream, NULL, NULL);
-   if ((ret = pulseDeviceWait(pulse, op)) < 0) {
-      av_log(NULL, AV_LOG_ERROR, "Failed to update pulse timing info: %s\n",
-             pa_strerror(ret));
-      return pulseDeviceError(ret);
-   }
-
-   pa_usec_t pulseTime;
-   if ((ret = pa_stream_get_time(pulse->stream, &pulseTime)) < 0) {
-      av_log(NULL, AV_LOG_ERROR, "Failed to get pulse time: %s\n", pa_strerror(ret));
-      return pulseDeviceError(ret);
-   }
-
-   pa_usec_t latency;
-   int negative;
-   if ((ret = pa_stream_get_latency(pulse->stream, &latency, &negative)) >= 0) {
-      if (negative) {
-         pulseTime += latency;
-      } else {
-         pulseTime -= latency;
-      }
-   }
-
-   *time = (int64_t)pulseTime + pulse->offset;
-   return 0;
-}
-
 static void pulseDeviceDestroy(RSDevice *device) {
    PulseDevice *pulse = (PulseDevice *)device;
    avcodec_parameters_free(&pulse->device.params);
@@ -190,9 +161,8 @@ static int pulseDeviceRead(PulseDevice *pulse, AVFrame *frame) {
       goto error;
    }
    memcpy(frame->data[0], data, size);
-   if ((ret = pulseDeviceTime(pulse, &frame->pts)) < 0) {
-      goto error;
-   }
+   frame->pts = pulse->time;
+   pulse->time += av_rescale(frame->nb_samples, AV_TIME_BASE, rsConfig.audioSamplerate);
 
    ret = 0;
 error:
@@ -319,13 +289,7 @@ int rsPulseDeviceCreate(RSDevice **device) {
       goto error;
    }
 
-   int64_t time;
-   if ((ret = pulseDeviceTime(pulse, &time)) < 0) {
-      goto error;
-   }
-   pulse->offset = av_gettime_relative() - time;
-   av_log(NULL, AV_LOG_INFO, "Pulse timing offset: %li\n", pulse->offset);
-
+   pulse->time = av_gettime_relative();
    AVCodecParameters *params = avcodec_parameters_alloc();
    params = avcodec_parameters_alloc();
    pulse->device.params = params;
