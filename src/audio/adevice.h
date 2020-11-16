@@ -21,7 +21,7 @@
 #define RS_AUDIO_ADEVICE_H
 #include "../device/device.h"
 
-int rsPulseDeviceCreate(RSDevice **device);
-int rsAudioDeviceCreate(RSDevice **device);
+int rsPulseDeviceCreate(RSDevice *device);
+int rsAudioDeviceCreate(RSDevice *device);
 
 #endif

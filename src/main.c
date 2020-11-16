@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
    (void)argv;
    int ret;
    RSDevice device = {0};
-   RSEncoder *encoder = NULL;
+   RSEncoder encoder = {0};
    RSStream *stream = NULL;
    RSControl *controller = NULL;
    RSAudioThread *audioThread = NULL;
@@ -64,10 +64,10 @@ int main(int argc, char *argv[]) {
    if ((ret = rsVideoDeviceCreate(&device)) < 0) {
       goto error;
    }
-   if ((ret = rsVideoEncoderCreate(&encoder, &device)) < 0) {
+   if ((ret = rsVideoEncoderCreate(&encoder, device.params)) < 0) {
       goto error;
    }
-   if ((ret = rsStreamCreate(&stream, encoder)) < 0) {
+   if ((ret = rsStreamCreate(&stream, &encoder)) < 0) {
       goto error;
    }
    if ((ret = rsDefaultControlCreate(&controller)) < 0) {

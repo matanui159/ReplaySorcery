@@ -20,21 +20,22 @@
 #include "adevice.h"
 #include "../config.h"
 
-int rsAudioDeviceCreate(RSDevice **device) {
-   int ret;
+int rsAudioDeviceCreate(RSDevice *device) {
+   // int ret;
+   (void)device;
    switch (rsConfig.audioInput) {
    case RS_CONFIG_DEVICE_NONE:
       return AVERROR(ENOSYS);
-   case RS_CONFIG_DEVICE_PULSE:
-      return rsPulseDeviceCreate(device);
+      // case RS_CONFIG_DEVICE_PULSE:
+      //    return rsPulseDeviceCreate(device);
    }
 
-   if ((ret = rsPulseDeviceCreate(device)) >= 0) {
-      av_log(NULL, AV_LOG_INFO, "Created pulse audio device\n");
-      return ret;
-   }
-   av_log(NULL, AV_LOG_WARNING, "Failed to create pulse audio device: %s\n",
-          av_err2str(ret));
+   // if ((ret = rsPulseDeviceCreate(device)) >= 0) {
+   //    av_log(NULL, AV_LOG_INFO, "Created pulse audio device\n");
+   //    return ret;
+   // }
+   // av_log(NULL, AV_LOG_WARNING, "Failed to create pulse audio device: %s\n",
+   //        av_err2str(ret));
 
    return AVERROR(ENOSYS);
 }

@@ -21,10 +21,11 @@
 #include "../util.h"
 #include "encoder.h"
 #include "ffenc.h"
+#include "../device/device.h"
 
 int rsVaapiEncoderCreate(RSEncoder **encoder, RSDevice *input) {
    int ret;
-   if ((ret = rsFFmpegEncoderCreate(encoder, "h264_vaapi", input)) < 0) {
+   if ((ret = rsFFmpegEncoderCreate(encoder, "h264_vaapi")) < 0) {
       goto error;
    }
 
@@ -70,9 +71,7 @@ int rsVaapiEncoderCreate(RSEncoder **encoder, RSDevice *input) {
       break;
    }
    if ((ret = rsFFmpegEncoderOpen(
-            *encoder, "hwmap=derive_device=vaapi,crop=%i:%i:%i:%i,scale_vaapi=%i:%i:nv12",
-            width, height, rsConfig.videoX, rsConfig.videoY, codecCtx->width,
-            codecCtx->height)) < 0) {
+            *encoder, "hwmap=derive_device=vaapi,crop=%i:%i:%i:%i,scale_vaapi=%i:%i:nv12")) < 0) {
       goto error;
    }
    // TODO: copy extradata from x264 if encoder does not support it

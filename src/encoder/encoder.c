@@ -19,30 +19,41 @@
 
 #include "encoder.h"
 #include "../config.h"
+#include "../util.h"
 
-void rsEncoderDestroy(RSEncoder **encoder) {
-   if (*encoder != NULL && (*encoder)->destroy != NULL) {
-      (*encoder)->destroy(*encoder);
+int rsEncoderCreate(RSEncoder *encoder) {
+   rsClear(encoder, sizeof(RSEncoder));
+   encoder->params = avcodec_parameters_alloc();
+   if (encoder->params == NULL) {
+      return AVERROR(ENOMEM);
    }
-   av_freep(encoder);
+   return 0;
 }
 
-int rsVideoEncoderCreate(RSEncoder **encoder, RSDevice *input) {
+void rsEncoderDestroy(RSEncoder *encoder) {
+   if (encoder->destroy != NULL) {
+      encoder->destroy(encoder);
+   }
+   avcodec_parameters_free(&encoder->params);
+}
+
+int rsVideoEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params) {
    int ret;
    switch (rsConfig.videoEncoder) {
    case RS_CONFIG_ENCODER_X264:
-      return rsX264EncoderCreate(encoder, input);
-   case RS_CONFIG_ENCODER_VAAPI:
-      return rsVaapiEncoderCreate(encoder, input);
+      return rsX264EncoderCreate(encoder, params);
+      // case RS_CONFIG_ENCODER_VAAPI:
+      //    return rsVaapiEncoderCreate(encoder, params);
    }
 
-   if ((ret = rsVaapiEncoderCreate(encoder, input)) >= 0) {
-      av_log(NULL, AV_LOG_INFO, "Created VAAPI encoder\n");
-      return 0;
-   }
-   av_log(NULL, AV_LOG_WARNING, "Failed to create VAAPI encoder: %s\n", av_err2str(ret));
+   // if ((ret = rsVaapiEncoderCreate(encoder, params)) >= 0) {
+   //    av_log(NULL, AV_LOG_INFO, "Created VAAPI encoder\n");
+   //    return 0;
+   // }
+   // av_log(NULL, AV_LOG_WARNING, "Failed to create VAAPI encoder: %s\n",
+   // av_err2str(ret));
 
-   if ((ret = rsX264EncoderCreate(encoder, input)) >= 0) {
+   if ((ret = rsX264EncoderCreate(encoder, params)) >= 0) {
       av_log(NULL, AV_LOG_INFO, "Created x264 encoder\n");
       return 0;
    }

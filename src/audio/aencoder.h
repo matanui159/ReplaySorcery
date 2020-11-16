@@ -21,7 +21,7 @@
 #define RS_AUDIO_AENCODER_H
 #include "../encoder/encoder.h"
 
-int rsAacEncoderCreate(RSEncoder **encoder, RSDevice *input);
-int rsAudioEncoderCreate(RSEncoder **encoder, RSDevice *input);
+int rsAacEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
+int rsAudioEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
 
 #endif

@@ -20,19 +20,21 @@
 #include "aencoder.h"
 #include "../config.h"
 
-int rsAudioEncoderCreate(RSEncoder **encoder, RSDevice *input) {
-   int ret;
+int rsAudioEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params) {
+   // int ret;
+   (void)encoder;
+   (void)params;
    switch (rsConfig.audioEncoder) {
-   case RS_CONFIG_ENCODER_AAC:
-      return rsAacEncoderCreate(encoder, input);
+      // case RS_CONFIG_ENCODER_AAC:
+      //    return rsAacEncoderCreate(encoder, params);
    }
 
-   if ((ret = rsAacEncoderCreate(encoder, input)) >= 0) {
-      av_log(NULL, AV_LOG_INFO, "Created AAC audio encoder\n");
-      return 0;
-   }
-   av_log(NULL, AV_LOG_WARNING, "Failed to create AAC audio encoder: %s\n",
-          av_err2str(ret));
+   // if ((ret = rsAacEncoderCreate(encoder, params)) >= 0) {
+   //    av_log(NULL, AV_LOG_INFO, "Created AAC audio encoder\n");
+   //    return 0;
+   // }
+   // av_log(NULL, AV_LOG_WARNING, "Failed to create AAC audio encoder: %s\n",
+   //        av_err2str(ret));
 
    return AVERROR(ENOSYS);
 }

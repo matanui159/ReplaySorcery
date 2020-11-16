@@ -19,24 +19,30 @@
 
 #ifndef RS_ENCODER_H
 #define RS_ENCODER_H
-#include "../device/device.h"
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
 
 typedef struct RSEncoder {
    AVCodecParameters *params;
+   void *extra;
    void (*destroy)(struct RSEncoder *encoder);
+   int (*sendFrame)(struct RSEncoder *encoder, AVFrame *frame);
    int (*getPacket)(struct RSEncoder *encoder, AVPacket *packet);
 } RSEncoder;
+
+static av_always_inline int rsEncoderSendFrame(RSEncoder *encoder, AVFrame *frame) {
+   return encoder->sendFrame(encoder, frame);
+}
 
 static av_always_inline int rsEncoderGetPacket(RSEncoder *encoder, AVPacket *packet) {
    return encoder->getPacket(encoder, packet);
 }
 
-void rsEncoderDestroy(RSEncoder **encoder);
+int rsEncoderCreate(RSEncoder *encoder);
+void rsEncoderDestroy(RSEncoder *encoder);
 
-int rsX264EncoderCreate(RSEncoder **encoder, RSDevice *input);
-int rsVaapiEncoderCreate(RSEncoder **encoder, RSDevice *input);
-int rsVideoEncoderCreate(RSEncoder **encoder, RSDevice *input);
+int rsX264EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
+int rsVaapiEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
+int rsVideoEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
 
 #endif

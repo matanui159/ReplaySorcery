@@ -52,10 +52,10 @@ int rsAudioThreadCreate(RSAudioThread **thread) {
    if ((ret = rsAudioDeviceCreate(&thrd->device)) < 0) {
       goto error;
    }
-   if ((ret = rsAudioEncoderCreate(&thrd->encoder, &thrd->device)) < 0) {
+   if ((ret = rsAudioEncoderCreate(&thrd->encoder, thrd->device.params)) < 0) {
       goto error;
    }
-   if ((ret = rsStreamCreate(&thrd->stream, thrd->encoder)) < 0) {
+   if ((ret = rsStreamCreate(&thrd->stream, &thrd->encoder)) < 0) {
       goto error;
    }
 

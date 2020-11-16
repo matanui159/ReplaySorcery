@@ -17,27 +17,21 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_AUDIO_H
-#define RS_AUDIO_H
-#include "../device/device.h"
-#include "../encoder/encoder.h"
-#include "../stream.h"
-#include "rsbuild.h"
-#ifdef RS_BUILD_PTHREAD_FOUND
-#include <pthread.h>
-#endif
+#ifndef RS_ENCODER_SWSCALE_H
+#define RS_ENCODER_SWSCALE_H
+#include <libavcodec/avcodec.h>
+#include <libswscale/swscale.h>
 
-typedef struct RSAudioThread {
-   RSDevice device;
-   RSEncoder encoder;
-   RSStream *stream;
-   volatile int running;
-#ifdef RS_BUILD_PTHREAD_FOUND
-   pthread_t thread;
-#endif
-} RSAudioThread;
+typedef struct RSSoftwareScale {
+   int width;
+   int height;
+   struct SwsContext *scaleCtx;
+   AVFrame *frame;
+} RSSoftwareScale;
 
-int rsAudioThreadCreate(RSAudioThread **thread);
-void rsAudioThreadDestroy(RSAudioThread **thread);
+int rsSoftwareScaleCreate(RSSoftwareScale *scale, const AVCodecParameters *params,
+                          enum AVPixelFormat format);
+void rsSoftwareScaleDestroy(RSSoftwareScale *scale);
+int rsSoftwareScale(RSSoftwareScale *scale, AVFrame *frame);
 
 #endif

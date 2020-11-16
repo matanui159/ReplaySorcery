@@ -22,11 +22,11 @@
 
 int rsAacEncoderCreate(RSEncoder **encoder, RSDevice *input) {
    int ret;
-   if ((ret = rsFFmpegEncoderCreate(encoder, "aac", input)) < 0) {
+   if ((ret = rsFFmpegEncoderCreate(encoder, "aac")) < 0) {
       goto error;
    }
 
-   AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(*encoder);
+   AVCodecContext *codecCtx = NULL;
    codecCtx->sample_fmt = AV_SAMPLE_FMT_FLTP;
    codecCtx->sample_rate = input->params->sample_rate;
    codecCtx->channels = input->params->channels;

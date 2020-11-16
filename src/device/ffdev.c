@@ -136,6 +136,7 @@ int rsFFmpegDeviceWrap(RSDevice *device, const char *name) {
    device->extra = av_malloc(sizeof(RSFFmpegDevice));
    if (device->extra == NULL) {
       ret = AVERROR(ENOMEM);
+      goto error;
    }
 
    device->destroy = ffmpegDeviceDestroy;
