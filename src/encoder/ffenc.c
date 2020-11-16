@@ -74,7 +74,8 @@ static int ffmpegEncoderSendPartialFrame(FFmpegEncoder *ffmpeg, AVFrame *frame) 
       size_t size = FFMIN(frameSize - frameUsed, audioFrameSize - ffmpeg->audioFrameUsed);
       if (ffmpeg->audioFrameUsed == 0) {
          int64_t samplesUsed = (int64_t)(frameUsed / sizeof(float));
-         audioFrame->pts = frame->pts + av_rescale(samplesUsed, AV_TIME_BASE, frame->sample_rate);
+         audioFrame->pts =
+             frame->pts + av_rescale(samplesUsed, AV_TIME_BASE, frame->sample_rate);
          audioFrame->format = frame->format;
          audioFrame->channels = frame->channels;
          audioFrame->channel_layout = frame->channel_layout;

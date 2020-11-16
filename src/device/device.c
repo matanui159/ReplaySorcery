@@ -19,15 +19,25 @@
 
 #include "device.h"
 #include "../config.h"
+#include "../util.h"
 
-void rsDeviceDestroy(RSDevice **device) {
-   if (*device != NULL && (*device)->destroy != NULL) {
-      (*device)->destroy(*device);
+int rsDeviceCreate(RSDevice *device) {
+   rsClear(device, sizeof(RSDevice));
+   device->params = avcodec_parameters_alloc();
+   if (device->params == NULL) {
+      return AVERROR(ENOMEM);
    }
-   av_freep(device);
+   return 0;
 }
 
-int rsVideoDeviceCreate(RSDevice **device) {
+void rsDeviceDestroy(RSDevice *device) {
+   if (device->destroy != NULL) {
+      device->destroy(device);
+   }
+   avcodec_parameters_free(&device->params);
+}
+
+int rsVideoDeviceCreate(RSDevice *device) {
    int ret;
    switch (rsConfig.videoInput) {
    case RS_CONFIG_DEVICE_X11:

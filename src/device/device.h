@@ -24,6 +24,7 @@
 
 typedef struct RSDevice {
    AVCodecParameters *params;
+   void *extra;
    void (*destroy)(struct RSDevice *device);
    int (*getFrame)(struct RSDevice *device, AVFrame *frame);
 } RSDevice;
@@ -32,10 +33,11 @@ static av_always_inline int rsDeviceGetFrame(RSDevice *device, AVFrame *frame) {
    return device->getFrame(device, frame);
 }
 
-void rsDeviceDestroy(RSDevice **device);
+int rsDeviceCreate(RSDevice *device);
+void rsDeviceDestroy(RSDevice *device);
 
-int rsX11DeviceCreate(RSDevice **device);
-int rsKMSDeviceCreate(RSDevice **device);
-int rsVideoDeviceCreate(RSDevice **device);
+int rsX11DeviceCreate(RSDevice *device);
+int rsKMSDeviceCreate(RSDevice *device);
+int rsVideoDeviceCreate(RSDevice *device);
 
 #endif

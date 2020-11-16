@@ -23,7 +23,7 @@
 #include "ffdev.h"
 #include "rsbuild.h"
 
-int rsX11DeviceCreate(RSDevice **device) {
+int rsX11DeviceCreate(RSDevice *device) {
    int ret;
    const char *input = getenv("DISPLAY");
    if (input == NULL) {
@@ -50,15 +50,15 @@ int rsX11DeviceCreate(RSDevice **device) {
       ret = AVERROR(ENOSYS);
       goto error;
    }
-   if ((ret = rsFFmpegDeviceCreate(device, "x11grab")) < 0) {
+   if ((ret = rsFFmpegDeviceWrap(device, "x11grab")) < 0) {
       goto error;
    }
 
-   rsFFmpegDeviceOption(*device, "grab_x", "%i", rsConfig.videoX);
-   rsFFmpegDeviceOption(*device, "grab_y", "%i", rsConfig.videoY);
-   rsFFmpegDeviceOption(*device, "video_size", "%ix%i", width, height);
-   rsFFmpegDeviceOption(*device, "framerate", "%i", rsConfig.videoFramerate);
-   if ((ret = rsFFmpegDeviceOpen(*device, input)) < 0) {
+   rsFFmpegDeviceOption(device->extra, "grab_x", "%i", rsConfig.videoX);
+   rsFFmpegDeviceOption(device->extra, "grab_y", "%i", rsConfig.videoY);
+   rsFFmpegDeviceOption(device->extra, "video_size", "%ix%i", width, height);
+   rsFFmpegDeviceOption(device->extra, "framerate", "%i", rsConfig.videoFramerate);
+   if ((ret = rsFFmpegDeviceOpen(device->extra, input, device->params)) < 0) {
       goto error;
    }
 

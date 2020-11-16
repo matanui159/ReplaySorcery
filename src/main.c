@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
    (void)argc;
    (void)argv;
    int ret;
-   RSDevice *device = NULL;
+   RSDevice device = {0};
    RSEncoder *encoder = NULL;
    RSStream *stream = NULL;
    RSControl *controller = NULL;
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
    if ((ret = rsVideoDeviceCreate(&device)) < 0) {
       goto error;
    }
-   if ((ret = rsVideoEncoderCreate(&encoder, device)) < 0) {
+   if ((ret = rsVideoEncoderCreate(&encoder, &device)) < 0) {
       goto error;
    }
    if ((ret = rsStreamCreate(&stream, encoder)) < 0) {

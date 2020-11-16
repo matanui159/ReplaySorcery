@@ -28,7 +28,7 @@
 #endif
 
 typedef struct RSAudioThread {
-   RSDevice *device;
+   RSDevice device;
    RSEncoder *encoder;
    RSStream *stream;
    volatile int running;

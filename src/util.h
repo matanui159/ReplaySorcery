@@ -31,6 +31,10 @@ typedef Display RSXDisplay;
 typedef char RSXDisplay;
 #endif
 
+static av_always_inline void rsClear(void *mem, size_t size) {
+   memset(mem, 0, size);
+}
+
 char *rsFormat(const char *fmt, ...);
 char *rsFormatv(const char *fmt, va_list args);
 
