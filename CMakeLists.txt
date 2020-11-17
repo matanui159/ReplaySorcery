@@ -13,11 +13,6 @@ set(sources
    src/main.c
    src/output.c
    src/util.c
-   # src/audio/aacenc.c
-   src/audio/adevice.c
-   src/audio/aencoder.c
-   src/audio/audio.c
-   # src/audio/pulsedev.c
    src/control/control.c
    src/control/dbgctrl.c
    src/control/x11ctrl.c
@@ -28,7 +23,6 @@ set(sources
    src/encoder/encoder.c
    src/encoder/ffenc.c
    src/encoder/swscale.c
-   # src/encoder/vaapienc.c
    src/encoder/x264enc.c
 )
 set(headers
@@ -39,9 +33,6 @@ set(headers
    src/output.h
    src/rsbuild.h.in
    src/util.h
-   src/audio/adevice.h
-   src/audio/aencoder.h
-   src/audio/audio.h
    src/control/control.h
    src/device/device.h
    src/device/ffdev.h

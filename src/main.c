@@ -18,7 +18,6 @@
  */
 
 #include "main.h"
-#include "audio/audio.h"
 #include "buffer.h"
 #include "config.h"
 #include "control/control.h"
@@ -35,43 +34,43 @@ const char *rsLicense = "ReplaySorcery  Copyright (C) 2020  ReplaySorcery develo
                         "This is free software, and you are welcome to redistribute it\n"
                         "under certain conditions; see COPYING for details.";
 
-static RSDevice mainDevice;
-static RSEncoder mainEncoder;
-static RSBuffer mainBuffer;
-static AVPacket mainPacket;
-static AVFrame *mainFrame;
-static volatile sig_atomic_t mainRunning = 1;
+static RSDevice videoDevice;
+static RSEncoder videoEncoder;
+static RSBuffer videoBuffer;
+static AVPacket videoPacket;
+static AVFrame *videoFrame;
+static volatile sig_atomic_t running = 1;
 
 static void mainSignal(int signal) {
    (void)signal;
    av_log(NULL, AV_LOG_INFO, "\nExiting...\n");
-   mainRunning = 0;
+   running = 0;
 }
 
 static int mainStep(void) {
    int ret;
-   while ((ret = rsEncoderGetPacket(&mainEncoder, &mainPacket)) == AVERROR(EAGAIN)) {
-      if ((ret = rsDeviceGetFrame(&mainDevice, mainFrame)) < 0) {
+   while ((ret = rsEncoderGetPacket(&videoEncoder, &videoPacket)) == AVERROR(EAGAIN)) {
+      if ((ret = rsDeviceGetFrame(&videoDevice, videoFrame)) < 0) {
          return ret;
       }
-      if ((ret = rsEncoderSendFrame(&mainEncoder, mainFrame)) < 0) {
+      if ((ret = rsEncoderSendFrame(&videoEncoder, videoFrame)) < 0) {
          return ret;
       }
    }
    if (ret < 0) {
       return ret;
    }
-   if ((ret = rsBufferAddPacket(&mainBuffer, &mainPacket)) < 0) {
+   if ((ret = rsBufferAddPacket(&videoBuffer, &videoPacket)) < 0) {
       return ret;
    }
    return 0;
 }
 
-static void mainOutput(void) {
+static int mainOutput(void) {
    int ret;
    RSOutput output = {0};
    int64_t startTime;
-   if ((startTime = rsBufferStartTime(&mainBuffer)) < 0) {
+   if ((startTime = rsBufferStartTime(&videoBuffer)) < 0) {
       ret = (int)startTime;
       goto error;
    }
@@ -79,22 +78,21 @@ static void mainOutput(void) {
       goto error;
    }
 
-   rsOutputAddStream(&output, mainEncoder.params);
+   rsOutputAddStream(&output, videoEncoder.params);
    if ((ret = rsOutputOpen(&output)) < 0) {
       goto error;
    }
-   if ((ret = rsBufferWrite(&mainBuffer, &output, 0)) < 0) {
+   if ((ret = rsBufferWrite(&videoBuffer, &output, 0)) < 0) {
       goto error;
    }
    if ((ret = rsOutputClose(&output)) < 0) {
       goto error;
    }
-   rsOutputDestroy(&output);
 
-   return;
+   ret = 0;
 error:
    rsOutputDestroy(&output);
-   av_log(NULL, AV_LOG_WARNING, "Failed to output video: %s\n", av_err2str(ret));
+   return ret;
 }
 
 int main(int argc, char *argv[]) {
@@ -102,7 +100,6 @@ int main(int argc, char *argv[]) {
    (void)argv;
    int ret;
    RSControl *controller = NULL;
-   RSAudioThread *audioThread = NULL;
 
    rsLogInit();
    if ((ret = rsConfigInit()) < 0) {
@@ -112,33 +109,29 @@ int main(int argc, char *argv[]) {
    av_log(NULL, AV_LOG_INFO, "%s\n", rsLicense);
    av_log(NULL, AV_LOG_INFO, "FFmpeg version: %s\n", av_version_info());
 
-   if ((ret = rsVideoDeviceCreate(&mainDevice)) < 0) {
+   if ((ret = rsVideoDeviceCreate(&videoDevice)) < 0) {
       goto error;
    }
-   if ((ret = rsVideoEncoderCreate(&mainEncoder, mainDevice.params)) < 0) {
+   if ((ret = rsVideoEncoderCreate(&videoEncoder, videoDevice.params)) < 0) {
       goto error;
    }
-   if ((ret = rsBufferCreate(&mainBuffer)) < 0) {
+   if ((ret = rsBufferCreate(&videoBuffer)) < 0) {
       goto error;
    }
 
-   av_init_packet(&mainPacket);
-   mainFrame = av_frame_alloc();
-   if (mainFrame == NULL) {
+   av_init_packet(&videoPacket);
+   videoFrame = av_frame_alloc();
+   if (videoFrame == NULL) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
    if ((ret = rsDefaultControlCreate(&controller)) < 0) {
       goto error;
    }
-   if ((ret = rsAudioThreadCreate(&audioThread)) < 0) {
-      av_log(NULL, AV_LOG_WARNING, "Failed to create audio thread: %s\n",
-             av_err2str(ret));
-   }
 
    signal(SIGINT, mainSignal);
    signal(SIGTERM, mainSignal);
-   while (mainRunning) {
+   while (running) {
       if ((ret = mainStep()) < 0) {
          goto error;
       }
@@ -146,17 +139,19 @@ int main(int argc, char *argv[]) {
          goto error;
       }
       if (ret > 0) {
-         mainOutput();
+         if ((ret = mainOutput()) < 0) {
+            av_log(NULL, AV_LOG_WARNING, "Failed to output video: %s\n", av_err2str(ret));
+         }
       }
    }
 
    ret = 0;
 error:
-   rsAudioThreadDestroy(&audioThread);
    rsControlDestroy(&controller);
-   rsBufferDestroy(&mainBuffer);
-   rsEncoderDestroy(&mainEncoder);
-   rsDeviceDestroy(&mainDevice);
+   av_frame_free(&videoFrame);
+   rsBufferDestroy(&videoBuffer);
+   rsEncoderDestroy(&videoEncoder);
+   rsDeviceDestroy(&videoDevice);
    if (ret < 0) {
       av_log(NULL, AV_LOG_FATAL, "%s\n", av_err2str(ret));
       return EXIT_FAILURE;
