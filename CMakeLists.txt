@@ -7,11 +7,11 @@ find_package(PkgConfig REQUIRED)
 
 set(binary replay-sorcery)
 set(sources
+   src/buffer.c
    src/config.c
    src/log.c
    src/main.c
    src/output.c
-   src/stream.c
    src/util.c
    # src/audio/aacenc.c
    src/audio/adevice.c
@@ -32,12 +32,12 @@ set(sources
    src/encoder/x264enc.c
 )
 set(headers
+   src/buffer.h
    src/config.h
    src/log.h
    src/main.h
    src/output.h
    src/rsbuild.h.in
-   src/stream.h
    src/util.h
    src/audio/adevice.h
    src/audio/aencoder.h

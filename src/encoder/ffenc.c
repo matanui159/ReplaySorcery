@@ -53,6 +53,9 @@ void rsFFmpegEncoderOption(RSFFmpegEncoder *ffmpeg, const char *key, const char 
 
 int rsFFmpegEncoderOpen(RSFFmpegEncoder *ffmpeg, AVCodecParameters *params) {
    int ret;
+   if (ffmpeg->error < 0) {
+      return ffmpeg->error;
+   }
    if ((ret = avcodec_open2(ffmpeg->codecCtx, NULL, &ffmpeg->options)) < 0) {
       av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to open encoder: %s\n",
              av_err2str(ret));

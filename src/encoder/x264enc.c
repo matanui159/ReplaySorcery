@@ -58,7 +58,7 @@ int rsX264EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params) {
 
    X264Encoder *x264 = av_mallocz(sizeof(X264Encoder));
    encoder->extra = x264;
-   if (encoder->extra == NULL) {
+   if (x264 == NULL) {
       ret = AVERROR(ENOMEM);
       goto error;
    }

@@ -19,10 +19,20 @@
 
 #ifndef RS_OUTPUT_H
 #define RS_OUTPUT_H
-#include "stream.h"
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
 
-typedef struct RSOutput RSOutput;
+typedef struct RSOutput {
+   int64_t startTime;
+   AVFormatContext *formatCtx;
+   int error;
+} RSOutput;
 
-int rsOutput(RSStream *videoStream, RSStream *audioStream);
+int rsOutputCreate(RSOutput *output, int64_t startTime);
+void rsOutputAddStream(RSOutput *output, const AVCodecParameters *params);
+int rsOutputOpen(RSOutput *output);
+int rsOutputClose(RSOutput *output);
+void rsOutputDestroy(RSOutput *output);
+int rsOutputWrite(RSOutput *output, AVPacket *packet);
 
 #endif

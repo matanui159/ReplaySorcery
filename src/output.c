@@ -20,35 +20,17 @@
 #include "output.h"
 #include "config.h"
 #include "util.h"
-#include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libavutil/bprint.h>
 #include <time.h>
 
-static int outputStream(AVFormatContext *formatCtx, RSStream *stream) {
+int rsOutputCreate(RSOutput *output, int64_t startTime) {
    int ret;
-   AVStream *formatStream = avformat_new_stream(formatCtx, NULL);
-   if (formatStream == NULL) {
-      return AVERROR(ENOMEM);
-   }
-   if ((ret = avcodec_parameters_copy(formatStream->codecpar, stream->input->params)) <
-       0) {
-      return ret;
-   }
-   formatStream->time_base = AV_TIME_BASE_Q;
-   return 0;
-}
-
-int rsOutput(RSStream *videoStream, RSStream *audioStream) {
-   int ret;
+   rsClear(output, sizeof(RSOutput));
+   output->startTime = startTime;
    AVBPrint buffer;
    av_bprint_init(&buffer, 0, AV_BPRINT_SIZE_UNLIMITED);
    char *path = NULL;
-   AVFormatContext *formatCtx = NULL;
-   AVDictionary *options = NULL;
-   AVPacket *videoPackets = NULL;
-   AVPacket *audioPackets = NULL;
-
    const char *outputFile = rsConfig.outputFile;
    if (outputFile[0] == '~') {
       const char *home = getenv("HOME");
@@ -73,110 +55,113 @@ int rsOutput(RSStream *videoStream, RSStream *audioStream) {
    }
 
    av_log(NULL, AV_LOG_INFO, "Saving video to '%s'...\n", path);
-   if ((ret = avformat_alloc_output_context2(&formatCtx, NULL, "mp4", path)) < 0) {
+   if ((ret = avformat_alloc_output_context2(&output->formatCtx, NULL, "mp4", path)) <
+       0) {
       av_log(NULL, AV_LOG_ERROR, "Failed to allocate output format: %s\n",
              av_err2str(ret));
       goto error;
    }
-   if ((ret = avio_open(&formatCtx->pb, path, AVIO_FLAG_WRITE)) < 0) {
-      av_log(formatCtx, AV_LOG_ERROR, "Failed to open output: %s\n", av_err2str(ret));
+   if ((ret = avio_open(&output->formatCtx->pb, path, AVIO_FLAG_WRITE)) < 0) {
+      av_log(output->formatCtx, AV_LOG_ERROR, "Failed to open output: %s\n",
+             av_err2str(ret));
       goto error;
    }
    av_freep(&path);
 
-   if ((ret = outputStream(formatCtx, videoStream)) < 0) {
-      goto error;
-   }
-   if (audioStream != NULL) {
-      if ((ret = outputStream(formatCtx, audioStream)) < 0) {
-         goto error;
-      }
+   return 0;
+error:
+   av_freep(&path);
+   av_bprint_finalize(&buffer, NULL);
+   rsOutputDestroy(output);
+   return ret;
+}
+
+void rsOutputAddStream(RSOutput *output, const AVCodecParameters *params) {
+   int ret;
+   if (output->error < 0) {
+      return;
    }
 
-   rsOptionsSet(&options, &ret, "movflags", "+faststart");
-   if (ret < 0) {
+   AVStream *stream = avformat_new_stream(output->formatCtx, NULL);
+   if (stream == NULL) {
+      ret = AVERROR(ENOMEM);
       goto error;
    }
-   if ((ret = avformat_init_output(formatCtx, &options)) < 0) {
-      av_log(formatCtx, AV_LOG_ERROR, "Failed to setup output format: %s\n",
+   if ((ret = avcodec_parameters_copy(stream->codecpar, params)) < 0) {
+      goto error;
+   }
+   if (params->codec_type == AVMEDIA_TYPE_AUDIO) {
+      stream->time_base = av_make_q(1, params->sample_rate);
+   } else {
+      stream->time_base = AV_TIME_BASE_Q;
+   }
+
+   return;
+error:
+   output->error = ret;
+}
+
+int rsOutputOpen(RSOutput *output) {
+   int ret;
+   AVDictionary *options = NULL;
+   rsOptionsSet(&options, &output->error, "movflags", "+faststart");
+   if (output->error < 0) {
+      ret = output->error;
+      goto error;
+   }
+   if ((ret = avformat_init_output(output->formatCtx, &options)) < 0) {
+      av_log(output->formatCtx, AV_LOG_ERROR, "Failed to setup output format: %s\n",
              av_err2str(ret));
       goto error;
    }
    rsOptionsDestroy(&options);
 
-   if ((ret = avformat_write_header(formatCtx, NULL)) < 0) {
-      av_log(formatCtx, AV_LOG_ERROR, "Failed to write header: %s\n", av_err2str(ret));
+   if ((ret = avformat_write_header(output->formatCtx, NULL)) < 0) {
+      av_log(output->formatCtx, AV_LOG_ERROR, "Failed to write header: %s\n",
+             av_err2str(ret));
       goto error;
    }
 
-   size_t videoSize;
-   videoPackets = rsStreamGetPackets(videoStream, &videoSize);
-   if (videoPackets == NULL) {
-      ret = AVERROR(ENOMEM);
-      goto error;
-   }
+   return 0;
+error:
+   rsOptionsDestroy(&options);
+   return ret;
+}
 
-   size_t audioSize = 0;
-   if (audioStream != NULL) {
-      audioPackets = rsStreamGetPackets(audioStream, &audioSize);
-      if (audioPackets == NULL) {
-         ret = AVERROR(ENOMEM);
+int rsOutputClose(RSOutput *output) {
+   int ret;
+   if ((ret = av_write_trailer(output->formatCtx)) < 0) {
+      av_log(output->formatCtx, AV_LOG_ERROR, "Failed to write trailer: %s\n",
+             av_err2str(ret));
+      return ret;
+   }
+   if ((ret = avio_closep(&output->formatCtx->pb)) < 0) {
+      av_log(NULL, AV_LOG_ERROR, "Failed to close output: %s\n", av_err2str(ret));
+   }
+   return 0;
+}
+
+void rsOutputDestroy(RSOutput *output) {
+   avio_closep(&output->formatCtx->pb);
+   avformat_free_context(output->formatCtx);
+   output->formatCtx = NULL;
+}
+
+int rsOutputWrite(RSOutput *output, AVPacket *packet) {
+   int ret;
+   AVStream *stream = output->formatCtx->streams[packet->stream_index];
+   int64_t startTime = av_rescale_q(output->startTime, AV_TIME_BASE_Q, stream->time_base);
+   packet->pts -= startTime;
+   packet->dts -= startTime;
+   if (packet->pts >= 0) {
+      if ((ret = av_interleaved_write_frame(output->formatCtx, packet)) < 0) {
+         av_log(NULL, AV_LOG_ERROR, "Failed to write packet: %s\n", av_err2str(ret));
          goto error;
       }
    }
 
-   size_t videoIndex = 0;
-   size_t audioIndex = 0;
-   for (; videoIndex < videoSize; ++videoIndex) {
-      if (videoPackets[videoIndex].flags & AV_PKT_FLAG_KEY) {
-         break;
-      }
-   }
-
-   int64_t startTime = videoPackets[videoIndex].pts;
-   while (videoIndex < videoSize || audioIndex < audioSize) {
-      AVPacket *packet;
-      if (audioIndex >= audioSize ||
-          (videoIndex < videoSize &&
-           videoPackets[videoIndex].pts <= audioPackets[audioIndex].pts)) {
-         packet = &videoPackets[videoIndex];
-         ++videoIndex;
-      } else {
-         packet = &audioPackets[audioIndex];
-         packet->stream_index = 1;
-         ++audioIndex;
-      }
-
-      packet->pts -= startTime;
-      packet->dts -= startTime;
-      AVStream *stream = formatCtx->streams[packet->stream_index];
-      av_packet_rescale_ts(packet, AV_TIME_BASE_Q, stream->time_base);
-      if (packet->pts >= 0) {
-         if ((ret = av_interleaved_write_frame(formatCtx, packet)) < 0) {
-            av_log(formatCtx, AV_LOG_ERROR, "Failed to write frame: %s\n",
-                   av_err2str(ret));
-            goto error;
-         }
-      }
-   }
-   rsStreamPacketsDestroy(&audioPackets, audioSize);
-   rsStreamPacketsDestroy(&videoPackets, videoSize);
-
-   if ((ret = av_write_trailer(formatCtx)) < 0) {
-      av_log(formatCtx, AV_LOG_ERROR, "Failed to write trailer: %s\n", av_err2str(ret));
-      goto error;
-   }
-   avio_closep(&formatCtx->pb);
-   avformat_free_context(formatCtx);
-
-   return 0;
+   ret = 0;
 error:
-   rsStreamPacketsDestroy(&audioPackets, audioSize);
-   rsStreamPacketsDestroy(&videoPackets, videoSize);
-   rsOptionsDestroy(&options);
-   avio_closep(&formatCtx->pb);
-   avformat_free_context(formatCtx);
-   av_freep(&path);
-   av_bprint_finalize(&buffer, NULL);
+   av_packet_unref(packet);
    return ret;
 }

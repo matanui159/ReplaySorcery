@@ -19,13 +19,13 @@
 
 #include "main.h"
 #include "audio/audio.h"
+#include "buffer.h"
 #include "config.h"
 #include "control/control.h"
 #include "device/device.h"
 #include "encoder/encoder.h"
 #include "log.h"
 #include "output.h"
-#include "stream.h"
 #include <libavutil/avutil.h>
 #include <signal.h>
 
@@ -35,21 +35,72 @@ const char *rsLicense = "ReplaySorcery  Copyright (C) 2020  ReplaySorcery develo
                         "This is free software, and you are welcome to redistribute it\n"
                         "under certain conditions; see COPYING for details.";
 
-static volatile int running = 1;
+static RSDevice mainDevice;
+static RSEncoder mainEncoder;
+static RSBuffer mainBuffer;
+static AVPacket mainPacket;
+static AVFrame *mainFrame;
+static volatile sig_atomic_t mainRunning = 1;
 
 static void mainSignal(int signal) {
    (void)signal;
    av_log(NULL, AV_LOG_INFO, "\nExiting...\n");
-   running = 0;
+   mainRunning = 0;
+}
+
+static int mainStep(void) {
+   int ret;
+   while ((ret = rsEncoderGetPacket(&mainEncoder, &mainPacket)) == AVERROR(EAGAIN)) {
+      if ((ret = rsDeviceGetFrame(&mainDevice, mainFrame)) < 0) {
+         return ret;
+      }
+      if ((ret = rsEncoderSendFrame(&mainEncoder, mainFrame)) < 0) {
+         return ret;
+      }
+   }
+   if (ret < 0) {
+      return ret;
+   }
+   if ((ret = rsBufferAddPacket(&mainBuffer, &mainPacket)) < 0) {
+      return ret;
+   }
+   return 0;
+}
+
+static void mainOutput(void) {
+   int ret;
+   RSOutput output = {0};
+   int64_t startTime;
+   if ((startTime = rsBufferStartTime(&mainBuffer)) < 0) {
+      ret = (int)startTime;
+      goto error;
+   }
+   if ((ret = rsOutputCreate(&output, startTime)) < 0) {
+      goto error;
+   }
+
+   rsOutputAddStream(&output, mainEncoder.params);
+   if ((ret = rsOutputOpen(&output)) < 0) {
+      goto error;
+   }
+   if ((ret = rsBufferWrite(&mainBuffer, &output, 0)) < 0) {
+      goto error;
+   }
+   if ((ret = rsOutputClose(&output)) < 0) {
+      goto error;
+   }
+   rsOutputDestroy(&output);
+
+   return;
+error:
+   rsOutputDestroy(&output);
+   av_log(NULL, AV_LOG_WARNING, "Failed to output video: %s\n", av_err2str(ret));
 }
 
 int main(int argc, char *argv[]) {
    (void)argc;
    (void)argv;
    int ret;
-   RSDevice device = {0};
-   RSEncoder encoder = {0};
-   RSStream *stream = NULL;
    RSControl *controller = NULL;
    RSAudioThread *audioThread = NULL;
 
@@ -61,13 +112,20 @@ int main(int argc, char *argv[]) {
    av_log(NULL, AV_LOG_INFO, "%s\n", rsLicense);
    av_log(NULL, AV_LOG_INFO, "FFmpeg version: %s\n", av_version_info());
 
-   if ((ret = rsVideoDeviceCreate(&device)) < 0) {
+   if ((ret = rsVideoDeviceCreate(&mainDevice)) < 0) {
       goto error;
    }
-   if ((ret = rsVideoEncoderCreate(&encoder, device.params)) < 0) {
+   if ((ret = rsVideoEncoderCreate(&mainEncoder, mainDevice.params)) < 0) {
       goto error;
    }
-   if ((ret = rsStreamCreate(&stream, &encoder)) < 0) {
+   if ((ret = rsBufferCreate(&mainBuffer)) < 0) {
+      goto error;
+   }
+
+   av_init_packet(&mainPacket);
+   mainFrame = av_frame_alloc();
+   if (mainFrame == NULL) {
+      ret = AVERROR(ENOMEM);
       goto error;
    }
    if ((ret = rsDefaultControlCreate(&controller)) < 0) {
@@ -80,21 +138,15 @@ int main(int argc, char *argv[]) {
 
    signal(SIGINT, mainSignal);
    signal(SIGTERM, mainSignal);
-   while (running) {
-      if ((ret = rsStreamUpdate(stream)) < 0) {
+   while (mainRunning) {
+      if ((ret = mainStep()) < 0) {
          goto error;
       }
       if ((ret = rsControlWantsSave(controller)) < 0) {
          goto error;
       }
       if (ret > 0) {
-         RSStream *audioStream = NULL;
-         if (audioThread != NULL) {
-            audioStream = audioThread->stream;
-         }
-         if ((ret = rsOutput(stream, audioStream)) < 0) {
-            goto error;
-         }
+         mainOutput();
       }
    }
 
@@ -102,9 +154,9 @@ int main(int argc, char *argv[]) {
 error:
    rsAudioThreadDestroy(&audioThread);
    rsControlDestroy(&controller);
-   rsStreamDestroy(&stream);
-   rsEncoderDestroy(&encoder);
-   rsDeviceDestroy(&device);
+   rsBufferDestroy(&mainBuffer);
+   rsEncoderDestroy(&mainEncoder);
+   rsDeviceDestroy(&mainDevice);
    if (ret < 0) {
       av_log(NULL, AV_LOG_FATAL, "%s\n", av_err2str(ret));
       return EXIT_FAILURE;

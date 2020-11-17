@@ -19,9 +19,9 @@
 
 #ifndef RS_AUDIO_H
 #define RS_AUDIO_H
+#include "../buffer.h"
 #include "../device/device.h"
 #include "../encoder/encoder.h"
-#include "../stream.h"
 #include "rsbuild.h"
 #ifdef RS_BUILD_PTHREAD_FOUND
 #include <pthread.h>
@@ -30,7 +30,7 @@
 typedef struct RSAudioThread {
    RSDevice device;
    RSEncoder encoder;
-   RSStream *stream;
+   RSBuffer buffer;
    volatile int running;
 #ifdef RS_BUILD_PTHREAD_FOUND
    pthread_t thread;

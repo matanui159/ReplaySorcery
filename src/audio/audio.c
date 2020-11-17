@@ -26,9 +26,9 @@ static void *audioThread(void *extra) {
    int ret;
    RSAudioThread *thread = extra;
    while (thread->running) {
-      if ((ret = rsStreamUpdate(thread->stream)) < 0) {
-         goto error;
-      }
+      // if ((ret = rsStreamUpdate(thread->stream)) < 0) {
+      //    goto error;
+      // }
    }
 
    ret = 0;
@@ -55,9 +55,9 @@ int rsAudioThreadCreate(RSAudioThread **thread) {
    if ((ret = rsAudioEncoderCreate(&thrd->encoder, thrd->device.params)) < 0) {
       goto error;
    }
-   if ((ret = rsStreamCreate(&thrd->stream, &thrd->encoder)) < 0) {
-      goto error;
-   }
+   // if ((ret = rsBufferCreate(&thrd->buffer, 0)) < 0) {
+   //    goto error;
+   // }
 
    thrd->running = 1;
    if ((ret = pthread_create(&thrd->thread, NULL, audioThread, thrd)) != 0) {
@@ -92,7 +92,7 @@ void rsAudioThreadDestroy(RSAudioThread **thread) {
       if (thrd->thread != 0) {
          pthread_join(thrd->thread, NULL);
       }
-      rsStreamDestroy(&thrd->stream);
+      rsBufferDestroy(&thrd->buffer);
       rsEncoderDestroy(&thrd->encoder);
       rsDeviceDestroy(&thrd->device);
       av_freep(thread);

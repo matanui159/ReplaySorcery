@@ -19,34 +19,25 @@
 
 #ifndef RS_STREAM_H
 #define RS_STREAM_H
-#include "encoder/encoder.h"
+#include "output.h"
 #include "rsbuild.h"
 #include <libavcodec/avcodec.h>
-#include <libavutil/avutil.h>
-#ifdef RS_BUILD_PTHREAD_FOUND
-#include <pthread.h>
-#endif
 
 typedef struct RSPacketList {
    struct RSPacketList *next;
    AVPacket packet;
 } RSPacketList;
 
-typedef struct RSStream {
-   RSEncoder *input;
+typedef struct RSBuffer {
    RSPacketList *pool;
    RSPacketList *tail;
    RSPacketList *head;
-#ifdef RS_BUILD_PTHREAD_FOUND
-   pthread_mutex_t mutex;
-   int mutexCreated;
-#endif
-} RSStream;
+} RSBuffer;
 
-int rsStreamCreate(RSStream **stream, RSEncoder *input);
-void rsStreamDestroy(RSStream **stream);
-int rsStreamUpdate(RSStream *stream);
-AVPacket *rsStreamGetPackets(RSStream *stream, size_t *size);
-void rsStreamPacketsDestroy(AVPacket **packets, size_t size);
+int rsBufferCreate(RSBuffer *buffer);
+void rsBufferDestroy(RSBuffer *buffer);
+int rsBufferAddPacket(RSBuffer *buffer, AVPacket *packet);
+int64_t rsBufferStartTime(RSBuffer *buffer);
+int rsBufferWrite(RSBuffer *buffer, RSOutput *output, int stream);
 
 #endif

@@ -39,7 +39,7 @@ int rsSoftwareScaleCreate(RSSoftwareScale *scale, const AVCodecParameters *param
                       scale->height, format, 0, NULL, NULL, NULL);
    if (scale->scaleCtx == NULL) {
       av_log(NULL, AV_LOG_ERROR, "Failed to create scale context\n");
-      ret = AVERROR_EXTERNAL;
+      ret = AVERROR_UNKNOWN;
       goto error;
    }
 
@@ -70,10 +70,13 @@ void rsSoftwareScaleDestroy(RSSoftwareScale *scale) {
 
 int rsSoftwareScale(RSSoftwareScale *scale, AVFrame *frame) {
    int ret;
-   if ((ret = sws_scale(scale->scaleCtx, frame->data, frame->linesize, 0, frame->height,
-                        scale->frame->data, scale->frame->linesize)) < 0) {
+   if ((ret = sws_scale(scale->scaleCtx, (const uint8_t **)frame->data, frame->linesize,
+                        0, frame->height, scale->frame->data, scale->frame->linesize)) <
+       0) {
+      av_log(NULL, AV_LOG_ERROR, "Failed to scale frame: %s\n", av_err2str(ret));
       goto error;
    }
+   av_frame_copy_props(scale->frame, frame);
 
    av_frame_unref(frame);
    if ((ret = av_frame_ref(frame, scale->frame)) < 0) {
