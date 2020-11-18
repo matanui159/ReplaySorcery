@@ -17,6 +17,7 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "audio/audio.h"
 #include "buffer.h"
 #include "config.h"
 #include "control/control.h"
@@ -33,6 +34,7 @@ static RSEncoder videoEncoder;
 static RSBuffer videoBuffer;
 static AVPacket videoPacket;
 static AVFrame *videoFrame;
+static RSAudioThread audioThread;
 static RSControl controller;
 static volatile sig_atomic_t running = 1;
 
@@ -126,6 +128,10 @@ int main(int argc, char *argv[]) {
    if ((ret = rsBufferCreate(&videoBuffer)) < 0) {
       goto error;
    }
+   if ((ret = rsAudioThreadCreate(&audioThread)) < 0) {
+      av_log(NULL, AV_LOG_WARNING, "Failed to create audio thread: %s\n",
+             av_err2str(ret));
+   }
    if ((ret = rsDefaultControlCreate(&controller)) < 0) {
       goto error;
    }
@@ -149,6 +155,7 @@ int main(int argc, char *argv[]) {
    ret = 0;
 error:
    rsControlDestroy(&controller);
+   rsAudioThreadDestroy(&audioThread);
    av_frame_free(&videoFrame);
    rsBufferDestroy(&videoBuffer);
    rsEncoderDestroy(&videoEncoder);

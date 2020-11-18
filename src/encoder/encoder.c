@@ -46,11 +46,14 @@ int rsVideoEncoderCreate(RSEncoder *encoder, const AVFrame *frame) {
       return rsVaapiEncoderCreate(encoder, frame);
    }
 
-   if ((ret = rsVaapiEncoderCreate(encoder, frame)) >= 0) {
-      av_log(NULL, AV_LOG_INFO, "Created VAAPI encoder\n");
-      return 0;
+   if (frame->format == AV_PIX_FMT_DRM_PRIME) {
+      if ((ret = rsVaapiEncoderCreate(encoder, frame)) >= 0) {
+         av_log(NULL, AV_LOG_INFO, "Created VA-API encoder\n");
+         return 0;
+      }
+      av_log(NULL, AV_LOG_WARNING, "Failed to create VA-API encoder: %s\n",
+             av_err2str(ret));
    }
-   av_log(NULL, AV_LOG_WARNING, "Failed to create VAAPI encoder: %s\n", av_err2str(ret));
 
    if ((ret = rsX264EncoderCreate(encoder, frame)) >= 0) {
       av_log(NULL, AV_LOG_INFO, "Created x264 encoder\n");

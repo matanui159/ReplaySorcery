@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020  Joshua Minter, Patryk Seregiet
  *
  * This file is part of ReplaySorcery.
  *
@@ -17,11 +17,22 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_AUDIO_AENCODER_H
-#define RS_AUDIO_AENCODER_H
-#include "../encoder/encoder.h"
+#ifndef RS_AUDIO_ABUFFER_H
+#define RS_AUDIO_ABUFFER_H
+#include "../output.h"
+#include <libavformat/avformat.h>
 
-int rsAacEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
-int rsAudioEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
+typedef struct RSAudioBuffer {
+   int8_t *data;
+   size_t capacity;
+   size_t index;
+   size_t size;
+   int64_t endTime;
+} RSAudioBuffer;
+
+int rsAudioBufferCreate(RSAudioBuffer *buffer);
+void rsAudioBufferDestroy(RSAudioBuffer *buffer);
+int rsAudioBufferAddFrame(RSAudioBuffer *buffer, AVFrame *frame);
+int rsAudioBufferWrite(RSOutput *output, int64_t startTime);
 
 #endif

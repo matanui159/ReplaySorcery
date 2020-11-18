@@ -24,6 +24,7 @@
 #include <libavutil/bprint.h>
 #include <time.h>
 
+// TODO: remove startTime and have it controlled by video buffer
 int rsOutputCreate(RSOutput *output, int64_t startTime) {
    int ret;
    rsClear(output, sizeof(RSOutput));

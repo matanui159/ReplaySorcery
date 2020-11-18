@@ -77,14 +77,13 @@ void rsBufferDestroy(RSBuffer *buffer) {
 }
 
 int rsBufferAddPacket(RSBuffer *buffer, AVPacket *packet) {
-   int ret;
    RSPacketList *plist = bufferPacketCreate(buffer);
    if (plist == NULL) {
+      av_packet_unref(packet);
       return AVERROR(ENOMEM);
    }
-   if ((ret = av_packet_ref(&plist->packet, packet)) < 0) {
-      goto error;
-   }
+   av_packet_move_ref(&plist->packet, packet);
+
    if (buffer->head == NULL) {
       buffer->tail = plist;
       buffer->head = plist;
@@ -101,11 +100,7 @@ int rsBufferAddPacket(RSBuffer *buffer, AVPacket *packet) {
       remove = next;
    }
    buffer->tail = remove;
-
    return 0;
-error:
-   bufferPacketDestroy(buffer, plist);
-   return ret;
 }
 
 int64_t rsBufferStartTime(RSBuffer *buffer) {

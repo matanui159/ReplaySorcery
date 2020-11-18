@@ -18,6 +18,7 @@
  */
 
 #include "audio.h"
+#include "../util.h"
 #include "adevice.h"
 #include "aencoder.h"
 
@@ -26,48 +27,66 @@ static void *audioThread(void *extra) {
    int ret;
    RSAudioThread *thread = extra;
    while (thread->running) {
-      // if ((ret = rsStreamUpdate(thread->stream)) < 0) {
-      //    goto error;
-      // }
+      if ((ret = rsDeviceNextFrame(&thread->device, thread->frame)) < 0) {
+         goto error;
+      }
+
+      rsAudioThreadLock(thread);
+      ret = rsAudioBufferAddFrame(&thread->buffer, thread->frame);
+      rsAudioThreadUnlock(thread);
+      if (ret < 0) {
+         goto error;
+      }
    }
 
    ret = 0;
 error:
    if (ret < 0) {
-      av_log(NULL, AV_LOG_PANIC, "Audio thread exiting: %s\n", av_err2str(ret));
+      av_log(NULL, AV_LOG_FATAL, "Audio thread exiting: %s\n", av_err2str(ret));
    }
    return NULL;
 }
 #endif
 
-int rsAudioThreadCreate(RSAudioThread **thread) {
+int rsAudioThreadCreate(RSAudioThread *thread) {
 #ifdef RS_BUILD_PTHREAD_FOUND
    int ret;
-   RSAudioThread *thrd = av_mallocz(sizeof(RSAudioThread));
-   *thread = thrd;
-   if (thrd == NULL) {
+   rsClear(thread, sizeof(RSAudioThread));
+   if ((ret = rsAudioDeviceCreate(&thread->device)) < 0) {
+      goto error;
+   }
+   if ((ret = rsAudioBufferCreate(&thread->buffer)) < 0) {
+      goto error;
+   }
+
+   thread->frame = av_frame_alloc();
+   if (thread->frame == NULL) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
-   if ((ret = rsAudioDeviceCreate(&thrd->device)) < 0) {
-      goto error;
-   }
-   if ((ret = rsAudioEncoderCreate(&thrd->encoder, thrd->device.params)) < 0) {
-      goto error;
-   }
-   // if ((ret = rsBufferCreate(&thrd->buffer, 0)) < 0) {
-   //    goto error;
-   // }
 
-   thrd->running = 1;
-   if ((ret = pthread_create(&thrd->thread, NULL, audioThread, thrd)) != 0) {
-      ret = AVERROR(ret);
-      av_log(NULL, AV_LOG_ERROR, "Failed to create pthread: %s\n", av_err2str(ret));
+   thread->mutex = av_malloc(sizeof(pthread_mutex_t));
+   if (thread->mutex == NULL) {
+      ret = AVERROR(ENOMEM);
       goto error;
    }
-   if (thrd->thread == 0) {
-      av_log(NULL, AV_LOG_ERROR, "Thread ID of 0 not supported\n");
-      ret = AVERROR_BUG;
+   if ((ret = pthread_mutex_init(thread->mutex, NULL)) != 0) {
+      av_freep(&thread->mutex);
+      ret = AVERROR(ret);
+      av_log(NULL, AV_LOG_ERROR, "Failed to create mutex: %s\n", av_err2str(ret));
+      goto error;
+   }
+
+   thread->running = 1;
+   thread->thread = av_malloc(sizeof(pthread_t));
+   if (thread->thread == NULL) {
+      ret = AVERROR(ENOMEM);
+      goto error;
+   }
+   if ((ret = pthread_create(thread->thread, NULL, audioThread, thread)) != 0) {
+      av_freep(&thread->thread);
+      ret = AVERROR(ret);
+      av_log(NULL, AV_LOG_ERROR, "Failed to create thread: %s\n", av_err2str(ret));
       goto error;
    }
 
@@ -84,19 +103,38 @@ error:
 #endif
 }
 
-void rsAudioThreadDestroy(RSAudioThread **thread) {
+void rsAudioThreadDestroy(RSAudioThread *thread) {
 #ifdef RS_BUILD_PTHREAD_FOUND
-   RSAudioThread *thrd = *thread;
-   if (thrd != NULL) {
-      thrd->running = 0;
-      if (thrd->thread != 0) {
-         pthread_join(thrd->thread, NULL);
-      }
-      rsBufferDestroy(&thrd->buffer);
-      rsEncoderDestroy(&thrd->encoder);
-      rsDeviceDestroy(&thrd->device);
-      av_freep(thread);
+   thread->running = 0;
+   if (thread->thread != NULL) {
+      pthread_join(*thread->thread, NULL);
+      av_freep(&thread->thread);
    }
+   if (thread->mutex != NULL) {
+      pthread_mutex_destroy(thread->mutex);
+      av_freep(thread->mutex);
+   }
+   av_frame_free(&thread->frame);
+   rsAudioBufferDestroy(&thread->buffer);
+   rsDeviceDestroy(&thread->device);
+
+#else
+   (void)thread;
+#endif
+}
+
+void rsAudioThreadLock(RSAudioThread *thread) {
+#ifdef RS_BUILD_PTHREAD_FOUND
+   pthread_mutex_lock(thread->mutex);
+
+#else
+   (void)thread;
+#endif
+}
+
+void rsAudioThreadUnlock(RSAudioThread *thread) {
+#ifdef RS_BUILD_PTHREAD_FOUND
+   pthread_mutex_unlock(thread->mutex);
 
 #else
    (void)thread;

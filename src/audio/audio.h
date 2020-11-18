@@ -19,25 +19,29 @@
 
 #ifndef RS_AUDIO_H
 #define RS_AUDIO_H
-#include "../buffer.h"
 #include "../device/device.h"
 #include "../encoder/encoder.h"
+#include "abuffer.h"
 #include "rsbuild.h"
+#include <libavcodec/avcodec.h>
 #ifdef RS_BUILD_PTHREAD_FOUND
 #include <pthread.h>
 #endif
 
 typedef struct RSAudioThread {
    RSDevice device;
-   RSEncoder encoder;
-   RSBuffer buffer;
+   RSAudioBuffer buffer;
+   AVFrame *frame;
    volatile int running;
 #ifdef RS_BUILD_PTHREAD_FOUND
-   pthread_t thread;
+   pthread_t *thread;
+   pthread_mutex_t *mutex;
 #endif
 } RSAudioThread;
 
-int rsAudioThreadCreate(RSAudioThread **thread);
-void rsAudioThreadDestroy(RSAudioThread **thread);
+int rsAudioThreadCreate(RSAudioThread *thread);
+void rsAudioThreadDestroy(RSAudioThread *thread);
+void rsAudioThreadLock(RSAudioThread *thread);
+void rsAudioThreadUnlock(RSAudioThread *thread);
 
 #endif
