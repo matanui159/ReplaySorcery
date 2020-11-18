@@ -19,6 +19,7 @@
 
 #include "config.h"
 #include "rsbuild.h"
+#include "util.h"
 #include <libavcodec/avcodec.h>
 #include <libavformat/avio.h>
 #include <libavutil/avstring.h>
@@ -102,8 +103,7 @@ static const AVOption configOptions[] = {
     {NULL}};
 
 static const AVClass configClass = {
-    // TODO: make rsName a constant so it can be used here
-    .class_name = "ReplaySorcery",
+    .class_name = RS_NAME,
     .option = configOptions,
     .item_name = av_default_item_name,
 };

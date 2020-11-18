@@ -23,17 +23,15 @@
 #include <libavformat/avformat.h>
 
 typedef struct RSDevice {
-   AVCodecParameters *params;
    void *extra;
    void (*destroy)(struct RSDevice *device);
-   int (*getFrame)(struct RSDevice *device, AVFrame *frame);
+   int (*nextFrame)(struct RSDevice *device, AVFrame *frame);
 } RSDevice;
 
-static av_always_inline int rsDeviceGetFrame(RSDevice *device, AVFrame *frame) {
-   return device->getFrame(device, frame);
+static av_always_inline int rsDeviceNextFrame(RSDevice *device, AVFrame *frame) {
+   return device->nextFrame(device, frame);
 }
 
-int rsDeviceCreate(RSDevice *device);
 void rsDeviceDestroy(RSDevice *device);
 
 int rsX11DeviceCreate(RSDevice *device);

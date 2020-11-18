@@ -17,7 +17,6 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "main.h"
 #include "buffer.h"
 #include "config.h"
 #include "control/control.h"
@@ -25,20 +24,16 @@
 #include "encoder/encoder.h"
 #include "log.h"
 #include "output.h"
+#include "util.h"
 #include <libavutil/avutil.h>
 #include <signal.h>
-
-const char *rsName = "ReplaySorcery";
-const char *rsLicense = "ReplaySorcery  Copyright (C) 2020  ReplaySorcery developers\n"
-                        "This program comes with ABSOLUTELY NO WARRANTY.\n"
-                        "This is free software, and you are welcome to redistribute it\n"
-                        "under certain conditions; see COPYING for details.";
 
 static RSDevice videoDevice;
 static RSEncoder videoEncoder;
 static RSBuffer videoBuffer;
 static AVPacket videoPacket;
 static AVFrame *videoFrame;
+static RSControl controller;
 static volatile sig_atomic_t running = 1;
 
 static void mainSignal(int signal) {
@@ -50,7 +45,7 @@ static void mainSignal(int signal) {
 static int mainStep(void) {
    int ret;
    while ((ret = rsEncoderNextPacket(&videoEncoder, &videoPacket)) == AVERROR(EAGAIN)) {
-      if ((ret = rsDeviceGetFrame(&videoDevice, videoFrame)) < 0) {
+      if ((ret = rsDeviceNextFrame(&videoDevice, videoFrame)) < 0) {
          return ret;
       }
       if ((ret = rsEncoderSendFrame(&videoEncoder, videoFrame)) < 0) {
@@ -99,14 +94,16 @@ int main(int argc, char *argv[]) {
    (void)argc;
    (void)argv;
    int ret;
-   RSControl *controller = NULL;
-
    rsLogInit();
    if ((ret = rsConfigInit()) < 0) {
       goto error;
    }
 
-   av_log(NULL, AV_LOG_INFO, "%s\n", rsLicense);
+   av_log(NULL, AV_LOG_INFO, "%s\n",
+          RS_NAME "  Copyright (C) 2020  ReplaySorcery developers\n"
+                  "This program comes with ABSOLUTELY NO WARRANTY.\n"
+                  "This is free software, and you are welcome to redistribute it\n"
+                  "under certain conditions; see COPYING for details.");
    av_log(NULL, AV_LOG_INFO, "FFmpeg version: %s\n", av_version_info());
 
    av_init_packet(&videoPacket);
@@ -118,12 +115,14 @@ int main(int argc, char *argv[]) {
    if ((ret = rsVideoDeviceCreate(&videoDevice)) < 0) {
       goto error;
    }
-   if ((ret = rsDeviceGetFrame(&videoDevice, videoFrame)) < 0) {
+   if ((ret = rsDeviceNextFrame(&videoDevice, videoFrame)) < 0) {
       goto error;
    }
    if ((ret = rsVideoEncoderCreate(&videoEncoder, videoFrame)) < 0) {
       goto error;
    }
+   av_frame_unref(videoFrame);
+
    if ((ret = rsBufferCreate(&videoBuffer)) < 0) {
       goto error;
    }
@@ -137,7 +136,7 @@ int main(int argc, char *argv[]) {
       if ((ret = mainStep()) < 0) {
          goto error;
       }
-      if ((ret = rsControlWantsSave(controller)) < 0) {
+      if ((ret = rsControlWantsSave(&controller)) < 0) {
          goto error;
       }
       if (ret > 0) {

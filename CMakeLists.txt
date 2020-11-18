@@ -29,7 +29,6 @@ set(headers
    src/buffer.h
    src/config.h
    src/log.h
-   src/main.h
    src/output.h
    src/rsbuild.h.in
    src/util.h

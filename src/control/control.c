@@ -20,14 +20,13 @@
 #include "control.h"
 #include "../config.h"
 
-void rsControlDestroy(RSControl **control) {
-   if (*control != NULL && (*control)->destroy != NULL) {
-      (*control)->destroy(*control);
+void rsControlDestroy(RSControl *control) {
+   if (control->destroy != NULL) {
+      control->destroy(control);
    }
-   av_freep(control);
 }
 
-int rsDefaultControlCreate(RSControl **control) {
+int rsDefaultControlCreate(RSControl *control) {
    int ret;
    switch (rsConfig.controller) {
    case RS_CONFIG_CONTROL_DEBUG:

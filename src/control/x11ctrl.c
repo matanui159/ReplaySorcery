@@ -24,24 +24,19 @@
 #include <X11/keysym.h>
 #endif
 
-typedef struct X11Control {
-   RSControl control;
-   RSXDisplay *display;
-} X11Control;
-
 #ifdef RS_BUILD_X11_FOUND
-static void x11ControlGrabKey(X11Control *x11, int key, unsigned mods) {
-   Window window = DefaultRootWindow(x11->display);
-   XGrabKey(x11->display, key, mods, window, 0, GrabModeAsync, GrabModeAsync);
+static void x11ControlGrabKey(RSXDisplay *display, int key, unsigned mods) {
+   Window window = DefaultRootWindow(display);
+   XGrabKey(display, key, mods, window, 0, GrabModeAsync, GrabModeAsync);
 }
 #endif
 
 static void x11ControlDestroy(RSControl *control) {
 #ifdef RS_BUILD_X11_FOUND
-   X11Control *x11 = (X11Control *)control;
-   if (x11->display != NULL) {
-      XCloseDisplay(x11->display);
-      x11->display = NULL;
+   RSXDisplay *display = control->extra;
+   if (display != NULL) {
+      XCloseDisplay(display);
+      control->extra = NULL;
    }
 #else
    (void)control;
@@ -51,10 +46,10 @@ static void x11ControlDestroy(RSControl *control) {
 static int x11ControlWantsSave(RSControl *control) {
 #ifdef RS_BUILD_X11_FOUND
    int ret = 0;
-   X11Control *x11 = (X11Control *)control;
-   while (XPending(x11->display) > 0) {
+   RSXDisplay *display = control->extra;
+   while (XPending(display) > 0) {
       XEvent event;
-      XNextEvent(x11->display, &event);
+      XNextEvent(display, &event);
       if (event.type == KeyPress) {
          ret = 1;
       }
@@ -66,29 +61,25 @@ static int x11ControlWantsSave(RSControl *control) {
 #endif
 }
 
-int rsX11ControlCreate(RSControl **control) {
+int rsX11ControlCreate(RSControl *control) {
    int ret = 0;
-   X11Control *x11 = av_mallocz(sizeof(X11Control));
-   *control = &x11->control;
-   if (x11 == NULL) {
-      ret = AVERROR(ENOMEM);
-      goto error;
-   }
-
-   x11->control.destroy = x11ControlDestroy;
-   x11->control.wantsSave = x11ControlWantsSave;
-   if ((ret = rsXDisplayOpen(&x11->display, NULL)) < 0) {
+   RSXDisplay *display = NULL;
+   ret = rsXDisplayOpen(&display, NULL);
+   control->extra = display;
+   control->destroy = x11ControlDestroy;
+   control->wantsSave = x11ControlWantsSave;
+   if (ret < 0) {
       goto error;
    }
 
 #ifdef RS_BUILD_X11_FOUND
-   int key = XKeysymToKeycode(x11->display, XK_R);
+   int key = XKeysymToKeycode(display, XK_R);
    unsigned mods = ControlMask | ShiftMask;
-   x11ControlGrabKey(x11, key, mods);
+   x11ControlGrabKey(display, key, mods);
    // Also allow capslock and numslock (Mod2) to be enabled
-   x11ControlGrabKey(x11, key, mods | LockMask);
-   x11ControlGrabKey(x11, key, mods | Mod2Mask);
-   x11ControlGrabKey(x11, key, mods | LockMask | Mod2Mask);
+   x11ControlGrabKey(display, key, mods | LockMask);
+   x11ControlGrabKey(display, key, mods | Mod2Mask);
+   x11ControlGrabKey(display, key, mods | LockMask | Mod2Mask);
 #endif
 
    return 0;

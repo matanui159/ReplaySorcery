@@ -50,15 +50,15 @@ int rsX11DeviceCreate(RSDevice *device) {
       ret = AVERROR(ENOSYS);
       goto error;
    }
-   if ((ret = rsFFmpegDeviceWrap(device, "x11grab")) < 0) {
+   if ((ret = rsFFmpegDeviceCreate(device, "x11grab")) < 0) {
       goto error;
    }
 
-   rsFFmpegDeviceOption(device->extra, "grab_x", "%i", rsConfig.videoX);
-   rsFFmpegDeviceOption(device->extra, "grab_y", "%i", rsConfig.videoY);
-   rsFFmpegDeviceOption(device->extra, "video_size", "%ix%i", width, height);
-   rsFFmpegDeviceOption(device->extra, "framerate", "%i", rsConfig.videoFramerate);
-   if ((ret = rsFFmpegDeviceOpen(device->extra, input, device->params)) < 0) {
+   rsFFmpegDeviceSetOption(device, "grab_x", "%i", rsConfig.videoX);
+   rsFFmpegDeviceSetOption(device, "grab_y", "%i", rsConfig.videoY);
+   rsFFmpegDeviceSetOption(device, "video_size", "%ix%i", width, height);
+   rsFFmpegDeviceSetOption(device, "framerate", "%i", rsConfig.videoFramerate);
+   if ((ret = rsFFmpegDeviceOpen(device, input)) < 0) {
       goto error;
    }
 

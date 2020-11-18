@@ -38,10 +38,14 @@ typedef struct FFmpegEncoder {
 
 static void ffmpegEncoderDestroy(RSEncoder *encoder) {
    FFmpegEncoder *ffmpeg = encoder->extra;
-   avfilter_inout_free(&ffmpeg->outputs);
-   avfilter_inout_free(&ffmpeg->inputs);
-   avfilter_graph_free(&ffmpeg->filterGraph);
-   avcodec_free_context(&ffmpeg->codecCtx);
+   if (ffmpeg != NULL) {
+      avfilter_inout_free(&ffmpeg->outputs);
+      avfilter_inout_free(&ffmpeg->inputs);
+      avfilter_graph_free(&ffmpeg->filterGraph);
+      avcodec_free_context(&ffmpeg->codecCtx);
+      rsOptionsDestroy(&ffmpeg->options);
+      av_freep(&encoder->extra);
+   }
 }
 
 static int ffmpegEncoderCreateFilter(FFmpegEncoder *ffmpeg, AVFilterContext **filterCtx,
@@ -49,7 +53,7 @@ static int ffmpegEncoderCreateFilter(FFmpegEncoder *ffmpeg, AVFilterContext **fi
    int ret;
    const AVFilter *filter = avfilter_get_by_name(name);
    if (filter == NULL) {
-      av_log(NULL, AV_LOG_ERROR, "Filter not found\n");
+      av_log(NULL, AV_LOG_ERROR, "Filter not found: %s\n", name);
       return AVERROR_FILTER_NOT_FOUND;
    }
 
@@ -172,9 +176,11 @@ static int ffmpegEncoderConfigCodec(FFmpegEncoder *ffmpeg, const AVFrame *frame)
       ffmpeg->codecCtx->chroma_sample_location = frame->chroma_location;
       ffmpeg->codecCtx->profile = rsConfig.videoProfile;
       ffmpeg->codecCtx->gop_size = rsConfig.videoGOP;
-      ffmpeg->codecCtx->hw_frames_ctx = av_buffer_ref(frame->hw_frames_ctx);
-      if (ffmpeg->codecCtx->hw_frames_ctx == NULL) {
-         return AVERROR(ENOMEM);
+      if (frame->hw_frames_ctx != NULL) {
+         ffmpeg->codecCtx->hw_frames_ctx = av_buffer_ref(frame->hw_frames_ctx);
+         if (ffmpeg->codecCtx->hw_frames_ctx == NULL) {
+            return AVERROR(ENOMEM);
+         }
       }
    }
    if (ffmpeg->codecCtx->codec_type == AVMEDIA_TYPE_AUDIO) {
@@ -255,14 +261,14 @@ int rsFFmpegEncoderCreate(RSEncoder *encoder, const char *name) {
 
    FFmpegEncoder *ffmpeg = av_mallocz(sizeof(FFmpegEncoder));
    encoder->extra = ffmpeg;
+   encoder->destroy = ffmpegEncoderDestroy;
+   encoder->sendFrame = ffmpegEncoderSendFrame;
+   encoder->nextPacket = ffmpegEncoderNextPacket;
    if (ffmpeg == NULL) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
 
-   encoder->destroy = ffmpegEncoderDestroy;
-   encoder->sendFrame = ffmpegEncoderSendFrame;
-   encoder->nextPacket = ffmpegEncoderNextPacket;
    AVCodec *codec = avcodec_find_encoder_by_name(name);
    if (codec == NULL) {
       av_log(NULL, AV_LOG_ERROR, "Encoder not found: %s\n", name);

@@ -44,20 +44,16 @@ static int logTrace(void *extra, uintptr_t pc, const char *file, int line,
                     const char *func) {
    (void)pc;
    int *level = extra;
-   if (file == NULL) {
-      file = "[unknown file]";
+   if (file != NULL || func != NULL) {
+      logDefault(NULL, *level, "- %s:%i (%s)\n", file, line, func);
    }
-   if (func == NULL) {
-      func = "unknown function";
-   }
-   logDefault(NULL, *level, " - %s:%i (%s)\n", file, line, func);
    return 0;
 }
 
 static void logCallback(void *ctx, int level, const char *format, va_list args) {
    av_log_default_callback(ctx, level, format, args);
    if (level <= rsConfig.traceLevel && traceState != NULL) {
-      backtrace_full(traceState, 0, logTrace, logTraceError, &level);
+      backtrace_full(traceState, 1, logTrace, logTraceError, &level);
    }
 }
 

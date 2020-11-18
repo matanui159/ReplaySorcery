@@ -23,12 +23,12 @@
 
 int rsKMSDeviceCreate(RSDevice *device) {
    int ret;
-   if ((ret = rsFFmpegDeviceWrap(device, "kmsgrab")) < 0) {
+   if ((ret = rsFFmpegDeviceCreate(device, "kmsgrab")) < 0) {
       goto error;
    }
 
-   rsFFmpegDeviceOption(device->extra, "framerate", "%i", rsConfig.videoFramerate);
-   if ((ret = rsFFmpegDeviceOpen(device->extra, "", device->params)) < 0) {
+   rsFFmpegDeviceSetOption(device, "framerate", "%i", rsConfig.videoFramerate);
+   if ((ret = rsFFmpegDeviceOpen(device, "")) < 0) {
       goto error;
    }
 

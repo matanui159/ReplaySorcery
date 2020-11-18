@@ -23,22 +23,9 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 
-typedef struct RSFFmpegDevice {
-   AVDictionary *options;
-   int error;
-   AVInputFormat *format;
-   AVFormatContext *formatCtx;
-   AVCodecContext *codecCtx;
-   AVPacket packet;
-} RSFFmpegDevice;
-
-int rsFFmpegDeviceCreate(RSFFmpegDevice *ffmpeg, const char *name);
-void rsFFmpegDeviceOption(RSFFmpegDevice *ffmpeg, const char *key, const char *fmt, ...)
+int rsFFmpegDeviceCreate(RSDevice *device, const char *name);
+void rsFFmpegDeviceSetOption(RSDevice *device, const char *key, const char *fmt, ...)
     av_printf_format(3, 4);
-int rsFFmpegDeviceOpen(RSFFmpegDevice *ffmpeg, const char *input,
-                       AVCodecParameters *params);
-void rsFFmpegDeviceDestroy(RSFFmpegDevice *ffmpeg);
-int rsFFmpegDeviceGetFrame(RSFFmpegDevice *ffmpeg, AVFrame *frame);
-int rsFFmpegDeviceWrap(RSDevice *device, const char *name);
+int rsFFmpegDeviceOpen(RSDevice *device, const char *input);
 
 #endif

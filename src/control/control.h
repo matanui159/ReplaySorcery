@@ -22,6 +22,7 @@
 #include <libavutil/avutil.h>
 
 typedef struct RSControl {
+   void *extra;
    void (*destroy)(struct RSControl *control);
    int (*wantsSave)(struct RSControl *control);
 } RSControl;
@@ -30,10 +31,10 @@ static av_always_inline int rsControlWantsSave(RSControl *control) {
    return control->wantsSave(control);
 }
 
-void rsControlDestroy(RSControl **control);
+void rsControlDestroy(RSControl *control);
 
-int rsDebugControlCreate(RSControl **control);
-int rsX11ControlCreate(RSControl **control);
-int rsDefaultControlCreate(RSControl **control);
+int rsDebugControlCreate(RSControl *control);
+int rsX11ControlCreate(RSControl *control);
+int rsDefaultControlCreate(RSControl *control);
 
 #endif

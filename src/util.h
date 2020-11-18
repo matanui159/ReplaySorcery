@@ -31,6 +31,8 @@ typedef Display RSXDisplay;
 typedef char RSXDisplay;
 #endif
 
+#define RS_NAME "ReplaySorcery"
+
 static av_always_inline void rsClear(void *mem, size_t size) {
    memset(mem, 0, size);
 }
