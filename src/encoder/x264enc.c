@@ -25,6 +25,7 @@ int rsX264EncoderCreate(RSEncoder *encoder, const AVFrame *frame) {
    int ret;
    AVFrame *clone = av_frame_clone(frame);
    if (clone == NULL) {
+      ret = AVERROR(ENOMEM);
       goto error;
    }
    if ((ret = rsFFmpegEncoderCreate(encoder, "libx264")) < 0) {
