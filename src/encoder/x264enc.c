@@ -20,7 +20,6 @@
 #include "../config.h"
 #include "encoder.h"
 #include "ffenc.h"
-#include "swscale.h"
 
 int rsX264EncoderCreate(RSEncoder *encoder, const AVFrame *frame) {
    int ret;
@@ -56,7 +55,8 @@ int rsX264EncoderCreate(RSEncoder *encoder, const AVFrame *frame) {
    if (scaleHeight == RS_CONFIG_AUTO) {
       scaleHeight = frame->height;
    }
-   if ((ret = rsFFmpegEncoderOpen(encoder, "scale=%ix%i,format=yuv420p", scaleWidth, scaleHeight)) < 0) {
+   if ((ret = rsFFmpegEncoderOpen(encoder, "scale=%ix%i,format=yuv420p", scaleWidth,
+                                  scaleHeight)) < 0) {
       goto error;
    }
    if ((ret = rsEncoderSendFrame(encoder, clone)) < 0) {

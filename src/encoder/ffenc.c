@@ -18,12 +18,12 @@
  */
 
 #include "ffenc.h"
-#include "../util.h"
 #include "../config.h"
+#include "../util.h"
 #include <libavcodec/avcodec.h>
 #include <libavfilter/avfilter.h>
-#include <libavfilter/buffersrc.h>
 #include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
 
 typedef struct FFmpegEncoder {
    AVDictionary *options;
@@ -44,7 +44,8 @@ static void ffmpegEncoderDestroy(RSEncoder *encoder) {
    avcodec_free_context(&ffmpeg->codecCtx);
 }
 
-static int ffmpegEncoderCreateFilter(FFmpegEncoder *ffmpeg, AVFilterContext **filterCtx, const char *name, AVDictionary **options) {
+static int ffmpegEncoderCreateFilter(FFmpegEncoder *ffmpeg, AVFilterContext **filterCtx,
+                                     const char *name, AVDictionary **options) {
    int ret;
    const AVFilter *filter = avfilter_get_by_name(name);
    if (filter == NULL) {
@@ -82,7 +83,8 @@ static int ffmpegEncoderConfigFilter(FFmpegEncoder *ffmpeg, const AVFrame *frame
       if (ret < 0) {
          goto error;
       }
-      if ((ret = ffmpegEncoderCreateFilter(ffmpeg, &ffmpeg->sourceCtx, "buffer", &options)) < 0) {
+      if ((ret = ffmpegEncoderCreateFilter(ffmpeg, &ffmpeg->sourceCtx, "buffer",
+                                           &options)) < 0) {
          goto error;
       }
       if (frame->hw_frames_ctx != NULL) {
@@ -103,17 +105,19 @@ static int ffmpegEncoderConfigFilter(FFmpegEncoder *ffmpeg, const AVFrame *frame
       rsOptionsSet(&options, &ret, "sample_fmt", "%i", frame->format);
       rsOptionsSet(&options, &ret, "sample_rate", "%i", frame->sample_rate);
       rsOptionsSet(&options, &ret, "channels", "%i", frame->channels);
-      rsOptionsSet(&options, &ret, "channel_layout", "0x%"PRIx64, frame->channel_layout);
+      rsOptionsSet(&options, &ret, "channel_layout", "0x%" PRIx64, frame->channel_layout);
       rsOptionsSet(&options, &ret, "time_base", "1/%i", frame->sample_rate);
       if (ret < 0) {
          goto error;
       }
-      if ((ret = ffmpegEncoderCreateFilter(ffmpeg, &ffmpeg->sourceCtx, "abuffer", &options)) < 0) {
+      if ((ret = ffmpegEncoderCreateFilter(ffmpeg, &ffmpeg->sourceCtx, "abuffer",
+                                           &options)) < 0) {
          goto error;
       }
    }
    if ((ret = avfilter_link(ffmpeg->sourceCtx, 0, inputCtx, (unsigned)inputIndex)) < 0) {
-      av_log(ffmpeg->sourceCtx, AV_LOG_ERROR, "Failed to link input filter: %s\n", av_err2str(ret));
+      av_log(ffmpeg->sourceCtx, AV_LOG_ERROR, "Failed to link input filter: %s\n",
+             av_err2str(ret));
       goto error;
    }
 
@@ -121,22 +125,26 @@ static int ffmpegEncoderConfigFilter(FFmpegEncoder *ffmpeg, const AVFrame *frame
    int outputIndex = ffmpeg->outputs->pad_idx;
    type = avfilter_pad_get_type(outputCtx->output_pads, outputIndex);
    if (type == AVMEDIA_TYPE_VIDEO) {
-      if ((ret = ffmpegEncoderCreateFilter(ffmpeg, &ffmpeg->sinkCtx, "buffersink", NULL)) < 0) {
+      if ((ret = ffmpegEncoderCreateFilter(ffmpeg, &ffmpeg->sinkCtx, "buffersink",
+                                           NULL)) < 0) {
          goto error;
       }
    }
    if (type == AVMEDIA_TYPE_AUDIO) {
-      if ((ret = ffmpegEncoderCreateFilter(ffmpeg, &ffmpeg->sinkCtx, "abuffersink", NULL)) < 0) {
+      if ((ret = ffmpegEncoderCreateFilter(ffmpeg, &ffmpeg->sinkCtx, "abuffersink",
+                                           NULL)) < 0) {
          goto error;
       }
    }
    if ((ret = avfilter_link(outputCtx, (unsigned)outputIndex, ffmpeg->sinkCtx, 0)) < 0) {
-      av_log(ffmpeg->sinkCtx, AV_LOG_ERROR, "Failed to link output filter: %s\n", av_err2str(ret));
+      av_log(ffmpeg->sinkCtx, AV_LOG_ERROR, "Failed to link output filter: %s\n",
+             av_err2str(ret));
       goto error;
    }
 
    if ((ret = avfilter_graph_config(ffmpeg->filterGraph, NULL)) < 0) {
-      av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to configure filter graph: %s\n", av_err2str(ret));
+      av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to configure filter graph: %s\n",
+             av_err2str(ret));
       goto error;
    }
 
@@ -164,6 +172,10 @@ static int ffmpegEncoderConfigCodec(FFmpegEncoder *ffmpeg, const AVFrame *frame)
       ffmpeg->codecCtx->chroma_sample_location = frame->chroma_location;
       ffmpeg->codecCtx->profile = rsConfig.videoProfile;
       ffmpeg->codecCtx->gop_size = rsConfig.videoGOP;
+      ffmpeg->codecCtx->hw_frames_ctx = av_buffer_ref(frame->hw_frames_ctx);
+      if (ffmpeg->codecCtx->hw_frames_ctx == NULL) {
+         return AVERROR(ENOMEM);
+      }
    }
    if (ffmpeg->codecCtx->codec_type == AVMEDIA_TYPE_AUDIO) {
       ffmpeg->codecCtx->sample_fmt = frame->format;
@@ -174,7 +186,8 @@ static int ffmpegEncoderConfigCodec(FFmpegEncoder *ffmpeg, const AVFrame *frame)
       ffmpeg->codecCtx->frame_size = frame->nb_samples;
    }
    if ((ret = avcodec_open2(ffmpeg->codecCtx, NULL, &ffmpeg->options)) < 0) {
-      av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to open encoder: %s\n", av_err2str(ret));
+      av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to open encoder: %s\n",
+             av_err2str(ret));
       return ret;
    }
    rsOptionsDestroy(&ffmpeg->options);
@@ -190,12 +203,14 @@ static int ffmpegEncoderSendFrame(RSEncoder *encoder, AVFrame *frame) {
       }
    }
    if ((ret = av_buffersrc_add_frame(ffmpeg->sourceCtx, frame)) < 0) {
-      av_log(ffmpeg->sourceCtx, AV_LOG_ERROR, "Failed to send frame to filter graph: %s\n", av_err2str(ret));
+      av_log(ffmpeg->sourceCtx, AV_LOG_ERROR,
+             "Failed to send frame to filter graph: %s\n", av_err2str(ret));
       goto error;
    }
    if ((ret = av_buffersink_get_frame(ffmpeg->sinkCtx, frame)) < 0) {
       if (ret != AVERROR(EAGAIN)) {
-         av_log(ffmpeg->sinkCtx, AV_LOG_ERROR, "Failed to receive frame from filter graph: %s\n", av_err2str(ret));
+         av_log(ffmpeg->sinkCtx, AV_LOG_ERROR,
+                "Failed to receive frame from filter graph: %s\n", av_err2str(ret));
       }
       goto error;
    }
@@ -203,12 +218,14 @@ static int ffmpegEncoderSendFrame(RSEncoder *encoder, AVFrame *frame) {
       if ((ret = ffmpegEncoderConfigCodec(ffmpeg, frame)) < 0) {
          goto error;
       }
-      if ((ret = avcodec_parameters_from_context(encoder->params, ffmpeg->codecCtx)) < 0) {
+      if ((ret = avcodec_parameters_from_context(encoder->params, ffmpeg->codecCtx)) <
+          0) {
          goto error;
       }
    }
    if ((ret = avcodec_send_frame(ffmpeg->codecCtx, frame)) < 0) {
-      av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to send frame to encoder: %s\n", av_err2str(ret));
+      av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to send frame to encoder: %s\n",
+             av_err2str(ret));
    }
 
    ret = 0;
@@ -222,7 +239,8 @@ static int ffmpegEncoderNextPacket(RSEncoder *encoder, AVPacket *packet) {
    FFmpegEncoder *ffmpeg = encoder->extra;
    if ((ret = avcodec_receive_packet(ffmpeg->codecCtx, packet)) < 0) {
       if (ret != AVERROR(EAGAIN)) {
-         av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to receive packet from encoder: %s\n", av_err2str(ret));
+         av_log(ffmpeg->codecCtx, AV_LOG_ERROR,
+                "Failed to receive packet from encoder: %s\n", av_err2str(ret));
       }
       return ret;
    }
@@ -269,8 +287,7 @@ error:
    return ret;
 }
 
-void rsFFmpegEncoderSetOption(RSEncoder *encoder, const char *key, const char *fmt,
-                           ...) {
+void rsFFmpegEncoderSetOption(RSEncoder *encoder, const char *key, const char *fmt, ...) {
    FFmpegEncoder *ffmpeg = encoder->extra;
    va_list args;
    va_start(args, fmt);
@@ -298,8 +315,10 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filterFmt, ...) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
-   if ((ret = avfilter_graph_parse2(ffmpeg->filterGraph, filter, &ffmpeg->inputs, &ffmpeg->outputs)) < 0) {
-      av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to parse filter graph: %s\n", av_err2str(ret));
+   if ((ret = avfilter_graph_parse2(ffmpeg->filterGraph, filter, &ffmpeg->inputs,
+                                    &ffmpeg->outputs)) < 0) {
+      av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to parse filter graph: %s\n",
+             av_err2str(ret));
       goto error;
    }
    if (ffmpeg->inputs == NULL || ffmpeg->outputs == NULL) {

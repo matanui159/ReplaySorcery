@@ -18,50 +18,29 @@
  */
 
 #include "../config.h"
-#include "../util.h"
 #include "encoder.h"
 #include "ffenc.h"
-#include "../device/device.h"
 
-int rsVaapiEncoderCreate(RSEncoder **encoder, RSDevice *input) {
+int rsVaapiEncoderCreate(RSEncoder *encoder, const AVFrame *frame) {
    int ret;
+   AVFrame *clone = av_frame_clone(frame);
+   if (clone == NULL) {
+      ret = AVERROR(ENOMEM);
+      goto error;
+   }
    if ((ret = rsFFmpegEncoderCreate(encoder, "h264_vaapi")) < 0) {
       goto error;
    }
 
-   int width = rsConfig.videoWidth;
-   if (width == RS_CONFIG_AUTO) {
-      width = input->params->width - rsConfig.videoX;
-   }
-   int height = rsConfig.videoHeight;
-   if (height == RS_CONFIG_AUTO) {
-      height = input->params->height - rsConfig.videoY;
-   }
-
-   AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(*encoder);
-   codecCtx->pix_fmt = AV_PIX_FMT_VAAPI;
+   AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(encoder);
    codecCtx->sw_pix_fmt = AV_PIX_FMT_NV12;
-   codecCtx->framerate = av_make_q(1, rsConfig.videoFramerate);
-   codecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-   codecCtx->profile = rsConfig.videoProfile;
-   codecCtx->gop_size = rsConfig.videoGOP;
-   if (rsConfig.scaleWidth == RS_CONFIG_AUTO) {
-      codecCtx->width = width;
-   } else {
-      codecCtx->width = rsConfig.scaleWidth;
-   }
-   if (rsConfig.scaleHeight == RS_CONFIG_AUTO) {
-      codecCtx->height = height;
-   } else {
-      codecCtx->height = rsConfig.scaleHeight;
-   }
    if (rsConfig.videoQuality != RS_CONFIG_AUTO) {
-      rsFFmpegEncoderOption(*encoder, "qp", "%i", rsConfig.videoQuality);
+      rsFFmpegEncoderSetOption(encoder, "qp", "%i", rsConfig.videoQuality);
    }
    switch (rsConfig.videoPreset) {
    case RS_CONFIG_PRESET_FAST:
       codecCtx->compression_level = 2;
-      rsFFmpegEncoderOption(*encoder, "coder", "cavlc");
+      rsFFmpegEncoderSetOption(encoder, "coder", "cavlc");
       break;
    case RS_CONFIG_PRESET_MEDIUM:
       codecCtx->compression_level = 4;
@@ -70,14 +49,38 @@ int rsVaapiEncoderCreate(RSEncoder **encoder, RSDevice *input) {
       codecCtx->compression_level = 6;
       break;
    }
+
+   int width = rsConfig.videoWidth;
+   if (width == RS_CONFIG_AUTO) {
+      width = frame->width - rsConfig.videoX;
+   }
+   int height = rsConfig.videoHeight;
+   if (height == RS_CONFIG_AUTO) {
+      height = frame->height - rsConfig.videoY;
+   }
+   int scaleWidth = rsConfig.scaleWidth;
+   if (scaleWidth == RS_CONFIG_AUTO) {
+      scaleWidth = width;
+   }
+   int scaleHeight = rsConfig.scaleHeight;
+   if (scaleHeight == RS_CONFIG_AUTO) {
+      scaleHeight = height;
+   }
    if ((ret = rsFFmpegEncoderOpen(
-            *encoder, "hwmap=derive_device=vaapi,crop=%i:%i:%i:%i,scale_vaapi=%i:%i:nv12")) < 0) {
+            encoder, "hwmap=derive_device=vaapi,crop=%i:%i:%i:%i,scale_vaapi=%i:%i:nv12",
+            width, height, rsConfig.videoX, rsConfig.videoY, scaleWidth, scaleHeight)) <
+       0) {
       goto error;
    }
+   if ((ret = rsEncoderSendFrame(encoder, clone)) < 0) {
+      goto error;
+   }
+   av_frame_free(&clone);
    // TODO: copy extradata from x264 if encoder does not support it
 
    return 0;
 error:
+   av_frame_free(&clone);
    rsEncoderDestroy(encoder);
    return ret;
 }

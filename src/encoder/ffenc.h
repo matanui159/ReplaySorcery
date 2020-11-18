@@ -25,6 +25,7 @@ int rsFFmpegEncoderCreate(RSEncoder *encoder, const char *name);
 void rsFFmpegEncoderSetOption(RSEncoder *encoder, const char *key, const char *fmt, ...)
     av_printf_format(3, 4);
 AVCodecContext *rsFFmpegEncoderGetContext(RSEncoder *encoder);
-int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filterFmt, ...) av_printf_format(2, 3);
+int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filterFmt, ...)
+    av_printf_format(2, 3);
 
 #endif

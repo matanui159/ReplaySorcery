@@ -22,7 +22,7 @@ set(sources
    src/device/x11dev.c
    src/encoder/encoder.c
    src/encoder/ffenc.c
-   src/encoder/swscale.c
+   src/encoder/vaapienc.c
    src/encoder/x264enc.c
 )
 set(headers
@@ -38,7 +38,6 @@ set(headers
    src/device/ffdev.h
    src/encoder/encoder.h
    src/encoder/ffenc.h
-   src/encoder/swscale.h
 )
 
 add_executable(${binary} ${sources})
@@ -108,7 +107,6 @@ pkg_check_modules(FFMPEG
    libavdevice
    libavcodec
    libavfilter
-   libswscale
 )
 target_link_libraries(${binary} PRIVATE PkgConfig::FFMPEG)
 
@@ -125,13 +123,6 @@ if (X11_FOUND)
    set(RS_BUILD_X11_FOUND ON)
    target_include_directories(${binary} SYSTEM PRIVATE ${X11_INCLUDE_DIRS})
    target_link_libraries(${binary} PRIVATE ${X11_LIBRARIES})
-endif()
-
-# VA-API
-pkg_check_modules(VAAPI IMPORTED_TARGET libva)
-if (VAAPI_FOUND)
-   set(RS_BUILD_VAAPI_FOUND ON)
-   target_link_libraries(${binary} PRIVATE PkgConfig::VAAPI)
 endif()
 
 # PulseAudio

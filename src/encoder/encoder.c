@@ -42,16 +42,15 @@ int rsVideoEncoderCreate(RSEncoder *encoder, const AVFrame *frame) {
    switch (rsConfig.videoEncoder) {
    case RS_CONFIG_ENCODER_X264:
       return rsX264EncoderCreate(encoder, frame);
-      // case RS_CONFIG_ENCODER_VAAPI:
-      //    return rsVaapiEncoderCreate(encoder, params);
+   case RS_CONFIG_ENCODER_VAAPI:
+      return rsVaapiEncoderCreate(encoder, frame);
    }
 
-   // if ((ret = rsVaapiEncoderCreate(encoder, params)) >= 0) {
-   //    av_log(NULL, AV_LOG_INFO, "Created VAAPI encoder\n");
-   //    return 0;
-   // }
-   // av_log(NULL, AV_LOG_WARNING, "Failed to create VAAPI encoder: %s\n",
-   // av_err2str(ret));
+   if ((ret = rsVaapiEncoderCreate(encoder, frame)) >= 0) {
+      av_log(NULL, AV_LOG_INFO, "Created VAAPI encoder\n");
+      return 0;
+   }
+   av_log(NULL, AV_LOG_WARNING, "Failed to create VAAPI encoder: %s\n", av_err2str(ret));
 
    if ((ret = rsX264EncoderCreate(encoder, frame)) >= 0) {
       av_log(NULL, AV_LOG_INFO, "Created x264 encoder\n");
