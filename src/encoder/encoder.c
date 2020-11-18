@@ -37,11 +37,11 @@ void rsEncoderDestroy(RSEncoder *encoder) {
    avcodec_parameters_free(&encoder->params);
 }
 
-int rsVideoEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params) {
+int rsVideoEncoderCreate(RSEncoder *encoder, const AVFrame *frame) {
    int ret;
    switch (rsConfig.videoEncoder) {
    case RS_CONFIG_ENCODER_X264:
-      return rsX264EncoderCreate(encoder, params);
+      return rsX264EncoderCreate(encoder, frame);
       // case RS_CONFIG_ENCODER_VAAPI:
       //    return rsVaapiEncoderCreate(encoder, params);
    }
@@ -53,7 +53,7 @@ int rsVideoEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params) {
    // av_log(NULL, AV_LOG_WARNING, "Failed to create VAAPI encoder: %s\n",
    // av_err2str(ret));
 
-   if ((ret = rsX264EncoderCreate(encoder, params)) >= 0) {
+   if ((ret = rsX264EncoderCreate(encoder, frame)) >= 0) {
       av_log(NULL, AV_LOG_INFO, "Created x264 encoder\n");
       return 0;
    }

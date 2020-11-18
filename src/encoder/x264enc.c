@@ -22,87 +22,51 @@
 #include "ffenc.h"
 #include "swscale.h"
 
-typedef struct X264Encoder {
-   RSSoftwareScale scale;
-   RSFFmpegEncoder ffmpeg;
-} X264Encoder;
-
-static void x264EncoderDestroy(RSEncoder *encoder) {
-   X264Encoder *x264 = encoder->extra;
-   rsFFmpegEncoderDestroy(&x264->ffmpeg);
-   rsSoftwareScaleDestroy(&x264->scale);
-}
-
-static int x264EncoderSendFrame(RSEncoder *encoder, AVFrame *frame) {
+int rsX264EncoderCreate(RSEncoder *encoder, const AVFrame *frame) {
    int ret;
-   X264Encoder *x264 = encoder->extra;
-   if ((ret = rsSoftwareScale(&x264->scale, frame)) < 0) {
-      return ret;
+   AVFrame *clone = av_frame_clone(frame);
+   if (clone == NULL) {
+      goto error;
    }
-   if ((ret = rsFFmpegEncoderSendFrame(&x264->ffmpeg, frame)) < 0) {
-      return ret;
-   }
-   return 0;
-}
-
-static int x264EncoderGetPacket(RSEncoder *encoder, AVPacket *packet) {
-   X264Encoder *x264 = encoder->extra;
-   return rsFFmpegEncoderGetPacket(&x264->ffmpeg, packet);
-}
-
-int rsX264EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params) {
-   int ret;
-   if ((ret = rsEncoderCreate(encoder)) < 0) {
+   if ((ret = rsFFmpegEncoderCreate(encoder, "libx264")) < 0) {
       goto error;
    }
 
-   X264Encoder *x264 = av_mallocz(sizeof(X264Encoder));
-   encoder->extra = x264;
-   if (x264 == NULL) {
-      ret = AVERROR(ENOMEM);
-      goto error;
-   }
-
-   encoder->destroy = x264EncoderDestroy;
-   encoder->sendFrame = x264EncoderSendFrame;
-   encoder->getPacket = x264EncoderGetPacket;
-   if ((ret = rsSoftwareScaleCreate(&x264->scale, params, AV_PIX_FMT_YUV420P)) < 0) {
-      goto error;
-   }
-   if ((ret = rsFFmpegEncoderCreate(&x264->ffmpeg, "libx264")) < 0) {
-      goto error;
-   }
-
-   AVCodecContext *codecCtx = x264->ffmpeg.codecCtx;
-   codecCtx->width = x264->scale.width;
-   codecCtx->height = x264->scale.height;
-   codecCtx->pix_fmt = AV_PIX_FMT_YUV420P;
-   codecCtx->framerate = av_make_q(rsConfig.videoFramerate, 1);
-   codecCtx->profile = rsConfig.videoProfile;
-   codecCtx->gop_size = rsConfig.videoGOP;
-   codecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-   codecCtx->thread_count = 1;
-   rsFFmpegEncoderOption(&x264->ffmpeg, "forced-idr", "true");
+   rsFFmpegEncoderSetOption(encoder, "forced-idr", "true");
    if (rsConfig.videoQuality != RS_CONFIG_AUTO) {
-      rsFFmpegEncoderOption(&x264->ffmpeg, "qp", "%i", rsConfig.videoQuality);
+      rsFFmpegEncoderSetOption(encoder, "qp", "%i", rsConfig.videoQuality);
    }
    switch (rsConfig.videoPreset) {
    case RS_CONFIG_PRESET_FAST:
-      rsFFmpegEncoderOption(&x264->ffmpeg, "preset", "ultrafast");
+      rsFFmpegEncoderSetOption(encoder, "preset", "ultrafast");
       break;
    case RS_CONFIG_PRESET_MEDIUM:
-      rsFFmpegEncoderOption(&x264->ffmpeg, "preset", "medium");
+      rsFFmpegEncoderSetOption(encoder, "preset", "medium");
       break;
    case RS_CONFIG_PRESET_SLOW:
-      rsFFmpegEncoderOption(&x264->ffmpeg, "preset", "slower");
+      rsFFmpegEncoderSetOption(encoder, "preset", "slower");
       break;
    }
-   if ((ret = rsFFmpegEncoderOpen(&x264->ffmpeg, encoder->params)) < 0) {
+
+   int scaleWidth = rsConfig.scaleWidth;
+   if (scaleWidth == RS_CONFIG_AUTO) {
+      scaleWidth = frame->width;
+   }
+   int scaleHeight = rsConfig.scaleHeight;
+   if (scaleHeight == RS_CONFIG_AUTO) {
+      scaleHeight = frame->height;
+   }
+   if ((ret = rsFFmpegEncoderOpen(encoder, "scale=%ix%i,format=yuv420p", scaleWidth, scaleHeight)) < 0) {
       goto error;
    }
+   if ((ret = rsEncoderSendFrame(encoder, clone)) < 0) {
+      goto error;
+   }
+   av_frame_free(&clone);
 
    return 0;
 error:
+   av_frame_free(&clone);
    rsEncoderDestroy(encoder);
    return ret;
 }

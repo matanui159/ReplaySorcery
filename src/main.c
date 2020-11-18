@@ -49,7 +49,7 @@ static void mainSignal(int signal) {
 
 static int mainStep(void) {
    int ret;
-   while ((ret = rsEncoderGetPacket(&videoEncoder, &videoPacket)) == AVERROR(EAGAIN)) {
+   while ((ret = rsEncoderNextPacket(&videoEncoder, &videoPacket)) == AVERROR(EAGAIN)) {
       if ((ret = rsDeviceGetFrame(&videoDevice, videoFrame)) < 0) {
          return ret;
       }
@@ -109,20 +109,22 @@ int main(int argc, char *argv[]) {
    av_log(NULL, AV_LOG_INFO, "%s\n", rsLicense);
    av_log(NULL, AV_LOG_INFO, "FFmpeg version: %s\n", av_version_info());
 
-   if ((ret = rsVideoDeviceCreate(&videoDevice)) < 0) {
-      goto error;
-   }
-   if ((ret = rsVideoEncoderCreate(&videoEncoder, videoDevice.params)) < 0) {
-      goto error;
-   }
-   if ((ret = rsBufferCreate(&videoBuffer)) < 0) {
-      goto error;
-   }
-
    av_init_packet(&videoPacket);
    videoFrame = av_frame_alloc();
    if (videoFrame == NULL) {
       ret = AVERROR(ENOMEM);
+      goto error;
+   }
+   if ((ret = rsVideoDeviceCreate(&videoDevice)) < 0) {
+      goto error;
+   }
+   if ((ret = rsDeviceGetFrame(&videoDevice, videoFrame)) < 0) {
+      goto error;
+   }
+   if ((ret = rsVideoEncoderCreate(&videoEncoder, videoFrame)) < 0) {
+      goto error;
+   }
+   if ((ret = rsBufferCreate(&videoBuffer)) < 0) {
       goto error;
    }
    if ((ret = rsDefaultControlCreate(&controller)) < 0) {

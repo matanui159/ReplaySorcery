@@ -127,6 +127,13 @@ if (X11_FOUND)
    target_link_libraries(${binary} PRIVATE ${X11_LIBRARIES})
 endif()
 
+# VA-API
+pkg_check_modules(VAAPI IMPORTED_TARGET libva)
+if (VAAPI_FOUND)
+   set(RS_BUILD_VAAPI_FOUND ON)
+   target_link_libraries(${binary} PRIVATE PkgConfig::VAAPI)
+endif()
+
 # PulseAudio
 pkg_check_modules(PULSE IMPORTED_TARGET libpulse)
 if (PULSE_FOUND)

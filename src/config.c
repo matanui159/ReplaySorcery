@@ -102,6 +102,7 @@ static const AVOption configOptions[] = {
     {NULL}};
 
 static const AVClass configClass = {
+    // TODO: make rsName a constant so it can be used here
     .class_name = "ReplaySorcery",
     .option = configOptions,
     .item_name = av_default_item_name,

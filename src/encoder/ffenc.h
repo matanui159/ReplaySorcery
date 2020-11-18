@@ -20,20 +20,11 @@
 #ifndef RS_ENCODER_FFENC_H
 #define RS_ENCODER_FFENC_H
 #include "encoder.h"
-#include <libavcodec/avcodec.h>
 
-typedef struct RSFFmpegEncoder {
-   AVDictionary *options;
-   int error;
-   AVCodecContext *codecCtx;
-} RSFFmpegEncoder;
-
-int rsFFmpegEncoderCreate(RSFFmpegEncoder *ffmpeg, const char *name);
-void rsFFmpegEncoderOption(RSFFmpegEncoder *ffmpeg, const char *key, const char *fmt, ...)
+int rsFFmpegEncoderCreate(RSEncoder *encoder, const char *name);
+void rsFFmpegEncoderSetOption(RSEncoder *encoder, const char *key, const char *fmt, ...)
     av_printf_format(3, 4);
-int rsFFmpegEncoderOpen(RSFFmpegEncoder *ffmpeg, AVCodecParameters *params);
-void rsFFmpegEncoderDestroy(RSFFmpegEncoder *ffmpeg);
-int rsFFmpegEncoderSendFrame(RSFFmpegEncoder *ffmpeg, AVFrame *frame);
-int rsFFmpegEncoderGetPacket(RSFFmpegEncoder *ffmpeg, AVPacket *packet);
+AVCodecContext *rsFFmpegEncoderGetContext(RSEncoder *encoder);
+int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filterFmt, ...) av_printf_format(2, 3);
 
 #endif
