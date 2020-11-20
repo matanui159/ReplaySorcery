@@ -33,6 +33,7 @@ typedef struct RSAudioBuffer {
 int rsAudioBufferCreate(RSAudioBuffer *buffer);
 void rsAudioBufferDestroy(RSAudioBuffer *buffer);
 int rsAudioBufferAddFrame(RSAudioBuffer *buffer, AVFrame *frame);
+int rsAudioThreadFirstFrame(RSAudioBuffer *buffer, AVFrame *frame);
 int rsAudioBufferWrite(RSOutput *output, int64_t startTime);
 
 #endif

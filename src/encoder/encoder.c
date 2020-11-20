@@ -20,6 +20,8 @@
 #include "encoder.h"
 #include "../config.h"
 #include "../util.h"
+#include <libavutil/avutil.h>
+#include <libavutil/pixdesc.h>
 
 int rsEncoderCreate(RSEncoder *encoder) {
    rsClear(encoder, sizeof(RSEncoder));
@@ -46,13 +48,16 @@ int rsVideoEncoderCreate(RSEncoder *encoder, const AVFrame *frame) {
       return rsVaapiEncoderCreate(encoder, frame);
    }
 
-   if (frame->format == AV_PIX_FMT_DRM_PRIME) {
+   const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(frame->format);
+   if (desc->flags & AV_PIX_FMT_FLAG_HWACCEL) {
       if ((ret = rsVaapiEncoderCreate(encoder, frame)) >= 0) {
          av_log(NULL, AV_LOG_INFO, "Created VA-API encoder\n");
          return 0;
       }
       av_log(NULL, AV_LOG_WARNING, "Failed to create VA-API encoder: %s\n",
              av_err2str(ret));
+
+      return AVERROR(ENOSYS);
    }
 
    if ((ret = rsX264EncoderCreate(encoder, frame)) >= 0) {

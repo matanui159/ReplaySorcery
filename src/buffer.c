@@ -92,7 +92,7 @@ int rsBufferAddPacket(RSBuffer *buffer, AVPacket *packet) {
       buffer->head = plist;
    }
 
-   int64_t startTime = packet->pts - rsConfig.recordSeconds * AV_TIME_BASE;
+   int64_t startTime = plist->packet.pts - rsConfig.recordSeconds * AV_TIME_BASE;
    RSPacketList *remove = buffer->tail;
    while (remove != NULL && remove->packet.pts < startTime) {
       RSPacketList *next = remove->next;

@@ -45,7 +45,7 @@ static int logTrace(void *extra, uintptr_t pc, const char *file, int line,
    (void)pc;
    int *level = extra;
    if (file != NULL || func != NULL) {
-      logDefault(NULL, *level, "- %s:%i (%s)\n", file, line, func);
+      logDefault(NULL, *level, " - %s:%i (%s)\n", file, line, func);
    }
    return 0;
 }

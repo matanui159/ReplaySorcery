@@ -67,6 +67,7 @@ int rsAudioBufferAddFrame(RSAudioBuffer *buffer, AVFrame *frame) {
    }
    buffer->index = (buffer->index + frameSize) % buffer->capacity;
    buffer->size = FFMIN(buffer->size + frameSize, buffer->capacity);
+   buffer->endTime = frame->pts + frame->sample_rate;
 
    ret = 0;
 error:

@@ -203,6 +203,7 @@ static int ffmpegEncoderConfigCodec(FFmpegEncoder *ffmpeg, const AVFrame *frame)
 static int ffmpegEncoderSendFrame(RSEncoder *encoder, AVFrame *frame) {
    int ret;
    FFmpegEncoder *ffmpeg = encoder->extra;
+   frame->pict_type = AV_PICTURE_TYPE_NONE;
    if (ffmpeg->sourceCtx == NULL || ffmpeg->sinkCtx == NULL) {
       if ((ret = ffmpegEncoderConfigFilter(ffmpeg, frame)) < 0) {
          goto error;
@@ -321,6 +322,8 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filterFmt, ...) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
+
+   av_log(ffmpeg->codecCtx, AV_LOG_INFO, "FFmpeg filter: %s\n", filter);
    if ((ret = avfilter_graph_parse2(ffmpeg->filterGraph, filter, &ffmpeg->inputs,
                                     &ffmpeg->outputs)) < 0) {
       av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to parse filter graph: %s\n",
