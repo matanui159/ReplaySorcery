@@ -39,18 +39,19 @@ void rsEncoderDestroy(RSEncoder *encoder) {
    avcodec_parameters_free(&encoder->params);
 }
 
-int rsVideoEncoderCreate(RSEncoder *encoder, const AVFrame *frame) {
+int rsVideoEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
+                         const AVBufferRef *hwFrames) {
    int ret;
    switch (rsConfig.videoEncoder) {
    case RS_CONFIG_ENCODER_X264:
-      return rsX264EncoderCreate(encoder, frame);
+      return rsX264EncoderCreate(encoder, params);
    case RS_CONFIG_ENCODER_VAAPI:
-      return rsVaapiEncoderCreate(encoder, frame);
+      return rsVaapiEncoderCreate(encoder, params, hwFrames);
    }
 
-   const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(frame->format);
+   const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(params->format);
    if (desc->flags & AV_PIX_FMT_FLAG_HWACCEL) {
-      if ((ret = rsVaapiEncoderCreate(encoder, frame)) >= 0) {
+      if ((ret = rsVaapiEncoderCreate(encoder, params, hwFrames)) >= 0) {
          av_log(NULL, AV_LOG_INFO, "Created VA-API encoder\n");
          return 0;
       }
@@ -60,7 +61,7 @@ int rsVideoEncoderCreate(RSEncoder *encoder, const AVFrame *frame) {
       return AVERROR(ENOSYS);
    }
 
-   if ((ret = rsX264EncoderCreate(encoder, frame)) >= 0) {
+   if ((ret = rsX264EncoderCreate(encoder, params)) >= 0) {
       av_log(NULL, AV_LOG_INFO, "Created x264 encoder\n");
       return 0;
    }

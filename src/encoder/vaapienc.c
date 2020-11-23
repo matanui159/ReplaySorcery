@@ -21,14 +21,29 @@
 #include "encoder.h"
 #include "ffenc.h"
 
-int rsVaapiEncoderCreate(RSEncoder *encoder, const AVFrame *frame) {
+int rsVaapiEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
+                         const AVBufferRef *hwFrames) {
    int ret;
-   AVFrame *clone = av_frame_clone(frame);
-   if (clone == NULL) {
-      ret = AVERROR(ENOMEM);
-      goto error;
+   int width = rsConfig.videoWidth;
+   if (width == RS_CONFIG_AUTO) {
+      width = params->width - rsConfig.videoX;
    }
-   if ((ret = rsFFmpegEncoderCreate(encoder, "h264_vaapi")) < 0) {
+   int height = rsConfig.videoHeight;
+   if (height == RS_CONFIG_AUTO) {
+      height = params->height - rsConfig.videoY;
+   }
+   int scaleWidth = rsConfig.scaleWidth;
+   if (scaleWidth == RS_CONFIG_AUTO) {
+      scaleWidth = width;
+   }
+   int scaleHeight = rsConfig.scaleHeight;
+   if (scaleHeight == RS_CONFIG_AUTO) {
+      scaleHeight = height;
+   }
+   if ((ret = rsFFmpegEncoderCreate(
+            encoder, "h264_vaapi",
+            "hwmap=derive_device=vaapi,crop=%i:%i:%i:%i,scale_vaapi=%i:%i:nv12", width,
+            height, rsConfig.videoX, rsConfig.videoY, scaleWidth, scaleHeight)) < 0) {
       goto error;
    }
 
@@ -49,38 +64,13 @@ int rsVaapiEncoderCreate(RSEncoder *encoder, const AVFrame *frame) {
       codecCtx->compression_level = 6;
       break;
    }
-
-   int width = rsConfig.videoWidth;
-   if (width == RS_CONFIG_AUTO) {
-      width = frame->width - rsConfig.videoX;
-   }
-   int height = rsConfig.videoHeight;
-   if (height == RS_CONFIG_AUTO) {
-      height = frame->height - rsConfig.videoY;
-   }
-   int scaleWidth = rsConfig.scaleWidth;
-   if (scaleWidth == RS_CONFIG_AUTO) {
-      scaleWidth = width;
-   }
-   int scaleHeight = rsConfig.scaleHeight;
-   if (scaleHeight == RS_CONFIG_AUTO) {
-      scaleHeight = height;
-   }
-   if ((ret = rsFFmpegEncoderOpen(
-            encoder, "hwmap=derive_device=vaapi,crop=%i:%i:%i:%i,scale_vaapi=%i:%i:nv12",
-            width, height, rsConfig.videoX, rsConfig.videoY, scaleWidth, scaleHeight)) <
-       0) {
+   if ((ret = rsFFmpegEncoderOpen(encoder, params, hwFrames)) < 0) {
       goto error;
    }
-   if ((ret = rsEncoderSendFrame(encoder, clone)) < 0) {
-      goto error;
-   }
-   av_frame_free(&clone);
    // TODO: copy extradata from x264 if encoder does not support it
 
    return 0;
 error:
-   av_frame_free(&clone);
    rsEncoderDestroy(encoder);
    return ret;
 }

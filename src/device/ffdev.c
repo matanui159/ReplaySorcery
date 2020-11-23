@@ -19,7 +19,9 @@
 
 #include "ffdev.h"
 #include "../util.h"
+#include <libavcodec/avcodec.h>
 #include <libavdevice/avdevice.h>
+#include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libavutil/time.h>
 
@@ -73,6 +75,10 @@ static int ffmpegDeviceNextFrame(RSDevice *device, AVFrame *frame) {
 int rsFFmpegDeviceCreate(RSDevice *device, const char *name) {
    int ret;
    avdevice_register_all();
+   if ((ret = rsDeviceCreate(device)) < 0) {
+      goto error;
+   }
+
    FFmpegDevice *ffmpeg = av_mallocz(sizeof(FFmpegDevice));
    device->extra = ffmpeg;
    device->destroy = ffmpegDeviceDestroy;
@@ -135,6 +141,9 @@ int rsFFmpegDeviceOpen(RSDevice *device, const char *input) {
       av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to open decoder: %s\n",
              av_err2str(ret));
       return ret;
+   }
+   if ((ret = avcodec_parameters_from_context(device->params, ffmpeg->codecCtx)) < 0) {
+      return AVERROR(ENOMEM);
    }
    return 0;
 }

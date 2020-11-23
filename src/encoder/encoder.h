@@ -20,7 +20,7 @@
 #ifndef RS_ENCODER_H
 #define RS_ENCODER_H
 #include <libavcodec/avcodec.h>
-#include <libavutil/avutil.h>
+#include <libavformat/avformat.h>
 
 typedef struct RSEncoder {
    AVCodecParameters *params;
@@ -41,8 +41,10 @@ static av_always_inline int rsEncoderNextPacket(RSEncoder *encoder, AVPacket *pa
 int rsEncoderCreate(RSEncoder *encoder);
 void rsEncoderDestroy(RSEncoder *encoder);
 
-int rsX264EncoderCreate(RSEncoder *encoder, const AVFrame *frame);
-int rsVaapiEncoderCreate(RSEncoder *encoder, const AVFrame *frame);
-int rsVideoEncoderCreate(RSEncoder *encoder, const AVFrame *frame);
+int rsX264EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
+int rsVaapiEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
+                         const AVBufferRef *hwFrames);
+int rsVideoEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
+                         const AVBufferRef *hwFrames);
 
 #endif

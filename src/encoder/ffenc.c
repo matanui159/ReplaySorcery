@@ -48,7 +48,7 @@ static void ffmpegEncoderDestroy(RSEncoder *encoder) {
    }
 }
 
-static int ffmpegEncoderCreateFilter(FFmpegEncoder *ffmpeg, AVFilterContext **filterCtx,
+static int ffmpegEncoderFilterCreate(FFmpegEncoder *ffmpeg, AVFilterContext **filterCtx,
                                      const char *name, AVDictionary **options) {
    int ret;
    const AVFilter *filter = avfilter_get_by_name(name);
@@ -71,144 +71,30 @@ static int ffmpegEncoderCreateFilter(FFmpegEncoder *ffmpeg, AVFilterContext **fi
    return 0;
 }
 
-static int ffmpegEncoderConfigFilter(FFmpegEncoder *ffmpeg, const AVFrame *frame) {
+static int ffmpegEncoderFilterHardware(AVFilterContext *filterCtx,
+                                       const AVBufferRef *hwFrames) {
    int ret;
-   AVDictionary *options = NULL;
-   AVFilterContext *inputCtx = ffmpeg->inputs->filter_ctx;
-   int inputIndex = ffmpeg->inputs->pad_idx;
-   enum AVMediaType type = avfilter_pad_get_type(inputCtx->input_pads, inputIndex);
-   if (type == AVMEDIA_TYPE_VIDEO) {
-      AVRational sar = frame->sample_aspect_ratio;
-      rsOptionsSet(&options, &ret, "video_size", "%ix%i", frame->width, frame->height);
-      rsOptionsSet(&options, &ret, "pix_fmt", "%i", frame->format);
-      rsOptionsSet(&options, &ret, "sar", "%i/%i", sar.num, sar.den);
-      rsOptionsSet(&options, &ret, "frame_rate", "%i", rsConfig.videoFramerate);
-      rsOptionsSet(&options, &ret, "time_base", "1/%i", AV_TIME_BASE);
-      if (ret < 0) {
-         goto error;
-      }
-      if ((ret = ffmpegEncoderCreateFilter(ffmpeg, &ffmpeg->sourceCtx, "buffer",
-                                           &options)) < 0) {
-         goto error;
-      }
-      if (frame->hw_frames_ctx != NULL) {
-         AVBufferSrcParameters *params = av_buffersrc_parameters_alloc();
-         if (params == NULL) {
-            ret = AVERROR(ENOMEM);
-            goto error;
-         }
-         params->hw_frames_ctx = frame->hw_frames_ctx;
-         ret = av_buffersrc_parameters_set(ffmpeg->sourceCtx, params);
-         av_freep(&params);
-         if (ret < 0) {
-            goto error;
-         }
-      }
-   }
-   if (type == AVMEDIA_TYPE_AUDIO) {
-      rsOptionsSet(&options, &ret, "sample_fmt", "%i", frame->format);
-      rsOptionsSet(&options, &ret, "sample_rate", "%i", frame->sample_rate);
-      rsOptionsSet(&options, &ret, "channels", "%i", frame->channels);
-      rsOptionsSet(&options, &ret, "channel_layout", "0x%" PRIx64, frame->channel_layout);
-      rsOptionsSet(&options, &ret, "time_base", "1/%i", frame->sample_rate);
-      if (ret < 0) {
-         goto error;
-      }
-      if ((ret = ffmpegEncoderCreateFilter(ffmpeg, &ffmpeg->sourceCtx, "abuffer",
-                                           &options)) < 0) {
-         goto error;
-      }
-   }
-   if ((ret = avfilter_link(ffmpeg->sourceCtx, 0, inputCtx, (unsigned)inputIndex)) < 0) {
-      av_log(ffmpeg->sourceCtx, AV_LOG_ERROR, "Failed to link input filter: %s\n",
-             av_err2str(ret));
+   AVBufferSrcParameters *bufferParams = av_buffersrc_parameters_alloc();
+   if (bufferParams == NULL) {
+      ret = AVERROR(ENOMEM);
       goto error;
    }
 
-   AVFilterContext *outputCtx = ffmpeg->outputs->filter_ctx;
-   int outputIndex = ffmpeg->outputs->pad_idx;
-   type = avfilter_pad_get_type(outputCtx->output_pads, outputIndex);
-   if (type == AVMEDIA_TYPE_VIDEO) {
-      if ((ret = ffmpegEncoderCreateFilter(ffmpeg, &ffmpeg->sinkCtx, "buffersink",
-                                           NULL)) < 0) {
-         goto error;
-      }
-   }
-   if (type == AVMEDIA_TYPE_AUDIO) {
-      if ((ret = ffmpegEncoderCreateFilter(ffmpeg, &ffmpeg->sinkCtx, "abuffersink",
-                                           NULL)) < 0) {
-         goto error;
-      }
-   }
-   if ((ret = avfilter_link(outputCtx, (unsigned)outputIndex, ffmpeg->sinkCtx, 0)) < 0) {
-      av_log(ffmpeg->sinkCtx, AV_LOG_ERROR, "Failed to link output filter: %s\n",
-             av_err2str(ret));
+   bufferParams->hw_frames_ctx = (AVBufferRef *)hwFrames;
+   if ((ret = av_buffersrc_parameters_set(filterCtx, bufferParams)) < 0) {
       goto error;
    }
 
-   if ((ret = avfilter_graph_config(ffmpeg->filterGraph, NULL)) < 0) {
-      av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to configure filter graph: %s\n",
-             av_err2str(ret));
-      goto error;
-   }
-
-   return 0;
+   ret = 0;
 error:
-   rsOptionsDestroy(&options);
+   av_freep(&bufferParams);
    return ret;
-}
-
-static int ffmpegEncoderConfigCodec(FFmpegEncoder *ffmpeg, const AVFrame *frame) {
-   int ret;
-   ffmpeg->codecCtx->thread_count = 1;
-   ffmpeg->codecCtx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-   if (ffmpeg->codecCtx->codec_type == AVMEDIA_TYPE_VIDEO) {
-      ffmpeg->codecCtx->width = frame->width;
-      ffmpeg->codecCtx->height = frame->height;
-      ffmpeg->codecCtx->pix_fmt = frame->format;
-      ffmpeg->codecCtx->sample_aspect_ratio = frame->sample_aspect_ratio;
-      ffmpeg->codecCtx->framerate = av_make_q(rsConfig.videoFramerate, 1);
-      ffmpeg->codecCtx->time_base = AV_TIME_BASE_Q;
-      ffmpeg->codecCtx->color_range = frame->color_range;
-      ffmpeg->codecCtx->color_primaries = frame->color_primaries;
-      ffmpeg->codecCtx->color_trc = frame->color_trc;
-      ffmpeg->codecCtx->colorspace = frame->colorspace;
-      ffmpeg->codecCtx->chroma_sample_location = frame->chroma_location;
-      ffmpeg->codecCtx->profile = rsConfig.videoProfile;
-      ffmpeg->codecCtx->gop_size = rsConfig.videoGOP;
-      if (frame->hw_frames_ctx != NULL) {
-         ffmpeg->codecCtx->hw_frames_ctx = av_buffer_ref(frame->hw_frames_ctx);
-         if (ffmpeg->codecCtx->hw_frames_ctx == NULL) {
-            return AVERROR(ENOMEM);
-         }
-      }
-   }
-   if (ffmpeg->codecCtx->codec_type == AVMEDIA_TYPE_AUDIO) {
-      ffmpeg->codecCtx->sample_fmt = frame->format;
-      ffmpeg->codecCtx->sample_rate = frame->sample_rate;
-      ffmpeg->codecCtx->channels = frame->channels;
-      ffmpeg->codecCtx->channel_layout = frame->channel_layout;
-      ffmpeg->codecCtx->time_base = av_make_q(1, frame->sample_rate);
-      ffmpeg->codecCtx->frame_size = frame->nb_samples;
-   }
-   if ((ret = avcodec_open2(ffmpeg->codecCtx, NULL, &ffmpeg->options)) < 0) {
-      av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to open encoder: %s\n",
-             av_err2str(ret));
-      return ret;
-   }
-   rsOptionsDestroy(&ffmpeg->options);
-   return 0;
 }
 
 static int ffmpegEncoderSendFrame(RSEncoder *encoder, AVFrame *frame) {
    int ret;
    FFmpegEncoder *ffmpeg = encoder->extra;
    frame->pict_type = AV_PICTURE_TYPE_NONE;
-   if (ffmpeg->sourceCtx == NULL || ffmpeg->sinkCtx == NULL) {
-      if ((ret = ffmpegEncoderConfigFilter(ffmpeg, frame)) < 0) {
-         goto error;
-      }
-   }
    if ((ret = av_buffersrc_add_frame(ffmpeg->sourceCtx, frame)) < 0) {
       av_log(ffmpeg->sourceCtx, AV_LOG_ERROR,
              "Failed to send frame to filter graph: %s\n", av_err2str(ret));
@@ -220,15 +106,6 @@ static int ffmpegEncoderSendFrame(RSEncoder *encoder, AVFrame *frame) {
                 "Failed to receive frame from filter graph: %s\n", av_err2str(ret));
       }
       goto error;
-   }
-   if (!avcodec_is_open(ffmpeg->codecCtx)) {
-      if ((ret = ffmpegEncoderConfigCodec(ffmpeg, frame)) < 0) {
-         goto error;
-      }
-      if ((ret = avcodec_parameters_from_context(encoder->params, ffmpeg->codecCtx)) <
-          0) {
-         goto error;
-      }
    }
    if ((ret = avcodec_send_frame(ffmpeg->codecCtx, frame)) < 0) {
       av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to send frame to encoder: %s\n",
@@ -254,8 +131,10 @@ static int ffmpegEncoderNextPacket(RSEncoder *encoder, AVPacket *packet) {
    return 0;
 }
 
-int rsFFmpegEncoderCreate(RSEncoder *encoder, const char *name) {
+int rsFFmpegEncoderCreate(RSEncoder *encoder, const char *name, const char *filterFmt,
+                          ...) {
    int ret;
+   char *filter = NULL;
    if ((ret = rsEncoderCreate(encoder)) < 0) {
       goto error;
    }
@@ -282,14 +161,55 @@ int rsFFmpegEncoderCreate(RSEncoder *encoder, const char *name) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
+   ffmpeg->codecCtx->flags = AV_CODEC_FLAG_GLOBAL_HEADER;
+   ffmpeg->codecCtx->thread_count = 1;
+
    ffmpeg->filterGraph = avfilter_graph_alloc();
    if (ffmpeg->filterGraph == NULL) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
 
+   va_list args;
+   va_start(args, filterFmt);
+   filter = rsFormatv(filterFmt, args);
+   va_end(args);
+   if (filter == NULL) {
+      return AVERROR(ENOMEM);
+      goto error;
+   }
+   if ((ret = avfilter_graph_parse2(ffmpeg->filterGraph, filter, &ffmpeg->inputs,
+                                    &ffmpeg->outputs)) < 0) {
+      av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to parse filter graph: %s\n",
+             av_err2str(ret));
+      goto error;
+   }
+   av_freep(&filter);
+
+   AVFilterContext *outputCtx = ffmpeg->outputs->filter_ctx;
+   int outputIndex = ffmpeg->outputs->pad_idx;
+   switch (avfilter_pad_get_type(outputCtx->output_pads, outputIndex)) {
+   case AVMEDIA_TYPE_VIDEO:
+      ret = ffmpegEncoderFilterCreate(ffmpeg, &ffmpeg->sinkCtx, "buffersink", NULL);
+      break;
+   case AVMEDIA_TYPE_AUDIO:
+      ret = ffmpegEncoderFilterCreate(ffmpeg, &ffmpeg->sinkCtx, "abuffersink", NULL);
+      break;
+   default:
+      ret = AVERROR(ENOSYS);
+      goto error;
+   }
+   if (ret < 0) {
+      goto error;
+   }
+   if ((ret = avfilter_link(outputCtx, (unsigned)outputIndex, ffmpeg->sinkCtx, 0)) < 0) {
+      av_log(ffmpeg->sinkCtx, AV_LOG_ERROR, "Failed to link output filter: %s\n",
+             av_err2str(ret));
+   }
+
    return 0;
 error:
+   av_freep(&filter);
    rsEncoderDestroy(encoder);
    return ret;
 }
@@ -307,37 +227,109 @@ AVCodecContext *rsFFmpegEncoderGetContext(RSEncoder *encoder) {
    return ffmpeg->codecCtx;
 }
 
-int rsFFmpegEncoderOpen(RSEncoder *encoder, const char *filterFmt, ...) {
+int rsFFmpegEncoderOpen(RSEncoder *encoder, const AVCodecParameters *params,
+                        const AVBufferRef *hwFrames) {
    int ret;
+   AVDictionary *options = NULL;
    FFmpegEncoder *ffmpeg = encoder->extra;
-   if (ffmpeg->error < 0) {
-      return ffmpeg->error;
-   }
-
-   va_list args;
-   va_start(args, filterFmt);
-   char *filter = rsFormatv(filterFmt, args);
-   va_end(args);
-   if (filter == NULL) {
-      ret = AVERROR(ENOMEM);
+   if ((ret = ffmpeg->error) < 0) {
       goto error;
    }
 
-   av_log(ffmpeg->codecCtx, AV_LOG_INFO, "FFmpeg filter: %s\n", filter);
-   if ((ret = avfilter_graph_parse2(ffmpeg->filterGraph, filter, &ffmpeg->inputs,
-                                    &ffmpeg->outputs)) < 0) {
-      av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to parse filter graph: %s\n",
+   AVFilterContext *inputCtx = ffmpeg->inputs->filter_ctx;
+   int inputIndex = ffmpeg->inputs->pad_idx;
+   AVRational sar = params->sample_aspect_ratio;
+   switch (avfilter_pad_get_type(inputCtx->input_pads, inputIndex)) {
+   case AVMEDIA_TYPE_VIDEO:
+      rsOptionsSet(&options, &ret, "video_size", "%ix%i", params->width, params->height);
+      rsOptionsSet(&options, &ret, "pix_fmt", "%i", params->format);
+      rsOptionsSet(&options, &ret, "sar", "%i/%i", sar.num, sar.den);
+      rsOptionsSet(&options, &ret, "frame_rate", "%i", rsConfig.videoFramerate);
+      rsOptionsSet(&options, &ret, "time_base", "1/%i", AV_TIME_BASE);
+      if (ret >= 0) {
+         ret = ffmpegEncoderFilterCreate(ffmpeg, &ffmpeg->sourceCtx, "buffer", &options);
+      }
+      break;
+   case AVMEDIA_TYPE_AUDIO:
+      rsOptionsSet(&options, &ret, "sample_fmt", "%i", params->format);
+      rsOptionsSet(&options, &ret, "sample_rate", "%i", params->sample_rate);
+      rsOptionsSet(&options, &ret, "channels", "%i", params->channels);
+      rsOptionsSet(&options, &ret, "channel_layout", "0x%" PRIx64,
+                   params->channel_layout);
+      rsOptionsSet(&options, &ret, "time_base", "1/%i", params->sample_rate);
+      if (ret >= 0) {
+         ret = ffmpegEncoderFilterCreate(ffmpeg, &ffmpeg->sourceCtx, "abuffer", &options);
+      }
+      break;
+   default:
+      ret = AVERROR(ENOSYS);
+      goto error;
+   }
+   if (ret < 0) {
+      goto error;
+   }
+   if (hwFrames != NULL) {
+      if ((ret = ffmpegEncoderFilterHardware(ffmpeg->sourceCtx, hwFrames)) < 0) {
+         goto error;
+      }
+   }
+   if ((ret = avfilter_link(ffmpeg->sourceCtx, 0, inputCtx, (unsigned)inputIndex)) < 0) {
+      av_log(ffmpeg->sourceCtx, AV_LOG_ERROR, "Failed to link input filter: %s\n",
              av_err2str(ret));
       goto error;
    }
-   if (ffmpeg->inputs == NULL || ffmpeg->outputs == NULL) {
-      av_log(NULL, AV_LOG_ERROR, "Missing filter input or filter output\n");
-      ret = AVERROR_FILTER_NOT_FOUND;
+   if ((ret = avfilter_graph_config(ffmpeg->filterGraph, ffmpeg->filterGraph)) < 0) {
+      av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to configure filter graph: %s\n",
+             av_err2str(ret));
       goto error;
    }
 
-   ret = 0;
+   ffmpeg->codecCtx->time_base = av_buffersink_get_time_base(ffmpeg->sinkCtx);
+   int format = av_buffersink_get_format(ffmpeg->sinkCtx);
+   switch (ffmpeg->codecCtx->codec_type) {
+   case AVMEDIA_TYPE_VIDEO:
+      ffmpeg->codecCtx->width = av_buffersink_get_w(ffmpeg->sinkCtx);
+      ffmpeg->codecCtx->height = av_buffersink_get_h(ffmpeg->sinkCtx);
+      ffmpeg->codecCtx->pix_fmt = format;
+      ffmpeg->codecCtx->sample_aspect_ratio =
+          av_buffersink_get_sample_aspect_ratio(ffmpeg->sinkCtx);
+      ffmpeg->codecCtx->framerate = av_buffersink_get_frame_rate(ffmpeg->sinkCtx);
+      ffmpeg->codecCtx->profile = rsConfig.videoProfile;
+      ffmpeg->codecCtx->gop_size = rsConfig.videoGOP;
+      break;
+   case AVMEDIA_TYPE_AUDIO:
+      ffmpeg->codecCtx->sample_fmt = format;
+      ffmpeg->codecCtx->sample_rate = av_buffersink_get_sample_rate(ffmpeg->sinkCtx);
+      ffmpeg->codecCtx->channels = av_buffersink_get_channels(ffmpeg->sinkCtx);
+      ffmpeg->codecCtx->channel_layout =
+          av_buffersink_get_channel_layout(ffmpeg->sinkCtx);
+      break;
+   default:
+      ret = AVERROR(ENOSYS);
+      goto error;
+   }
+
+   hwFrames = av_buffersink_get_hw_frames_ctx(ffmpeg->sinkCtx);
+   if (hwFrames != NULL) {
+      ffmpeg->codecCtx->hw_frames_ctx = av_buffer_ref((AVBufferRef *)hwFrames);
+      if (ffmpeg->codecCtx->hw_frames_ctx == NULL) {
+         ret = AVERROR(ENOMEM);
+         goto error;
+      }
+   }
+   if ((ret = avcodec_open2(ffmpeg->codecCtx, NULL, &ffmpeg->options)) < 0) {
+      av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to open encoder: %s\n",
+             av_err2str(ret));
+      goto error;
+   }
+   rsOptionsDestroy(&ffmpeg->options);
+
+   if ((ret = avcodec_parameters_from_context(encoder->params, ffmpeg->codecCtx)) < 0) {
+      goto error;
+   }
+
+   return 0;
 error:
-   av_freep(&filter);
+   rsOptionsDestroy(&options);
    return ret;
 }

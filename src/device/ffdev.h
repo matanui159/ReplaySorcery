@@ -20,8 +20,6 @@
 #ifndef RS_DEVICE_FFDEV_H
 #define RS_DEVICE_FFDEV_H
 #include "device.h"
-#include <libavcodec/avcodec.h>
-#include <libavformat/avformat.h>
 
 int rsFFmpegDeviceCreate(RSDevice *device, const char *name);
 void rsFFmpegDeviceSetOption(RSDevice *device, const char *key, const char *fmt, ...)

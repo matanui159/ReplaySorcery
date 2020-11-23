@@ -21,14 +21,18 @@
 #include "encoder.h"
 #include "ffenc.h"
 
-int rsX264EncoderCreate(RSEncoder *encoder, const AVFrame *frame) {
+int rsX264EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params) {
    int ret;
-   AVFrame *clone = av_frame_clone(frame);
-   if (clone == NULL) {
-      ret = AVERROR(ENOMEM);
-      goto error;
+   int scaleWidth = rsConfig.scaleWidth;
+   if (scaleWidth == RS_CONFIG_AUTO) {
+      scaleWidth = params->width;
    }
-   if ((ret = rsFFmpegEncoderCreate(encoder, "libx264")) < 0) {
+   int scaleHeight = rsConfig.scaleHeight;
+   if (scaleHeight == RS_CONFIG_AUTO) {
+      scaleHeight = params->height;
+   }
+   if ((ret = rsFFmpegEncoderCreate(encoder, "libx264", "scale=%ix%i,format=yuv420p",
+                                    scaleWidth, scaleHeight)) < 0) {
       goto error;
    }
 
@@ -47,27 +51,12 @@ int rsX264EncoderCreate(RSEncoder *encoder, const AVFrame *frame) {
       rsFFmpegEncoderSetOption(encoder, "preset", "slower");
       break;
    }
-
-   int scaleWidth = rsConfig.scaleWidth;
-   if (scaleWidth == RS_CONFIG_AUTO) {
-      scaleWidth = frame->width;
-   }
-   int scaleHeight = rsConfig.scaleHeight;
-   if (scaleHeight == RS_CONFIG_AUTO) {
-      scaleHeight = frame->height;
-   }
-   if ((ret = rsFFmpegEncoderOpen(encoder, "scale=%ix%i,format=yuv420p", scaleWidth,
-                                  scaleHeight)) < 0) {
+   if ((ret = rsFFmpegEncoderOpen(encoder, params, NULL)) < 0) {
       goto error;
    }
-   if ((ret = rsEncoderSendFrame(encoder, clone)) < 0) {
-      goto error;
-   }
-   av_frame_free(&clone);
 
    return 0;
 error:
-   av_frame_free(&clone);
    rsEncoderDestroy(encoder);
    return ret;
 }

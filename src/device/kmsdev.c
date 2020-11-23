@@ -23,17 +23,32 @@
 
 int rsKMSDeviceCreate(RSDevice *device) {
    int ret;
+   AVFrame *frame = av_frame_alloc();
+   if (frame == NULL) {
+      return AVERROR(ENOMEM);
+   }
    if ((ret = rsFFmpegDeviceCreate(device, "kmsgrab")) < 0) {
       goto error;
    }
 
    rsFFmpegDeviceSetOption(device, "framerate", "%i", rsConfig.videoFramerate);
-   if ((ret = rsFFmpegDeviceOpen(device, "")) < 0) {
+   if ((ret = rsFFmpegDeviceOpen(device, NULL)) < 0) {
+      goto error;
+   }
+   if ((ret = rsDeviceNextFrame(device, frame)) < 0) {
       goto error;
    }
 
+   device->hwFrames = av_buffer_ref(frame->hw_frames_ctx);
+   if (device->hwFrames == NULL) {
+      ret = AVERROR(ENOMEM);
+      goto error;
+   }
+   av_frame_free(&frame);
+
    return 0;
 error:
+   av_frame_free(&frame);
    rsDeviceDestroy(device);
    return ret;
 }

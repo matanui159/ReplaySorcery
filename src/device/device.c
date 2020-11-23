@@ -21,10 +21,20 @@
 #include "../config.h"
 #include "../util.h"
 
+int rsDeviceCreate(RSDevice *device) {
+   rsClear(device, sizeof(RSDevice));
+   device->params = avcodec_parameters_alloc();
+   if (device->params == NULL) {
+      return AVERROR(ENOMEM);
+   }
+   return 0;
+}
+
 void rsDeviceDestroy(RSDevice *device) {
    if (device->destroy != NULL) {
       device->destroy(device);
    }
+   avcodec_parameters_free(&device->params);
 }
 
 int rsVideoDeviceCreate(RSDevice *device) {

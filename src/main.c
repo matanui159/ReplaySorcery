@@ -117,10 +117,8 @@ int main(int argc, char *argv[]) {
    if ((ret = rsVideoDeviceCreate(&videoDevice)) < 0) {
       goto error;
    }
-   if ((ret = rsDeviceNextFrame(&videoDevice, videoFrame)) < 0) {
-      goto error;
-   }
-   if ((ret = rsVideoEncoderCreate(&videoEncoder, videoFrame)) < 0) {
+   if ((ret = rsVideoEncoderCreate(&videoEncoder, videoDevice.params,
+                                   videoDevice.hwFrames)) < 0) {
       goto error;
    }
    av_frame_unref(videoFrame);
