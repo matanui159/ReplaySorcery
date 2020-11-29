@@ -11,6 +11,9 @@ jobs:
         with:
           submodules: true
 
+      - name: Update package repositories
+        run: sudo apt-get update
+
       - name: Install FFmpeg
         run: sudo apt-get install -y
           libavutil-dev
