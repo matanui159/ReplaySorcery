@@ -71,8 +71,13 @@ static int mainOutput(void) {
       goto error;
    }
 
+   const AVCodecParameters *audioParams;
+   if ((ret = rsAudioBufferGetParams(&audioThread.buffer, &audioParams)) < 0) {
+      goto error;
+   }
+
    rsOutputAddStream(&output, videoEncoder.params);
-   rsOutputAddStream(&output, audioThread.buffer.encoder.params);
+   rsOutputAddStream(&output, audioParams);
    if ((ret = rsOutputOpen(&output)) < 0) {
       goto error;
    }

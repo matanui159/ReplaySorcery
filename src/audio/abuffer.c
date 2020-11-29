@@ -22,6 +22,16 @@
 #include "../util.h"
 #include "aencoder.h"
 
+static int audioBufferGetEncoder(RSAudioBuffer *buffer) {
+   int ret;
+   if (buffer->encoder.params == NULL) {
+      if ((ret = rsAudioEncoderCreate(&buffer->encoder, buffer->params)) < 0) {
+         return ret;
+      }
+   }
+   return 0;
+}
+
 int rsAudioBufferCreate(RSAudioBuffer *buffer, const AVCodecParameters *params) {
    int ret;
    rsClear(buffer, sizeof(RSAudioBuffer));
@@ -39,9 +49,6 @@ int rsAudioBufferCreate(RSAudioBuffer *buffer, const AVCodecParameters *params) 
    buffer->data = av_malloc_array((size_t)buffer->capacity, (size_t)buffer->sampleSize);
    if (buffer->data == NULL) {
       ret = AVERROR(ENOMEM);
-      goto error;
-   }
-   if ((ret = rsAudioEncoderCreate(&buffer->encoder, params)) < 0) {
       goto error;
    }
 
@@ -71,6 +78,15 @@ int rsAudioBufferAddFrame(RSAudioBuffer *buffer, AVFrame *frame) {
    return 0;
 }
 
+int rsAudioBufferGetParams(RSAudioBuffer *buffer, const AVCodecParameters **params) {
+   int ret;
+   if ((ret = audioBufferGetEncoder(buffer)) < 0) {
+      return ret;
+   }
+   *params = buffer->encoder.params;
+   return 0;
+}
+
 int rsAudioBufferWrite(RSAudioBuffer *buffer, RSOutput *output, int stream,
                        int64_t offset) {
    int ret;
@@ -79,6 +95,9 @@ int rsAudioBufferWrite(RSAudioBuffer *buffer, RSOutput *output, int stream,
    AVFrame *frame = av_frame_alloc();
    if (frame == NULL) {
       ret = AVERROR(ENOMEM);
+      goto error;
+   }
+   if ((ret = audioBufferGetEncoder(buffer)) < 0) {
       goto error;
    }
 
@@ -121,6 +140,5 @@ int rsAudioBufferWrite(RSAudioBuffer *buffer, RSOutput *output, int stream,
 error:
    av_frame_free(&frame);
    rsEncoderDestroy(&buffer->encoder);
-   rsAudioEncoderCreate(&buffer->encoder, buffer->params);
    return ret;
 }
