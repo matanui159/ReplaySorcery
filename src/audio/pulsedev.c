@@ -151,6 +151,8 @@ static int pulseDeviceRead(PulseDevice *pulse, AVFrame *frame) {
    }
 
    frame->nb_samples = (int)(size / sizeof(float));
+   frame->pts = av_rescale(av_gettime_relative(), frame->sample_rate, AV_TIME_BASE) -
+                frame->nb_samples;
    if ((ret = av_frame_get_buffer(frame, 0)) < 0) {
       goto error;
    }

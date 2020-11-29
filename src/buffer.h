@@ -37,7 +37,7 @@ typedef struct RSBuffer {
 int rsBufferCreate(RSBuffer *buffer);
 void rsBufferDestroy(RSBuffer *buffer);
 int rsBufferAddPacket(RSBuffer *buffer, AVPacket *packet);
-int64_t rsBufferGetOffset(RSBuffer *buffer);
+int64_t rsBufferGetStartTime(RSBuffer *buffer);
 int rsBufferWrite(RSBuffer *buffer, RSOutput *output, int stream);
 
 #endif

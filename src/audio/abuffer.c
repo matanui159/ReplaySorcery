@@ -74,6 +74,7 @@ int rsAudioBufferAddFrame(RSAudioBuffer *buffer, AVFrame *frame) {
    }
    buffer->index = (buffer->index + frame->nb_samples) % buffer->capacity;
    buffer->size = FFMIN(buffer->size + frame->nb_samples, buffer->capacity);
+   buffer->endTime = frame->pts + frame->nb_samples;
    av_frame_unref(frame);
    return 0;
 }
@@ -88,8 +89,9 @@ int rsAudioBufferGetParams(RSAudioBuffer *buffer, const AVCodecParameters **para
 }
 
 int rsAudioBufferWrite(RSAudioBuffer *buffer, RSOutput *output, int stream,
-                       int64_t offset) {
+                       int64_t startTime) {
    int ret;
+   startTime = av_rescale(startTime, buffer->params->sample_rate, AV_TIME_BASE);
    AVPacket packet;
    av_init_packet(&packet);
    AVFrame *frame = av_frame_alloc();
@@ -101,8 +103,8 @@ int rsAudioBufferWrite(RSAudioBuffer *buffer, RSOutput *output, int stream,
       goto error;
    }
 
-   int realOffset = (int)av_rescale(offset, buffer->params->sample_rate, AV_TIME_BASE);
-   int index = realOffset;
+   int start = (int)(startTime - buffer->endTime + buffer->size);
+   int index = FFMAX(start, 0);
    while ((ret = rsEncoderNextPacket(&buffer->encoder, &packet)) != AVERROR_EOF) {
       if (ret >= 0) {
          packet.stream_index = stream;
@@ -119,7 +121,7 @@ int rsAudioBufferWrite(RSAudioBuffer *buffer, RSOutput *output, int stream,
          frame->channel_layout = buffer->params->channel_layout;
          frame->sample_rate = buffer->params->sample_rate;
          frame->nb_samples = 1;
-         frame->pts = index - realOffset;
+         frame->pts = index - start;
          if ((ret = av_frame_get_buffer(frame, 0)) < 0) {
             goto error;
          }

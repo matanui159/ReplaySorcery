@@ -31,6 +31,7 @@ typedef struct RSAudioBuffer {
    int capacity;
    int index;
    int size;
+   int64_t endTime;
    RSEncoder encoder;
 } RSAudioBuffer;
 
@@ -39,6 +40,6 @@ void rsAudioBufferDestroy(RSAudioBuffer *buffer);
 int rsAudioBufferAddFrame(RSAudioBuffer *buffer, AVFrame *frame);
 int rsAudioBufferGetParams(RSAudioBuffer *buffer, const AVCodecParameters **params);
 int rsAudioBufferWrite(RSAudioBuffer *buffer, RSOutput *output, int stream,
-                       int64_t offset);
+                       int64_t startTime);
 
 #endif

@@ -67,6 +67,7 @@ static int mainStep(void) {
 static int mainOutput(void) {
    int ret;
    RSOutput output = {0};
+   rsAudioThreadLock(&audioThread);
    if ((ret = rsOutputCreate(&output)) < 0) {
       goto error;
    }
@@ -82,12 +83,12 @@ static int mainOutput(void) {
       goto error;
    }
 
-   int64_t offset;
-   if ((offset = rsBufferGetOffset(&videoBuffer)) < 0) {
-      ret = (int)offset;
+   int64_t startTime;
+   if ((startTime = rsBufferGetStartTime(&videoBuffer)) < 0) {
+      ret = (int)startTime;
       goto error;
    }
-   if ((ret = rsAudioBufferWrite(&audioThread.buffer, &output, 1, offset)) < 0) {
+   if ((ret = rsAudioBufferWrite(&audioThread.buffer, &output, 1, startTime)) < 0) {
       goto error;
    }
    if ((ret = rsBufferWrite(&videoBuffer, &output, 0)) < 0) {
@@ -100,6 +101,7 @@ static int mainOutput(void) {
    ret = 0;
 error:
    rsOutputDestroy(&output);
+   rsAudioThreadUnlock(&audioThread);
    return ret;
 }
 

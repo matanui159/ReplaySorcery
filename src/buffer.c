@@ -103,12 +103,12 @@ int rsBufferAddPacket(RSBuffer *buffer, AVPacket *packet) {
    return 0;
 }
 
-int64_t rsBufferGetOffset(RSBuffer *buffer) {
+int64_t rsBufferGetStartTime(RSBuffer *buffer) {
    RSPacketList *start = bufferPacketGetStart(buffer);
    if (start == NULL) {
       return AVERROR(EAGAIN);
    }
-   return start->packet.pts - buffer->tail->packet.pts;
+   return start->packet.pts;
 }
 
 int rsBufferWrite(RSBuffer *buffer, RSOutput *output, int stream) {
