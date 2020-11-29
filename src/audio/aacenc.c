@@ -20,18 +20,12 @@
 #include "../encoder/ffenc.h"
 #include "aencoder.h"
 
-int rsAacEncoderCreate(RSEncoder **encoder, RSDevice *input) {
+int rsAacEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params) {
    int ret;
-   if ((ret = rsFFmpegEncoderCreate(encoder, "aac")) < 0) {
+   if ((ret = rsFFmpegEncoderCreate(encoder, "aac", "aformat=fltp")) < 0) {
       goto error;
    }
-
-   AVCodecContext *codecCtx = NULL;
-   codecCtx->sample_fmt = AV_SAMPLE_FMT_FLTP;
-   codecCtx->sample_rate = input->params->sample_rate;
-   codecCtx->channels = input->params->channels;
-   codecCtx->channel_layout = input->params->channel_layout;
-   if ((ret = rsFFmpegEncoderOpen(*encoder, "aformat=fltp")) < 0) {
+   if ((ret = rsFFmpegEncoderOpen(encoder, params, NULL)) < 0) {
       goto error;
    }
 

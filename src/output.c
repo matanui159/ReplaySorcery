@@ -24,11 +24,9 @@
 #include <libavutil/bprint.h>
 #include <time.h>
 
-// TODO: remove startTime and have it controlled by video buffer
-int rsOutputCreate(RSOutput *output, int64_t startTime) {
+int rsOutputCreate(RSOutput *output) {
    int ret;
    rsClear(output, sizeof(RSOutput));
-   output->startTime = startTime;
    AVBPrint buffer;
    av_bprint_init(&buffer, 0, AV_BPRINT_SIZE_UNLIMITED);
    char *path = NULL;
@@ -150,15 +148,9 @@ void rsOutputDestroy(RSOutput *output) {
 
 int rsOutputWrite(RSOutput *output, AVPacket *packet) {
    int ret;
-   AVStream *stream = output->formatCtx->streams[packet->stream_index];
-   int64_t startTime = av_rescale_q(output->startTime, AV_TIME_BASE_Q, stream->time_base);
-   packet->pts -= startTime;
-   packet->dts -= startTime;
-   if (packet->pts >= 0) {
-      if ((ret = av_interleaved_write_frame(output->formatCtx, packet)) < 0) {
-         av_log(NULL, AV_LOG_ERROR, "Failed to write packet: %s\n", av_err2str(ret));
-         goto error;
-      }
+   if ((ret = av_interleaved_write_frame(output->formatCtx, packet)) < 0) {
+      av_log(NULL, AV_LOG_ERROR, "Failed to write packet: %s\n", av_err2str(ret));
+      goto error;
    }
 
    ret = 0;

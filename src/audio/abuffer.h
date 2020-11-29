@@ -19,21 +19,25 @@
 
 #ifndef RS_AUDIO_ABUFFER_H
 #define RS_AUDIO_ABUFFER_H
+#include "../encoder/encoder.h"
 #include "../output.h"
+#include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 
 typedef struct RSAudioBuffer {
+   AVCodecParameters *params;
+   int sampleSize;
    int8_t *data;
-   size_t capacity;
-   size_t index;
-   size_t size;
-   int64_t endTime;
+   int capacity;
+   int index;
+   int size;
+   RSEncoder encoder;
 } RSAudioBuffer;
 
-int rsAudioBufferCreate(RSAudioBuffer *buffer);
+int rsAudioBufferCreate(RSAudioBuffer *buffer, const AVCodecParameters *params);
 void rsAudioBufferDestroy(RSAudioBuffer *buffer);
 int rsAudioBufferAddFrame(RSAudioBuffer *buffer, AVFrame *frame);
-int rsAudioThreadFirstFrame(RSAudioBuffer *buffer, AVFrame *frame);
-int rsAudioBufferWrite(RSOutput *output, int64_t startTime);
+int rsAudioBufferWrite(RSAudioBuffer *buffer, RSOutput *output, int stream,
+                       int64_t offset);
 
 #endif

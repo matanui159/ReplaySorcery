@@ -55,7 +55,7 @@ int rsAudioThreadCreate(RSAudioThread *thread) {
    if ((ret = rsAudioDeviceCreate(&thread->device)) < 0) {
       goto error;
    }
-   if ((ret = rsAudioBufferCreate(&thread->buffer)) < 0) {
+   if ((ret = rsAudioBufferCreate(&thread->buffer, thread->device.params)) < 0) {
       goto error;
    }
 

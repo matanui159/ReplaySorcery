@@ -20,57 +20,107 @@
 #include "abuffer.h"
 #include "../config.h"
 #include "../util.h"
+#include "aencoder.h"
 
-static int audioBufferSize(const AVFrame *frame, int samples) {
-   return av_samples_get_buffer_size(NULL, frame->channels, samples, frame->format, 1);
-}
-
-static int audioBufferConfig(RSAudioBuffer *buffer, const AVFrame *frame) {
+int rsAudioBufferCreate(RSAudioBuffer *buffer, const AVCodecParameters *params) {
    int ret;
-   if ((ret = audioBufferSize(frame, frame->sample_rate * rsConfig.recordSeconds)) < 0) {
-      return ret;
-   }
-
-   buffer->capacity = (size_t)ret;
-   buffer->data = av_malloc(buffer->capacity);
-   if (buffer->data == NULL) {
-      return AVERROR(ENOMEM);
-   }
-   return 0;
-}
-
-int rsAudioBufferCreate(RSAudioBuffer *buffer) {
    rsClear(buffer, sizeof(RSAudioBuffer));
-   return 0;
-}
-
-void rsAudioBufferDestroy(RSAudioBuffer *buffer) {
-   av_freep(&buffer->data);
-}
-
-int rsAudioBufferAddFrame(RSAudioBuffer *buffer, AVFrame *frame) {
-   int ret;
-   if (buffer->data == NULL) {
-      if ((ret = audioBufferConfig(buffer, frame)) < 0) {
-         goto error;
-      }
+   buffer->params = avcodec_parameters_alloc();
+   if (buffer->params == NULL) {
+      ret = AVERROR(ENOMEM);
+      goto error;
    }
-   if ((ret = audioBufferSize(frame, frame->nb_samples)) < 0) {
+   if ((ret = avcodec_parameters_copy(buffer->params, params)) < 0) {
       goto error;
    }
 
-   size_t frameSize = (size_t)ret;
-   size_t startSize = FFMIN(frameSize, buffer->capacity - buffer->index);
-   memcpy(buffer->data + buffer->index, frame->data[0], startSize);
-   if (startSize < frameSize) {
-      memcpy(buffer->data, frame->data[0] + startSize, frameSize - startSize);
+   buffer->sampleSize = params->channels * av_get_bytes_per_sample(params->format);
+   buffer->capacity = rsConfig.recordSeconds * params->sample_rate;
+   buffer->data = av_malloc_array((size_t)buffer->capacity, (size_t)buffer->sampleSize);
+   if (buffer->data == NULL) {
+      ret = AVERROR(ENOMEM);
+      goto error;
    }
-   buffer->index = (buffer->index + frameSize) % buffer->capacity;
-   buffer->size = FFMIN(buffer->size + frameSize, buffer->capacity);
-   buffer->endTime = frame->pts + frame->sample_rate;
+   if ((ret = rsAudioEncoderCreate(&buffer->encoder, params)) < 0) {
+      goto error;
+   }
+
+   return 0;
+error:
+   rsAudioBufferDestroy(buffer);
+   return ret;
+}
+
+void rsAudioBufferDestroy(RSAudioBuffer *buffer) {
+   rsEncoderDestroy(&buffer->encoder);
+   av_freep(&buffer->data);
+   avcodec_parameters_free(&buffer->params);
+}
+
+int rsAudioBufferAddFrame(RSAudioBuffer *buffer, AVFrame *frame) {
+   int prefix = FFMIN(frame->nb_samples, buffer->capacity - buffer->index);
+   size_t prefixSize = (size_t)(prefix * buffer->sampleSize);
+   memcpy(buffer->data + buffer->index * buffer->sampleSize, frame->data[0], prefixSize);
+   if (prefix < frame->nb_samples) {
+      size_t suffixSize = (size_t)((frame->nb_samples - prefix) * buffer->sampleSize);
+      memcpy(buffer->data, frame->data[0] + prefixSize, suffixSize);
+   }
+   buffer->index = (buffer->index + frame->nb_samples) % buffer->capacity;
+   buffer->size = FFMIN(buffer->size + frame->nb_samples, buffer->capacity);
+   av_frame_unref(frame);
+   return 0;
+}
+
+int rsAudioBufferWrite(RSAudioBuffer *buffer, RSOutput *output, int stream,
+                       int64_t offset) {
+   int ret;
+   AVPacket packet;
+   av_init_packet(&packet);
+   AVFrame *frame = av_frame_alloc();
+   if (frame == NULL) {
+      ret = AVERROR(ENOMEM);
+      goto error;
+   }
+
+   int realOffset = (int)av_rescale(offset, buffer->params->sample_rate, AV_TIME_BASE);
+   int index = realOffset;
+   while ((ret = rsEncoderNextPacket(&buffer->encoder, &packet)) != AVERROR_EOF) {
+      if (ret >= 0) {
+         packet.stream_index = stream;
+         if ((ret = rsOutputWrite(output, &packet)) < 0) {
+            goto error;
+         }
+      } else if (ret == AVERROR(EAGAIN)) {
+         if (index == buffer->size) {
+            rsEncoderSendFrame(&buffer->encoder, NULL);
+         }
+
+         frame->format = buffer->params->format;
+         frame->channels = buffer->params->channels;
+         frame->channel_layout = buffer->params->channel_layout;
+         frame->sample_rate = buffer->params->sample_rate;
+         frame->nb_samples = 1;
+         frame->pts = index - realOffset;
+         if ((ret = av_frame_get_buffer(frame, 0)) < 0) {
+            goto error;
+         }
+
+         int realIndex = (buffer->index + index) % buffer->size;
+         memcpy(frame->data[0], buffer->data + realIndex * buffer->sampleSize,
+                (size_t)buffer->sampleSize);
+         if ((ret = rsEncoderSendFrame(&buffer->encoder, frame)) < 0) {
+            goto error;
+         }
+         ++index;
+      } else {
+         goto error;
+      }
+   }
 
    ret = 0;
 error:
-   av_frame_unref(frame);
+   av_frame_free(&frame);
+   rsEncoderDestroy(&buffer->encoder);
+   rsAudioEncoderCreate(&buffer->encoder, buffer->params);
    return ret;
 }

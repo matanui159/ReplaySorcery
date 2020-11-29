@@ -151,8 +151,6 @@ static int pulseDeviceRead(PulseDevice *pulse, AVFrame *frame) {
    }
 
    frame->nb_samples = (int)(size / sizeof(float));
-   frame->pts = av_rescale(av_gettime_relative(), frame->sample_rate, AV_TIME_BASE) -
-                frame->nb_samples;
    if ((ret = av_frame_get_buffer(frame, 0)) < 0) {
       goto error;
    }
@@ -171,10 +169,10 @@ error:
 static int pulseDeviceNextFrame(RSDevice *device, AVFrame *frame) {
    int ret;
    PulseDevice *pulse = device->extra;
-   frame->format = AV_SAMPLE_FMT_FLTP;
-   frame->sample_rate = rsConfig.audioSamplerate;
-   frame->channels = 1;
-   frame->channel_layout = AV_CH_LAYOUT_MONO;
+   frame->format = device->params->format;
+   frame->channels = device->params->channels;
+   frame->channel_layout = device->params->channel_layout;
+   frame->sample_rate = device->params->sample_rate;
    while ((ret = pulseDeviceRead(pulse, frame)) == AVERROR(EAGAIN)) {
       if ((ret = pulseDeviceIterate(pulse)) < 0) {
          return ret;
@@ -203,6 +201,10 @@ static void pulseDeviceServerInfo(pa_context *context, const pa_server_info *inf
 int rsPulseDeviceCreate(RSDevice *device) {
 #ifdef RS_BUILD_PULSE_FOUND
    int ret;
+   if ((ret = rsDeviceCreate(device)) < 0) {
+      goto error;
+   }
+
    PulseDevice *pulse = av_mallocz(sizeof(PulseDevice));
    device->extra = pulse;
    device->destroy = pulseDeviceDestroy;
@@ -257,8 +259,8 @@ int rsPulseDeviceCreate(RSDevice *device) {
    pulse->stream = pa_stream_new(pulse->context, RS_NAME,
                                  &(pa_sample_spec){
                                      .format = PA_SAMPLE_FLOAT32NE,
-                                     .rate = (uint32_t)rsConfig.audioSamplerate,
                                      .channels = 1,
+                                     .rate = (uint32_t)rsConfig.audioSamplerate,
                                  },
                                  NULL);
    if (pulse->stream == NULL) {
@@ -286,6 +288,10 @@ int rsPulseDeviceCreate(RSDevice *device) {
       ret = AVERROR_EXTERNAL;
       goto error;
    }
+   device->params->format = AV_SAMPLE_FMT_FLT;
+   device->params->channels = 1;
+   device->params->channel_layout = AV_CH_LAYOUT_MONO;
+   device->params->sample_rate = rsConfig.audioSamplerate;
 
    return 0;
 error:

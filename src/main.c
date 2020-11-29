@@ -17,6 +17,7 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "audio/abuffer.h"
 #include "audio/audio.h"
 #include "buffer.h"
 #include "config.h"
@@ -38,10 +39,10 @@ static RSAudioThread audioThread;
 static RSControl controller;
 static volatile sig_atomic_t running = 1;
 
-static void mainSignal(int signal) {
-   (void)signal;
+static void mainSignal(int sig) {
    av_log(NULL, AV_LOG_INFO, "\nExiting...\n");
    running = 0;
+   signal(sig, SIG_DFL);
 }
 
 static int mainStep(void) {
@@ -66,17 +67,22 @@ static int mainStep(void) {
 static int mainOutput(void) {
    int ret;
    RSOutput output = {0};
-   int64_t startTime;
-   if ((startTime = rsBufferStartTime(&videoBuffer)) < 0) {
-      ret = (int)startTime;
-      goto error;
-   }
-   if ((ret = rsOutputCreate(&output, startTime)) < 0) {
+   if ((ret = rsOutputCreate(&output)) < 0) {
       goto error;
    }
 
    rsOutputAddStream(&output, videoEncoder.params);
+   rsOutputAddStream(&output, audioThread.buffer.encoder.params);
    if ((ret = rsOutputOpen(&output)) < 0) {
+      goto error;
+   }
+
+   int64_t offset;
+   if ((offset = rsBufferGetOffset(&videoBuffer)) < 0) {
+      ret = (int)offset;
+      goto error;
+   }
+   if ((ret = rsAudioBufferWrite(&audioThread.buffer, &output, 1, offset)) < 0) {
       goto error;
    }
    if ((ret = rsBufferWrite(&videoBuffer, &output, 0)) < 0) {

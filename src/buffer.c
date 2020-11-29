@@ -43,7 +43,7 @@ static void bufferPacketDestroy(RSBuffer *buffer, RSPacketList *plist) {
    buffer->pool = plist;
 }
 
-static RSPacketList *bufferStartPacket(RSBuffer *buffer) {
+static RSPacketList *bufferPacketGetStart(RSBuffer *buffer) {
    for (RSPacketList *plist = buffer->tail; plist != NULL; plist = plist->next) {
       if (plist->packet.flags & AV_PKT_FLAG_KEY) {
          return plist;
@@ -103,29 +103,31 @@ int rsBufferAddPacket(RSBuffer *buffer, AVPacket *packet) {
    return 0;
 }
 
-int64_t rsBufferStartTime(RSBuffer *buffer) {
-   RSPacketList *start = bufferStartPacket(buffer);
+int64_t rsBufferGetOffset(RSBuffer *buffer) {
+   RSPacketList *start = bufferPacketGetStart(buffer);
    if (start == NULL) {
       return AVERROR(EAGAIN);
    }
-   return start->packet.pts;
+   return start->packet.pts - buffer->tail->packet.pts;
 }
 
 int rsBufferWrite(RSBuffer *buffer, RSOutput *output, int stream) {
    int ret;
    AVPacket packet;
    av_init_packet(&packet);
-   RSPacketList *plist = bufferStartPacket(buffer);
-   if (plist == NULL) {
+   RSPacketList *start = bufferPacketGetStart(buffer);
+   if (start == NULL) {
       return AVERROR(EAGAIN);
    }
 
-   for (; plist != NULL; plist = plist->next) {
+   for (RSPacketList *plist = start; plist != NULL; plist = plist->next) {
       if ((ret = av_packet_ref(&packet, &plist->packet)) < 0) {
          return ret;
       }
 
       packet.stream_index = stream;
+      packet.pts -= start->packet.pts;
+      packet.dts -= start->packet.dts;
       if ((ret = rsOutputWrite(output, &packet)) < 0) {
          return ret;
       }

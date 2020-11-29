@@ -23,12 +23,11 @@
 #include <libavformat/avformat.h>
 
 typedef struct RSOutput {
-   int64_t startTime;
    AVFormatContext *formatCtx;
    int error;
 } RSOutput;
 
-int rsOutputCreate(RSOutput *output, int64_t startTime);
+int rsOutputCreate(RSOutput *output);
 void rsOutputAddStream(RSOutput *output, const AVCodecParameters *params);
 int rsOutputOpen(RSOutput *output);
 int rsOutputClose(RSOutput *output);

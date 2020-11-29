@@ -13,8 +13,10 @@ set(sources
    src/main.c
    src/output.c
    src/util.c
+   src/audio/aacenc.c
    src/audio/abuffer.c
    src/audio/adevice.c
+   src/audio/aencoder.c
    src/audio/audio.c
    src/audio/pulsedev.c
    src/control/control.c
@@ -38,6 +40,7 @@ set(headers
    src/util.h
    src/audio/abuffer.h
    src/audio/adevice.h
+   src/audio/aencoder.h
    src/audio/audio.h
    src/control/control.h
    src/device/device.h
@@ -88,22 +91,6 @@ add_dependencies(${binary} backtrace)
 ExternalProject_Get_Property(backtrace INSTALL_DIR)
 target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
 target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libbacktrace.a")
-
-# libjpeg-turbo git submodule
-# ExternalProject_Add(jpeg
-#    STEP_TARGETS jpeg
-#    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dep/libjpeg-turbo"
-#    CMAKE_ARGS
-#       -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-#       -DCMAKE_INSTALL_LIBDIR=<INSTALL_DIR>/lib
-#       -DENABLE_SHARED=OFF
-#       -DWITH_TURBOJPEG=OFF
-#       -DCMAKE_C_FLAGS=-O3
-# )
-# add_dependencies(${binary} jpeg)
-# ExternalProject_Get_Property(jpeg INSTALL_DIR)
-# target_include_directories(${binary} SYSTEM PRIVATE "${INSTALL_DIR}/include")
-# target_link_libraries(${binary} PRIVATE "${INSTALL_DIR}/lib/libjpeg.a")
 
 # FFmpeg
 pkg_check_modules(FFMPEG

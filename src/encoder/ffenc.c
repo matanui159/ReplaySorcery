@@ -91,25 +91,50 @@ error:
    return ret;
 }
 
-static int ffmpegEncoderSendFrame(RSEncoder *encoder, AVFrame *frame) {
+static int ffmpegEncoderFilterGetFrame(FFmpegEncoder *ffmpeg, AVFrame *frame) {
    int ret;
-   FFmpegEncoder *ffmpeg = encoder->extra;
-   frame->pict_type = AV_PICTURE_TYPE_NONE;
-   if ((ret = av_buffersrc_add_frame(ffmpeg->sourceCtx, frame)) < 0) {
-      av_log(ffmpeg->sourceCtx, AV_LOG_ERROR,
-             "Failed to send frame to filter graph: %s\n", av_err2str(ret));
-      goto error;
+   switch (ffmpeg->codecCtx->codec_type) {
+   case AVMEDIA_TYPE_VIDEO:
+      ret = av_buffersink_get_frame(ffmpeg->sinkCtx, frame);
+      break;
+   case AVMEDIA_TYPE_AUDIO:
+      ret =
+          av_buffersink_get_samples(ffmpeg->sinkCtx, frame, ffmpeg->codecCtx->frame_size);
+      break;
+   default:
+      return AVERROR(ENOSYS);
    }
-   if ((ret = av_buffersink_get_frame(ffmpeg->sinkCtx, frame)) < 0) {
+   if (ret < 0) {
       if (ret != AVERROR(EAGAIN)) {
          av_log(ffmpeg->sinkCtx, AV_LOG_ERROR,
                 "Failed to receive frame from filter graph: %s\n", av_err2str(ret));
       }
-      goto error;
+      return ret;
+   }
+   return 0;
+}
+
+static int ffmpegEncoderSendFrame(RSEncoder *encoder, AVFrame *frame) {
+   int ret;
+   FFmpegEncoder *ffmpeg = encoder->extra;
+   if (frame != NULL) {
+      frame->pict_type = AV_PICTURE_TYPE_NONE;
+      if ((ret = av_buffersrc_add_frame(ffmpeg->sourceCtx, frame)) < 0) {
+         av_log(ffmpeg->sourceCtx, AV_LOG_ERROR,
+                "Failed to send frame to filter graph: %s\n", av_err2str(ret));
+         goto error;
+      }
+      if ((ret = ffmpegEncoderFilterGetFrame(ffmpeg, frame)) < 0) {
+         if (ret == AVERROR(EAGAIN)) {
+            ret = 0;
+         }
+         goto error;
+      }
    }
    if ((ret = avcodec_send_frame(ffmpeg->codecCtx, frame)) < 0) {
       av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to send frame to encoder: %s\n",
              av_err2str(ret));
+      goto error;
    }
 
    ret = 0;
@@ -122,7 +147,7 @@ static int ffmpegEncoderNextPacket(RSEncoder *encoder, AVPacket *packet) {
    int ret;
    FFmpegEncoder *ffmpeg = encoder->extra;
    if ((ret = avcodec_receive_packet(ffmpeg->codecCtx, packet)) < 0) {
-      if (ret != AVERROR(EAGAIN)) {
+      if (ret != AVERROR_EOF && ret != AVERROR(EAGAIN)) {
          av_log(ffmpeg->codecCtx, AV_LOG_ERROR,
                 "Failed to receive packet from encoder: %s\n", av_err2str(ret));
       }
@@ -252,10 +277,10 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const AVCodecParameters *params,
       break;
    case AVMEDIA_TYPE_AUDIO:
       rsOptionsSet(&options, &ret, "sample_fmt", "%i", params->format);
-      rsOptionsSet(&options, &ret, "sample_rate", "%i", params->sample_rate);
       rsOptionsSet(&options, &ret, "channels", "%i", params->channels);
       rsOptionsSet(&options, &ret, "channel_layout", "0x%" PRIx64,
                    params->channel_layout);
+      rsOptionsSet(&options, &ret, "sample_rate", "%i", params->sample_rate);
       rsOptionsSet(&options, &ret, "time_base", "1/%i", params->sample_rate);
       if (ret >= 0) {
          ret = ffmpegEncoderFilterCreate(ffmpeg, &ffmpeg->sourceCtx, "abuffer", &options);
@@ -299,10 +324,10 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const AVCodecParameters *params,
       break;
    case AVMEDIA_TYPE_AUDIO:
       ffmpeg->codecCtx->sample_fmt = format;
-      ffmpeg->codecCtx->sample_rate = av_buffersink_get_sample_rate(ffmpeg->sinkCtx);
       ffmpeg->codecCtx->channels = av_buffersink_get_channels(ffmpeg->sinkCtx);
       ffmpeg->codecCtx->channel_layout =
           av_buffersink_get_channel_layout(ffmpeg->sinkCtx);
+      ffmpeg->codecCtx->sample_rate = av_buffersink_get_sample_rate(ffmpeg->sinkCtx);
       break;
    default:
       ret = AVERROR(ENOSYS);
