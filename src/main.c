@@ -121,12 +121,6 @@ int main(int argc, char *argv[]) {
                   "under certain conditions; see COPYING for details.");
    av_log(NULL, AV_LOG_INFO, "FFmpeg version: %s\n", av_version_info());
 
-   av_init_packet(&videoPacket);
-   videoFrame = av_frame_alloc();
-   if (videoFrame == NULL) {
-      ret = AVERROR(ENOMEM);
-      goto error;
-   }
    if ((ret = rsVideoDeviceCreate(&videoDevice)) < 0) {
       goto error;
    }
@@ -134,9 +128,14 @@ int main(int argc, char *argv[]) {
                                    videoDevice.hwFrames)) < 0) {
       goto error;
    }
-   av_frame_unref(videoFrame);
-
    if ((ret = rsBufferCreate(&videoBuffer)) < 0) {
+      goto error;
+   }
+
+   av_init_packet(&videoPacket);
+   videoFrame = av_frame_alloc();
+   if (videoFrame == NULL) {
+      ret = AVERROR(ENOMEM);
       goto error;
    }
    if ((ret = rsAudioThreadCreate(&audioThread)) < 0) {

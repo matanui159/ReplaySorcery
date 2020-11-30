@@ -113,13 +113,13 @@ int64_t rsBufferGetStartTime(RSBuffer *buffer) {
 
 int rsBufferWrite(RSBuffer *buffer, RSOutput *output, int stream) {
    int ret;
-   AVPacket packet;
-   av_init_packet(&packet);
    RSPacketList *start = bufferPacketGetStart(buffer);
    if (start == NULL) {
       return AVERROR(EAGAIN);
    }
 
+   AVPacket packet;
+   av_init_packet(&packet);
    for (RSPacketList *plist = start; plist != NULL; plist = plist->next) {
       if ((ret = av_packet_ref(&packet, &plist->packet)) < 0) {
          return ret;

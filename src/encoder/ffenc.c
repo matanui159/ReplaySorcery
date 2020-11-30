@@ -91,29 +91,6 @@ error:
    return ret;
 }
 
-static int ffmpegEncoderFilterGetFrame(FFmpegEncoder *ffmpeg, AVFrame *frame) {
-   int ret;
-   switch (ffmpeg->codecCtx->codec_type) {
-   case AVMEDIA_TYPE_VIDEO:
-      ret = av_buffersink_get_frame(ffmpeg->sinkCtx, frame);
-      break;
-   case AVMEDIA_TYPE_AUDIO:
-      ret =
-          av_buffersink_get_samples(ffmpeg->sinkCtx, frame, ffmpeg->codecCtx->frame_size);
-      break;
-   default:
-      return AVERROR(ENOSYS);
-   }
-   if (ret < 0) {
-      if (ret != AVERROR(EAGAIN)) {
-         av_log(ffmpeg->sinkCtx, AV_LOG_ERROR,
-                "Failed to receive frame from filter graph: %s\n", av_err2str(ret));
-      }
-      return ret;
-   }
-   return 0;
-}
-
 static int ffmpegEncoderSendFrame(RSEncoder *encoder, AVFrame *frame) {
    int ret;
    FFmpegEncoder *ffmpeg = encoder->extra;
@@ -124,10 +101,9 @@ static int ffmpegEncoderSendFrame(RSEncoder *encoder, AVFrame *frame) {
                 "Failed to send frame to filter graph: %s\n", av_err2str(ret));
          goto error;
       }
-      if ((ret = ffmpegEncoderFilterGetFrame(ffmpeg, frame)) < 0) {
-         if (ret == AVERROR(EAGAIN)) {
-            ret = 0;
-         }
+      if ((ret = av_buffersink_get_frame(ffmpeg->sinkCtx, frame)) < 0) {
+         av_log(ffmpeg->sinkCtx, AV_LOG_ERROR,
+                "Failed to receive frame from filter graph: %s\n", av_err2str(ret));
          goto error;
       }
    }
