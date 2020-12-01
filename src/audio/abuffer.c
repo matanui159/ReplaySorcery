@@ -22,9 +22,13 @@
 #include "../util.h"
 #include "aencoder.h"
 
-static av_always_inline void audioBufferCopy(RSAudioBuffer *buffer, void *dest, int destOffset, const void *src, int srcOffset, int size) {
+static av_always_inline void audioBufferCopy(RSAudioBuffer *buffer, void *dest,
+                                             int destOffset, const void *src,
+                                             int srcOffset, int size) {
    if (size >= 0) {
-      memcpy((int8_t *)dest + destOffset * buffer->sampleSize, (const int8_t *)src + srcOffset * buffer->sampleSize, (size_t)(size * buffer->sampleSize));
+      memcpy((int8_t *)dest + destOffset * buffer->sampleSize,
+             (const int8_t *)src + srcOffset * buffer->sampleSize,
+             (size_t)(size * buffer->sampleSize));
    }
 }
 
@@ -38,7 +42,8 @@ static int audioBufferGetEncoder(RSAudioBuffer *buffer) {
    return 0;
 }
 
-static int audioBufferSendFrame(RSAudioBuffer *buffer, int index, int pts, AVFrame *frame) {
+static int audioBufferSendFrame(RSAudioBuffer *buffer, int index, int pts,
+                                AVFrame *frame) {
    int ret;
    if (index == buffer->size) {
       if ((ret = rsEncoderSendFrame(&buffer->encoder, NULL)) < 0) {
@@ -61,7 +66,8 @@ static int audioBufferSendFrame(RSAudioBuffer *buffer, int index, int pts, AVFra
    int bufIndex = (buffer->index + index) % buffer->size;
    int prefix = FFMIN(frame->nb_samples, buffer->size - bufIndex);
    audioBufferCopy(buffer, frame->data[0], 0, buffer->data, bufIndex, prefix);
-   audioBufferCopy(buffer, frame->data[0], prefix, buffer->data, 0, frame->nb_samples - prefix);
+   audioBufferCopy(buffer, frame->data[0], prefix, buffer->data, 0,
+                   frame->nb_samples - prefix);
    if ((ret = rsEncoderSendFrame(&buffer->encoder, frame)) < 0) {
       return ret;
    }
@@ -103,7 +109,8 @@ void rsAudioBufferDestroy(RSAudioBuffer *buffer) {
 int rsAudioBufferAddFrame(RSAudioBuffer *buffer, AVFrame *frame) {
    int prefix = FFMIN(frame->nb_samples, buffer->capacity - buffer->index);
    audioBufferCopy(buffer, buffer->data, buffer->index, frame->data[0], 0, prefix);
-   audioBufferCopy(buffer, buffer->data, 0, frame->data[0], prefix, frame->nb_samples - prefix);
+   audioBufferCopy(buffer, buffer->data, 0, frame->data[0], prefix,
+                   frame->nb_samples - prefix);
    buffer->index = (buffer->index + frame->nb_samples) % buffer->capacity;
    buffer->size = FFMIN(buffer->size + frame->nb_samples, buffer->capacity);
    buffer->endTime = frame->pts + frame->nb_samples;
@@ -134,8 +141,8 @@ int rsAudioBufferWrite(RSAudioBuffer *buffer, RSOutput *output, int stream,
    }
 
    int64_t bufStartTime = buffer->endTime - buffer->size;
-   int offset = (int)FFMAX(startTime - bufStartTime, 0);
-   int index = offset;
+   int index = (int)FFMAX(startTime - bufStartTime, 0);
+   int pts = 0;
    AVPacket packet;
    av_init_packet(&packet);
    while ((ret = rsEncoderNextPacket(&buffer->encoder, &packet)) != AVERROR_EOF) {
@@ -145,10 +152,11 @@ int rsAudioBufferWrite(RSAudioBuffer *buffer, RSOutput *output, int stream,
             goto error;
          }
       } else if (ret == AVERROR(EAGAIN)) {
-         if ((ret = audioBufferSendFrame(buffer, index, index - offset, frame)) < 0) {
+         if ((ret = audioBufferSendFrame(buffer, index, pts, frame)) < 0) {
             goto error;
          }
          index += ret;
+         pts += ret;
       } else {
          goto error;
       }
