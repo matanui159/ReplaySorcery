@@ -84,7 +84,7 @@ static const AVOption configOptions[] = {
     CONFIG_INT(videoGOP, 30, 0, INT_MAX, videoGOP),
     CONFIG_INT(scaleWidth, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX, auto),
     CONFIG_INT(scaleHeight, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX, auto),
-    CONFIG_INT(audioInput, RS_CONFIG_DEVICE_NONE, RS_CONFIG_DEVICE_NONE,
+    CONFIG_INT(audioInput, RS_CONFIG_AUTO, RS_CONFIG_DEVICE_NONE,
                RS_CONFIG_DEVICE_PULSE, audioInput),
     CONFIG_CONST(none, RS_CONFIG_DEVICE_NONE, audioInput),
     CONFIG_CONST(auto, RS_CONFIG_AUTO, audioInput),

@@ -105,6 +105,30 @@ error:
    return ret;
 }
 
+static int mainOutputVideo(void) {
+   int ret;
+   RSOutput output = {0};
+   if ((ret = rsOutputCreate(&output)) < 0) {
+      goto error;
+   }
+
+   rsOutputAddStream(&output, videoEncoder.params);
+   if ((ret = rsOutputOpen(&output)) < 0) {
+      goto error;
+   }
+   if ((ret = rsBufferWrite(&videoBuffer, &output, 0)) < 0) {
+      goto error;
+   }
+   if ((ret = rsOutputClose(&output)) < 0) {
+      goto error;
+   }
+
+   ret = 0;
+error:
+   rsOutputDestroy(&output);
+   return ret;
+}
+
 int main(int argc, char *argv[]) {
    (void)argc;
    (void)argv;
@@ -156,7 +180,12 @@ int main(int argc, char *argv[]) {
          goto error;
       }
       if (ret > 0) {
-         if ((ret = mainOutput()) < 0) {
+         if (audioThread.running) {
+            ret = mainOutput();
+         } else {
+            ret = mainOutputVideo();
+         }
+         if (ret < 0) {
             av_log(NULL, AV_LOG_WARNING, "Failed to output video: %s\n", av_err2str(ret));
          }
       }

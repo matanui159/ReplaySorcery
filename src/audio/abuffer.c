@@ -45,7 +45,7 @@ static int audioBufferGetEncoder(RSAudioBuffer *buffer) {
 static int audioBufferSendFrame(RSAudioBuffer *buffer, int index, int pts,
                                 AVFrame *frame) {
    int ret;
-   if (index == buffer->size) {
+   if (index >= buffer->size) {
       if ((ret = rsEncoderSendFrame(&buffer->encoder, NULL)) < 0) {
          return ret;
       }

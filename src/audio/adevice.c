@@ -25,6 +25,7 @@ int rsAudioDeviceCreate(RSDevice *device) {
    (void)device;
    switch (rsConfig.audioInput) {
    case RS_CONFIG_DEVICE_NONE:
+      av_log(NULL, AV_LOG_WARNING, "Audio is disabled\n");
       return AVERROR(ENOSYS);
    case RS_CONFIG_DEVICE_PULSE:
       return rsPulseDeviceCreate(device);
