@@ -143,5 +143,10 @@ set(service replay-sorcery.service)
 set(RS_SYSTEMD_DIR /usr/lib/systemd/user CACHE STRING "Where to install the systemd service")
 configure_file(sys/${service}.in ${service})
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${service}" DESTINATION "${RS_SYSTEMD_DIR}")
-install(TARGETS ${binary} DESTINATION bin)
+install(TARGETS ${binary} DESTINATION bin PERMISSIONS
+   OWNER_READ OWNER_WRITE OWNER_EXECUTE
+   GROUP_READ GROUP_EXECUTE
+   WORLD_READ WORLD_EXECUTE
+   SETUID SETGID
+)
 install(FILES sys/etc/replay-sorcery.conf DESTINATION etc)
