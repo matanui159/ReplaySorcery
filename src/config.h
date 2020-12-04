@@ -40,6 +40,11 @@
 #define RS_CONFIG_CONTROL_DEBUG 0
 #define RS_CONFIG_CONTROL_X11 1
 
+#define RS_CONFIG_KEYMOD_CTRL 1
+#define RS_CONFIG_KEYMOD_SHIFT 2
+#define RS_CONFIG_KEYMOD_ALT 4
+#define RS_CONFIG_KEYMOD_SUPER 8
+
 typedef struct RSConfig {
    const AVClass *avClass;
    int logLevel;
@@ -62,7 +67,10 @@ typedef struct RSConfig {
    int audioSamplerate;
    int audioEncoder;
    int controller;
+   char *keyName;
+   int keyMods;
    char *outputFile;
+   char *outputCommand;
 } RSConfig;
 
 extern RSConfig rsConfig;

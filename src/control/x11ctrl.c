@@ -17,12 +17,18 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "../config.h"
 #include "../util.h"
 #include "control.h"
 #include "rsbuild.h"
 #ifdef RS_BUILD_X11_FOUND
 #include <X11/keysym.h>
 #endif
+
+#define RSX_ALT_MASK Mod1Mask
+#define RSX_SUPER_MASK Mod4Mask
+#define RSX_CAPSLOCK_MASK LockMask
+#define RSX_NUMLOCK_MASK Mod2Mask
 
 #ifdef RS_BUILD_X11_FOUND
 static void x11ControlGrabKey(RSXDisplay *display, int key, unsigned mods) {
@@ -73,13 +79,26 @@ int rsX11ControlCreate(RSControl *control) {
    }
 
 #ifdef RS_BUILD_X11_FOUND
-   int key = XKeysymToKeycode(display, XK_R);
-   unsigned mods = ControlMask | ShiftMask;
+   int key = XKeysymToKeycode(display, XStringToKeysym(rsConfig.keyName));
+   unsigned mods = 0;
+   if (rsConfig.keyMods & RS_CONFIG_KEYMOD_CTRL) {
+      mods |= ControlMask;
+   }
+   if (rsConfig.keyMods & RS_CONFIG_KEYMOD_SHIFT) {
+      mods |= ShiftMask;
+   }
+   if (rsConfig.keyMods & RS_CONFIG_KEYMOD_ALT) {
+      mods |= RSX_ALT_MASK;
+   }
+   if (rsConfig.keyMods & RS_CONFIG_KEYMOD_SUPER) {
+      mods |= RSX_SUPER_MASK;
+   }
+
    x11ControlGrabKey(display, key, mods);
-   // Also allow capslock and numslock (Mod2) to be enabled
-   x11ControlGrabKey(display, key, mods | LockMask);
-   x11ControlGrabKey(display, key, mods | Mod2Mask);
-   x11ControlGrabKey(display, key, mods | LockMask | Mod2Mask);
+   // Also allow capslock and numslock to be enabled
+   x11ControlGrabKey(display, key, mods | RSX_CAPSLOCK_MASK);
+   x11ControlGrabKey(display, key, mods | RSX_NUMLOCK_MASK);
+   x11ControlGrabKey(display, key, mods | RSX_CAPSLOCK_MASK | RSX_NUMLOCK_MASK);
 #endif
 
    return 0;

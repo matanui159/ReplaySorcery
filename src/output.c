@@ -129,15 +129,29 @@ error:
 
 int rsOutputClose(RSOutput *output) {
    int ret;
+   char *command = rsFormat(rsConfig.outputCommand, output->formatCtx->url);
+   if (command == NULL) {
+      return AVERROR(ENOMEM);
+   }
    if ((ret = av_write_trailer(output->formatCtx)) < 0) {
       av_log(output->formatCtx, AV_LOG_ERROR, "Failed to write trailer: %s\n",
              av_err2str(ret));
-      return ret;
+      goto error;
    }
    if ((ret = avio_closep(&output->formatCtx->pb)) < 0) {
       av_log(NULL, AV_LOG_ERROR, "Failed to close output: %s\n", av_err2str(ret));
+      goto error;
    }
-   return 0;
+
+   av_log(NULL, AV_LOG_INFO, "Running command: %s\n", command);
+   if ((ret = system(command)) != 0) {
+      av_log(NULL, AV_LOG_WARNING, "Command returned non-zero exit-code: %i\n", ret);
+   }
+
+   ret = 0;
+error:
+   av_freep(&command);
+   return ret;
 }
 
 void rsOutputDestroy(RSOutput *output) {

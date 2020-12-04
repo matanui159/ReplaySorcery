@@ -39,7 +39,13 @@
 #name, NULL, offsetof(RSConfig, name), AV_OPT_TYPE_INT,                            \
           {.i64 = def }, min, max, 0, #group                                             \
    }
+#define CONFIG_FLAGS(name, def, group)                                                   \
+   {                                                                                     \
+#name, NULL, offsetof(RSConfig, name), AV_OPT_TYPE_FLAGS,                          \
+          {.i64 = def }, 0, INT_MAX, 0, #group                                           \
+   }
 
+// Remember to update replay-sorcery.conf
 static const AVOption configOptions[] = {
     CONFIG_CONST(auto, RS_CONFIG_AUTO, auto),
     CONFIG_INT(logLevel, AV_LOG_INFO, AV_LOG_QUIET, AV_LOG_TRACE, logLevel),
@@ -99,7 +105,14 @@ static const AVOption configOptions[] = {
     CONFIG_CONST(auto, RS_CONFIG_AUTO, controller),
     CONFIG_CONST(debug, RS_CONFIG_CONTROL_DEBUG, controller),
     CONFIG_CONST(x11, RS_CONFIG_CONTROL_X11, controller),
+    CONFIG_STRING(keyName, "r"),
+    CONFIG_FLAGS(keyMods, RS_CONFIG_KEYMOD_CTRL | RS_CONFIG_KEYMOD_SHIFT, keyMods),
+    CONFIG_CONST(ctrl, RS_CONFIG_KEYMOD_CTRL, keyMods),
+    CONFIG_CONST(shift, RS_CONFIG_KEYMOD_SHIFT, keyMods),
+    CONFIG_CONST(alt, RS_CONFIG_KEYMOD_ALT, keyMods),
+    CONFIG_CONST(super, RS_CONFIG_KEYMOD_SUPER, keyMods),
     CONFIG_STRING(outputFile, "~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4"),
+    CONFIG_STRING(outputCommand, "notify-send " RS_NAME " \"Saved replay as %s\""),
     {NULL}};
 
 static const AVClass configClass = {

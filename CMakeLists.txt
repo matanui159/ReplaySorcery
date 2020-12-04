@@ -149,4 +149,4 @@ install(TARGETS ${binary} DESTINATION bin PERMISSIONS
    WORLD_READ WORLD_EXECUTE
    SETUID SETGID
 )
-install(FILES sys/etc/replay-sorcery.conf DESTINATION etc)
+install(FILES sys/replay-sorcery.conf DESTINATION etc)
