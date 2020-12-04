@@ -57,10 +57,6 @@ int rsVaapiEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
          rsFFmpegEncoderSetOption(encoder, "rc_mode", "CQP");
       }
    }
-   if (rsConfig.videoBitrate != RS_CONFIG_AUTO) {
-      codecCtx->bit_rate = rsConfig.videoBitrate;
-      codecCtx->rc_max_rate = rsConfig.videoBitrate;
-   }
    switch (rsConfig.videoPreset) {
    case RS_CONFIG_PRESET_FAST:
       codecCtx->compression_level = 6;
