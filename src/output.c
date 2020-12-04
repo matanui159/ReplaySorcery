@@ -29,7 +29,6 @@ int rsOutputCreate(RSOutput *output) {
    rsClear(output, sizeof(RSOutput));
    AVBPrint buffer;
    av_bprint_init(&buffer, 0, AV_BPRINT_SIZE_UNLIMITED);
-   char *path = NULL;
    const char *outputFile = rsConfig.outputFile;
    if (outputFile[0] == '~') {
       const char *home = getenv("HOME");
@@ -49,27 +48,25 @@ int rsOutputCreate(RSOutput *output) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
-   if ((ret = av_bprint_finalize(&buffer, &path)) < 0) {
+   if ((ret = av_bprint_finalize(&buffer, &output->path)) < 0) {
       goto error;
    }
 
-   av_log(NULL, AV_LOG_INFO, "Saving video to '%s'...\n", path);
-   if ((ret = avformat_alloc_output_context2(&output->formatCtx, NULL, "mp4", path)) <
-       0) {
+   av_log(NULL, AV_LOG_INFO, "Saving video to '%s'...\n", output->path);
+   if ((ret = avformat_alloc_output_context2(&output->formatCtx, NULL, "mp4",
+                                             output->path)) < 0) {
       av_log(NULL, AV_LOG_ERROR, "Failed to allocate output format: %s\n",
              av_err2str(ret));
       goto error;
    }
-   if ((ret = avio_open(&output->formatCtx->pb, path, AVIO_FLAG_WRITE)) < 0) {
+   if ((ret = avio_open(&output->formatCtx->pb, output->path, AVIO_FLAG_WRITE)) < 0) {
       av_log(output->formatCtx, AV_LOG_ERROR, "Failed to open output: %s\n",
              av_err2str(ret));
       goto error;
    }
-   av_freep(&path);
 
    return 0;
 error:
-   av_freep(&path);
    av_bprint_finalize(&buffer, NULL);
    rsOutputDestroy(output);
    return ret;
@@ -129,7 +126,7 @@ error:
 
 int rsOutputClose(RSOutput *output) {
    int ret;
-   char *command = rsFormat(rsConfig.outputCommand, output->formatCtx->url);
+   char *command = rsFormat(rsConfig.outputCommand, output->path);
    if (command == NULL) {
       return AVERROR(ENOMEM);
    }
@@ -158,6 +155,7 @@ void rsOutputDestroy(RSOutput *output) {
    avio_closep(&output->formatCtx->pb);
    avformat_free_context(output->formatCtx);
    output->formatCtx = NULL;
+   av_freep(&output->path);
 }
 
 int rsOutputWrite(RSOutput *output, AVPacket *packet) {

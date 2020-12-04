@@ -23,6 +23,7 @@
 #include <libavformat/avformat.h>
 
 typedef struct RSOutput {
+   char *path;
    AVFormatContext *formatCtx;
    int error;
 } RSOutput;
