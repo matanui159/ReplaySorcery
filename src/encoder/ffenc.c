@@ -297,6 +297,9 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const AVCodecParameters *params,
       ffmpeg->codecCtx->framerate = av_buffersink_get_frame_rate(ffmpeg->sinkCtx);
       ffmpeg->codecCtx->profile = rsConfig.videoProfile;
       ffmpeg->codecCtx->gop_size = rsConfig.videoGOP;
+      if (rsConfig.videoBitrate != RS_CONFIG_AUTO) {
+         ffmpeg->codecCtx->bit_rate = rsConfig.videoBitrate;
+      }
       break;
    case AVMEDIA_TYPE_AUDIO:
       ffmpeg->codecCtx->sample_fmt = format;
@@ -304,6 +307,9 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const AVCodecParameters *params,
       ffmpeg->codecCtx->channel_layout =
           av_buffersink_get_channel_layout(ffmpeg->sinkCtx);
       ffmpeg->codecCtx->sample_rate = av_buffersink_get_sample_rate(ffmpeg->sinkCtx);
+      if (rsConfig.audioBitrate != RS_CONFIG_AUTO) {
+         ffmpeg->codecCtx->bit_rate = rsConfig.audioBitrate;
+      }
       break;
    default:
       ret = AVERROR(ENOSYS);

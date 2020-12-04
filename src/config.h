@@ -60,12 +60,15 @@ typedef struct RSConfig {
    int videoProfile;
    int videoPreset;
    int videoQuality;
+   int64_t videoBitrate;
    int videoGOP;
    int scaleWidth;
    int scaleHeight;
    int audioInput;
+   int audioChannels;
    int audioSamplerate;
    int audioEncoder;
+   int64_t audioBitrate;
    int controller;
    char *keyName;
    int keyMods;

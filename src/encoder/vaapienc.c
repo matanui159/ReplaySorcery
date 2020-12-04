@@ -50,18 +50,27 @@ int rsVaapiEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
    AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(encoder);
    codecCtx->sw_pix_fmt = AV_PIX_FMT_NV12;
    if (rsConfig.videoQuality != RS_CONFIG_AUTO) {
-      rsFFmpegEncoderSetOption(encoder, "qp", "%i", rsConfig.videoQuality);
+      codecCtx->global_quality = rsConfig.videoQuality;
+      if (rsConfig.videoBitrate != RS_CONFIG_AUTO) {
+         rsFFmpegEncoderSetOption(encoder, "rc_mode", "QVBR");
+      } else if (rsConfig.videoPreset == RS_CONFIG_PRESET_FAST) {
+         rsFFmpegEncoderSetOption(encoder, "rc_mode", "CQP");
+      }
+   }
+   if (rsConfig.videoBitrate != RS_CONFIG_AUTO) {
+      codecCtx->bit_rate = rsConfig.videoBitrate;
+      codecCtx->rc_max_rate = rsConfig.videoBitrate;
    }
    switch (rsConfig.videoPreset) {
    case RS_CONFIG_PRESET_FAST:
-      codecCtx->compression_level = 2;
+      codecCtx->compression_level = 6;
       rsFFmpegEncoderSetOption(encoder, "coder", "cavlc");
       break;
    case RS_CONFIG_PRESET_MEDIUM:
       codecCtx->compression_level = 4;
       break;
    case RS_CONFIG_PRESET_SLOW:
-      codecCtx->compression_level = 6;
+      codecCtx->compression_level = 2;
       break;
    }
    if ((ret = rsFFmpegEncoderOpen(encoder, params, hwFrames)) < 0) {

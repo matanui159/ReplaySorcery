@@ -39,6 +39,11 @@
 #name, NULL, offsetof(RSConfig, name), AV_OPT_TYPE_INT,                            \
           {.i64 = def }, min, max, 0, #group                                             \
    }
+#define CONFIG_INT64(name, def, min, max, group)                                         \
+   {                                                                                     \
+#name, NULL, offsetof(RSConfig, name), AV_OPT_TYPE_INT64,                          \
+          {.i64 = def }, min, max, 0, #group                                             \
+   }
 #define CONFIG_FLAGS(name, def, group)                                                   \
    {                                                                                     \
 #name, NULL, offsetof(RSConfig, name), AV_OPT_TYPE_FLAGS,                          \
@@ -59,7 +64,7 @@ static const AVOption configOptions[] = {
     CONFIG_CONST(verbose, AV_LOG_VERBOSE, logLevel),
     CONFIG_CONST(debug, AV_LOG_DEBUG, logLevel),
     CONFIG_CONST(trace, AV_LOG_TRACE, logLevel),
-    CONFIG_INT(recordSeconds, 30, 0, INT_MAX, ),
+    CONFIG_INT(recordSeconds, 30, 1, INT_MAX, ),
     CONFIG_INT(videoInput, RS_CONFIG_AUTO, RS_CONFIG_DEVICE_HWACCEL, RS_CONFIG_DEVICE_KMS,
                videoInput),
     CONFIG_CONST(hwaccel, RS_CONFIG_DEVICE_HWACCEL, videoInput),
@@ -70,7 +75,7 @@ static const AVOption configOptions[] = {
     CONFIG_INT(videoY, 0, 0, INT_MAX, NULL),
     CONFIG_INT(videoWidth, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX, auto),
     CONFIG_INT(videoHeight, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX, auto),
-    CONFIG_INT(videoFramerate, 30, 0, INT_MAX, NULL),
+    CONFIG_INT(videoFramerate, 30, 1, INT_MAX, NULL),
     CONFIG_INT(videoEncoder, RS_CONFIG_AUTO, RS_CONFIG_AUTO, RS_CONFIG_ENCODER_VAAPI,
                videoEncoder),
     CONFIG_CONST(auto, RS_CONFIG_AUTO, videoEncoder),
@@ -87,6 +92,7 @@ static const AVOption configOptions[] = {
     CONFIG_CONST(medium, RS_CONFIG_PRESET_MEDIUM, videoPreset),
     CONFIG_CONST(slow, RS_CONFIG_PRESET_SLOW, videoPreset),
     CONFIG_INT(videoQuality, 28, RS_CONFIG_AUTO, 51, auto),
+    CONFIG_INT64(videoBitrate, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX, auto),
     CONFIG_INT(videoGOP, 30, 0, INT_MAX, videoGOP),
     CONFIG_INT(scaleWidth, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX, auto),
     CONFIG_INT(scaleHeight, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX, auto),
@@ -95,11 +101,13 @@ static const AVOption configOptions[] = {
     CONFIG_CONST(none, RS_CONFIG_DEVICE_NONE, audioInput),
     CONFIG_CONST(auto, RS_CONFIG_AUTO, audioInput),
     CONFIG_CONST(pulse, RS_CONFIG_DEVICE_PULSE, audioInput),
-    CONFIG_INT(audioSamplerate, 44100, 7350, 96000, auto),
+    CONFIG_INT(audioChannels, 1, 1, 2, NULL),
+    CONFIG_INT(audioSamplerate, 44100, RS_CONFIG_AUTO, INT_MAX, auto),
     CONFIG_INT(audioEncoder, RS_CONFIG_AUTO, RS_CONFIG_AUTO, RS_CONFIG_ENCODER_AAC,
                audioEncoder),
     CONFIG_CONST(auto, RS_CONFIG_AUTO, audioEncoder),
     CONFIG_CONST(aac, RS_CONFIG_ENCODER_AAC, audioEncoder),
+    CONFIG_INT64(audioBitrate, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX, auto),
     CONFIG_INT(controller, RS_CONFIG_AUTO, RS_CONFIG_AUTO, RS_CONFIG_CONTROL_DEBUG,
                controller),
     CONFIG_CONST(auto, RS_CONFIG_AUTO, controller),

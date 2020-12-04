@@ -36,9 +36,19 @@ int rsX264EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params) {
       goto error;
    }
 
+   AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(encoder);
    rsFFmpegEncoderSetOption(encoder, "forced-idr", "true");
    if (rsConfig.videoQuality != RS_CONFIG_AUTO) {
-      rsFFmpegEncoderSetOption(encoder, "qp", "%i", rsConfig.videoQuality);
+      if (rsConfig.videoPreset == RS_CONFIG_PRESET_FAST &&
+          rsConfig.videoBitrate == RS_CONFIG_AUTO) {
+         rsFFmpegEncoderSetOption(encoder, "qp", "%i", rsConfig.videoQuality);
+      } else {
+         rsFFmpegEncoderSetOption(encoder, "crf", "%i", rsConfig.videoQuality);
+      }
+   }
+   if (rsConfig.videoBitrate != RS_CONFIG_AUTO) {
+      codecCtx->rc_max_rate = rsConfig.videoBitrate;
+      codecCtx->rc_buffer_size = (int)rsConfig.videoBitrate;
    }
    switch (rsConfig.videoPreset) {
    case RS_CONFIG_PRESET_FAST:
