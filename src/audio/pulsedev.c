@@ -198,6 +198,20 @@ static void pulseDeviceServerInfo(pa_context *context, const pa_server_info *inf
       return;
    }
 }
+
+static void pulseDeviceSourceInfo(pa_context *context, const pa_source_info *info, int end, void *extra) {
+   (void)context;
+   RSDevice *device = extra;
+   PulseDevice *pulse = device->extra;
+   if (end != 0) {
+      if (end < 0) {
+         av_log(NULL, AV_LOG_INFO, "Failed to get PulseAudio source info: %s\n", pa_strerror(end));
+         pulse->error = pulseDeviceError(end);
+      }
+      return;
+   }
+   device->params->sample_rate = (int)info->sample_spec.rate;
+}
 #endif
 
 int rsPulseDeviceCreate(RSDevice *device) {
@@ -211,6 +225,9 @@ int rsPulseDeviceCreate(RSDevice *device) {
    device->extra = pulse;
    device->destroy = pulseDeviceDestroy;
    device->nextFrame = pulseDeviceNextFrame;
+   device->params->format = AV_SAMPLE_FMT_FLT;
+   device->params->channels = 1;
+   device->params->channel_layout = AV_CH_LAYOUT_MONO;
    if (pulse == NULL) {
       ret = AVERROR(ENOMEM);
       goto error;
@@ -256,13 +273,23 @@ int rsPulseDeviceCreate(RSDevice *device) {
              av_err2str(ret));
       goto error;
    }
-
    av_log(NULL, AV_LOG_INFO, "PulseAudio stream name: %s\n", pulse->streamName);
+
+   device->params->sample_rate = rsConfig.audioSamplerate;
+   if (device->params->sample_rate == RS_CONFIG_AUTO) {
+      op = pa_context_get_source_info_by_name(pulse->context, pulse->streamName, pulseDeviceSourceInfo, device);
+      if ((ret = pulseDeviceWait(pulse, op)) < 0) {
+         av_log(NULL, AV_LOG_ERROR, "Failed to get PulseAudio source info: %s\n", av_err2str(ret));
+         goto error;
+      }
+      av_log(NULL, AV_LOG_INFO, "PulseAudio sample rate: %i\n", device->params->sample_rate);
+   }
+
    pulse->stream = pa_stream_new(pulse->context, RS_NAME,
                                  &(pa_sample_spec){
                                      .format = PA_SAMPLE_FLOAT32NE,
                                      .channels = 1,
-                                     .rate = (uint32_t)rsConfig.audioSamplerate,
+                                     .rate = (uint32_t)device->params->sample_rate,
                                  },
                                  NULL);
    if (pulse->stream == NULL) {
@@ -290,10 +317,6 @@ int rsPulseDeviceCreate(RSDevice *device) {
       ret = AVERROR_EXTERNAL;
       goto error;
    }
-   device->params->format = AV_SAMPLE_FMT_FLT;
-   device->params->channels = 1;
-   device->params->channel_layout = AV_CH_LAYOUT_MONO;
-   device->params->sample_rate = rsConfig.audioSamplerate;
 
    return 0;
 error:

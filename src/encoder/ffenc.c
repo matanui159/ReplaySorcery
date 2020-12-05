@@ -179,6 +179,8 @@ int rsFFmpegEncoderCreate(RSEncoder *encoder, const char *name, const char *filt
       return AVERROR(ENOMEM);
       goto error;
    }
+
+   av_log(ffmpeg->codecCtx, AV_LOG_INFO, "Filter graph: %s\n", filter);
    if ((ret = avfilter_graph_parse2(ffmpeg->filterGraph, filter, &ffmpeg->inputs,
                                     &ffmpeg->outputs)) < 0) {
       av_log(ffmpeg->filterGraph, AV_LOG_ERROR, "Failed to parse filter graph: %s\n",

@@ -134,7 +134,6 @@ target_include_directories(${binary} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 # Clang format target to make formatting easy
 add_custom_target(clang-format
    COMMAND clang-format -i ${sources} ${headers}
-   SOURCES ${sources}
    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 
