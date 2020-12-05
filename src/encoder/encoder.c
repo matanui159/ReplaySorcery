@@ -45,6 +45,8 @@ int rsVideoEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
    switch (rsConfig.videoEncoder) {
    case RS_CONFIG_ENCODER_X264:
       return rsX264EncoderCreate(encoder, params);
+   case RS_CONFIG_ENCODER_OPENH264:
+      return rsOpenH264EncoderCreate(encoder, params);
    case RS_CONFIG_ENCODER_VAAPI:
       return rsVaapiEncoderCreate(encoder, params, hwFrames);
    }
@@ -66,6 +68,13 @@ int rsVideoEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
       return 0;
    }
    av_log(NULL, AV_LOG_WARNING, "Failed to create x264 encoder: %s\n", av_err2str(ret));
+
+   if ((ret = rsOpenH264EncoderCreate(encoder, params)) >= 0) {
+      av_log(NULL, AV_LOG_INFO, "Created OpenH264 encoder\n");
+      return 0;
+   }
+   av_log(NULL, AV_LOG_WARNING, "Failed to create OpenH264 encoder: %s\n",
+          av_err2str(ret));
 
    return AVERROR(ENOSYS);
 }

@@ -22,6 +22,7 @@
 #include "../encoder/encoder.h"
 
 int rsAacEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
+int rsFdkEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
 int rsAudioEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
 
 #endif

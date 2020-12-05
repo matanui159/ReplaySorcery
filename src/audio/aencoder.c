@@ -27,7 +27,16 @@ int rsAudioEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params) {
    switch (rsConfig.audioEncoder) {
    case RS_CONFIG_ENCODER_AAC:
       return rsAacEncoderCreate(encoder, params);
+   case RS_CONFIG_ENCODER_FDK:
+      return rsAacEncoderCreate(encoder, params);
    }
+
+   if ((ret = rsFdkEncoderCreate(encoder, params)) >= 0) {
+      av_log(NULL, AV_LOG_INFO, "Created FDK-AAC audio encoder\n");
+      return 0;
+   }
+   av_log(NULL, AV_LOG_WARNING, "Failed to create FDK-AAC audio encoder: %s\n",
+          av_err2str(ret));
 
    if ((ret = rsAacEncoderCreate(encoder, params)) >= 0) {
       av_log(NULL, AV_LOG_INFO, "Created AAC audio encoder\n");

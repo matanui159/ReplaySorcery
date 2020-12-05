@@ -18,6 +18,7 @@ set(sources
    src/audio/adevice.c
    src/audio/aencoder.c
    src/audio/audio.c
+   src/audio/fdkenc.c
    src/audio/pulsedev.c
    src/control/control.c
    src/control/dbgctrl.c
@@ -28,6 +29,7 @@ set(sources
    src/device/x11dev.c
    src/encoder/encoder.c
    src/encoder/ffenc.c
+   src/encoder/openh264enc.c
    src/encoder/vaapienc.c
    src/encoder/x264enc.c
 )

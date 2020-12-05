@@ -309,6 +309,7 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const AVCodecParameters *params,
       ffmpeg->codecCtx->channel_layout =
           av_buffersink_get_channel_layout(ffmpeg->sinkCtx);
       ffmpeg->codecCtx->sample_rate = av_buffersink_get_sample_rate(ffmpeg->sinkCtx);
+      ffmpeg->codecCtx->profile = rsConfig.audioProfile;
       if (rsConfig.audioBitrate != RS_CONFIG_AUTO) {
          ffmpeg->codecCtx->bit_rate = rsConfig.audioBitrate;
       }
