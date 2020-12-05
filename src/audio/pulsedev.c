@@ -199,13 +199,15 @@ static void pulseDeviceServerInfo(pa_context *context, const pa_server_info *inf
    }
 }
 
-static void pulseDeviceSourceInfo(pa_context *context, const pa_source_info *info, int end, void *extra) {
+static void pulseDeviceSourceInfo(pa_context *context, const pa_source_info *info,
+                                  int end, void *extra) {
    (void)context;
    RSDevice *device = extra;
    PulseDevice *pulse = device->extra;
    if (end != 0) {
       if (end < 0) {
-         av_log(NULL, AV_LOG_INFO, "Failed to get PulseAudio source info: %s\n", pa_strerror(end));
+         av_log(NULL, AV_LOG_INFO, "Failed to get PulseAudio source info: %s\n",
+                pa_strerror(end));
          pulse->error = pulseDeviceError(end);
       }
       return;
@@ -277,12 +279,15 @@ int rsPulseDeviceCreate(RSDevice *device) {
 
    device->params->sample_rate = rsConfig.audioSamplerate;
    if (device->params->sample_rate == RS_CONFIG_AUTO) {
-      op = pa_context_get_source_info_by_name(pulse->context, pulse->streamName, pulseDeviceSourceInfo, device);
+      op = pa_context_get_source_info_by_name(pulse->context, pulse->streamName,
+                                              pulseDeviceSourceInfo, device);
       if ((ret = pulseDeviceWait(pulse, op)) < 0) {
-         av_log(NULL, AV_LOG_ERROR, "Failed to get PulseAudio source info: %s\n", av_err2str(ret));
+         av_log(NULL, AV_LOG_ERROR, "Failed to get PulseAudio source info: %s\n",
+                av_err2str(ret));
          goto error;
       }
-      av_log(NULL, AV_LOG_INFO, "PulseAudio sample rate: %i\n", device->params->sample_rate);
+      av_log(NULL, AV_LOG_INFO, "PulseAudio sample rate: %i\n",
+             device->params->sample_rate);
    }
 
    pulse->stream = pa_stream_new(pulse->context, RS_NAME,

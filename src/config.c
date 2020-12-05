@@ -191,6 +191,7 @@ int rsConfigInit(void) {
       *eq = 0;
       char *key = configTrim(line);
       char *value = configTrim(eq + 1);
+      av_log(NULL, AV_LOG_INFO, "Setting '%s' to '%s'...\n", key, value);
       if ((ret = av_opt_set(&rsConfig, key, value, 0)) < 0) {
          av_log(NULL, AV_LOG_ERROR, "Failed to set '%s' to '%s': %s\n", key, value,
                 av_err2str(ret));

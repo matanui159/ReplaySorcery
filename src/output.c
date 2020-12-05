@@ -144,6 +144,7 @@ int rsOutputClose(RSOutput *output) {
    if ((ret = system(command)) != 0) {
       av_log(NULL, AV_LOG_WARNING, "Command returned non-zero exit-code: %i\n", ret);
    }
+   av_log(NULL, AV_LOG_INFO, "Video saved!\n");
 
    ret = 0;
 error:
