@@ -18,9 +18,9 @@
  */
 
 #include "../config.h"
+#include "../util.h"
 #include "encoder.h"
 #include "ffenc.h"
-#include "../util.h"
 
 static int vaapiEncoderExtradata(RSEncoder *encoder, const AVCodecParameters *params) {
    int ret;
@@ -40,7 +40,8 @@ static int vaapiEncoderExtradata(RSEncoder *encoder, const AVCodecParameters *pa
 
    AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(encoder);
    codecCtx->extradata_size = swEncoder.params->extradata_size;
-   codecCtx->extradata = av_memdup(swEncoder.params->extradata, (size_t)codecCtx->extradata_size);
+   codecCtx->extradata =
+       av_memdup(swEncoder.params->extradata, (size_t)codecCtx->extradata_size);
    if (codecCtx->extradata == NULL) {
       codecCtx->extradata_size = 0;
       ret = AVERROR(ENOMEM);
@@ -106,9 +107,11 @@ int rsVaapiEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
       goto error;
    }
    if (codecCtx->extradata == NULL) {
-      av_log(NULL, AV_LOG_WARNING, "VAAPI encoder is missing extradata, getting from software encoder\n");
+      av_log(NULL, AV_LOG_WARNING,
+             "VAAPI encoder is missing extradata, getting from software encoder\n");
       if ((ret = vaapiEncoderExtradata(encoder, params)) < 0) {
-         av_log(NULL, AV_LOG_WARNING, "Failed to get extradata from software encoder: %s\n", av_err2str(ret));
+         av_log(NULL, AV_LOG_WARNING,
+                "Failed to get extradata from software encoder: %s\n", av_err2str(ret));
       }
    }
 

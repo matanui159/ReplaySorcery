@@ -20,9 +20,9 @@
 #ifndef RS_UTIL_H
 #define RS_UTIL_H
 #include "rsbuild.h"
+#include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
 #include <libavutil/dict.h>
-#include <libavcodec/avcodec.h>
 
 #ifdef RS_BUILD_X11_FOUND
 #include <X11/Xlib.h>
