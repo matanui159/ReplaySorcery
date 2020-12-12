@@ -49,14 +49,14 @@ static int mainStep(void) {
    int ret;
    while ((ret = rsEncoderNextPacket(&videoEncoder, &videoPacket)) == AVERROR(EAGAIN)) {
       if ((ret = rsDeviceNextFrame(&videoDevice, videoFrame)) < 0) {
-         return ret;
+         av_log(NULL, AV_LOG_WARNING, "Failed to get packet from device (%s), silencing logs for now\n", av_err2str(ret));
+         av_log_set_level(AV_LOG_FATAL);
+      } else {
+         av_log_set_level(rsConfig.logLevel);
+         if ((ret = rsEncoderSendFrame(&videoEncoder, videoFrame)) < 0) {
+            return ret;
+         }
       }
-      if ((ret = rsEncoderSendFrame(&videoEncoder, videoFrame)) < 0) {
-         return ret;
-      }
-   }
-   if (ret < 0) {
-      return ret;
    }
    if ((ret = rsBufferAddPacket(&videoBuffer, &videoPacket)) < 0) {
       return ret;
