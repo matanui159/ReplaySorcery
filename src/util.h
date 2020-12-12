@@ -22,6 +22,7 @@
 #include "rsbuild.h"
 #include <libavutil/avutil.h>
 #include <libavutil/dict.h>
+#include <libavcodec/avcodec.h>
 
 #ifdef RS_BUILD_X11_FOUND
 #include <X11/Xlib.h>
@@ -39,6 +40,8 @@ static av_always_inline void rsClear(void *mem, size_t size) {
 
 char *rsFormat(const char *fmt, ...);
 char *rsFormatv(const char *fmt, va_list args);
+
+AVCodecParameters *rsParamsClone(const AVCodecParameters *params);
 
 void rsOptionsSet(AVDictionary **options, int *error, const char *key, const char *fmt,
                   ...);

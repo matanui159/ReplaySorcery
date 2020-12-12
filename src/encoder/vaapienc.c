@@ -20,6 +20,39 @@
 #include "../config.h"
 #include "encoder.h"
 #include "ffenc.h"
+#include "../util.h"
+
+static int vaapiEncoderExtradata(RSEncoder *encoder, const AVCodecParameters *params) {
+   int ret;
+   RSEncoder swEncoder = {0};
+   AVCodecParameters *swParams = rsParamsClone(params);
+   if (swParams == NULL) {
+      ret = AVERROR(ENOMEM);
+      goto error;
+   }
+
+   swParams->format = AV_PIX_FMT_YUV420P;
+   swParams->width = encoder->params->width;
+   swParams->height = encoder->params->height;
+   if ((ret = rsVideoEncoderCreate(&swEncoder, swParams, NULL)) < 0) {
+      goto error;
+   }
+
+   AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(encoder);
+   codecCtx->extradata_size = swEncoder.params->extradata_size;
+   codecCtx->extradata = av_memdup(swEncoder.params->extradata, (size_t)codecCtx->extradata_size);
+   if (codecCtx->extradata == NULL) {
+      codecCtx->extradata_size = 0;
+      ret = AVERROR(ENOMEM);
+      goto error;
+   }
+
+   ret = 0;
+error:
+   rsEncoderDestroy(&swEncoder);
+   avcodec_parameters_free(&swParams);
+   return ret;
+}
 
 int rsVaapiEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
                          const AVBufferRef *hwFrames) {
@@ -72,7 +105,12 @@ int rsVaapiEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
    if ((ret = rsFFmpegEncoderOpen(encoder, params, hwFrames)) < 0) {
       goto error;
    }
-   // TODO: copy extradata from x264 if encoder does not support it
+   if (codecCtx->extradata == NULL) {
+      av_log(NULL, AV_LOG_WARNING, "VAAPI encoder is missing extradata, getting from software encoder\n");
+      if ((ret = vaapiEncoderExtradata(encoder, params)) < 0) {
+         av_log(NULL, AV_LOG_WARNING, "Failed to get extradata from software encoder: %s\n", av_err2str(ret));
+      }
+   }
 
    return 0;
 error:

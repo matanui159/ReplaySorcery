@@ -77,12 +77,9 @@ static int audioBufferSendFrame(RSAudioBuffer *buffer, int index, int pts,
 int rsAudioBufferCreate(RSAudioBuffer *buffer, const AVCodecParameters *params) {
    int ret;
    rsClear(buffer, sizeof(RSAudioBuffer));
-   buffer->params = avcodec_parameters_alloc();
+   buffer->params = rsParamsClone(params);
    if (buffer->params == NULL) {
       ret = AVERROR(ENOMEM);
-      goto error;
-   }
-   if ((ret = avcodec_parameters_copy(buffer->params, params)) < 0) {
       goto error;
    }
 

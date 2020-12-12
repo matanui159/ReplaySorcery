@@ -45,6 +45,21 @@ char *rsFormatv(const char *fmt, va_list args) {
    return value;
 }
 
+AVCodecParameters *rsParamsClone(const AVCodecParameters *params) {
+   AVCodecParameters *clone = avcodec_parameters_alloc();
+   if (clone == NULL) {
+      goto error;
+   }
+   if (avcodec_parameters_copy(clone, params) < 0) {
+      goto error;
+   }
+
+   return clone;
+error:
+   avcodec_parameters_free(&clone);
+   return NULL;
+}
+
 void rsOptionsSet(AVDictionary **options, int *error, const char *key, const char *fmt,
                   ...) {
    va_list args;
