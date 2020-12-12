@@ -49,10 +49,9 @@ static int ffmpegDeviceNextFrame(RSDevice *device, AVFrame *frame) {
    FFmpegDevice *ffmpeg = device->extra;
    int64_t pts = av_gettime_relative();
    while ((ret = avcodec_receive_frame(ffmpeg->codecCtx, frame)) == AVERROR(EAGAIN)) {
-      if ((ret = av_read_frame(ffmpeg->formatCtx, &ffmpeg->packet)) < 0) {
-         av_log(ffmpeg->formatCtx, AV_LOG_ERROR, "Failed to read frame: %s\n",
+      while ((ret = av_read_frame(ffmpeg->formatCtx, &ffmpeg->packet)) < 0) {
+         av_log(ffmpeg->formatCtx, AV_LOG_WARNING, "Failed to read frame: %s\n",
                 av_err2str(ret));
-         return ret;
       }
 
       ret = avcodec_send_packet(ffmpeg->codecCtx, &ffmpeg->packet);

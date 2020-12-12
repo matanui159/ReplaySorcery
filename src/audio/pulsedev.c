@@ -157,6 +157,7 @@ static int pulseDeviceRead(PulseDevice *pulse, AVFrame *frame) {
       goto error;
    }
    if (data == NULL) {
+      av_log(NULL, AV_LOG_WARNING, "%zu byte hole in PulseAudio stream\n", size);
       rsClear(frame->data[0], size);
    } else {
       memcpy(frame->data[0], data, size);
