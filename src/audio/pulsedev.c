@@ -269,19 +269,27 @@ int rsPulseDeviceCreate(RSDevice *device) {
       }
    }
 
-   pa_operation *op =
-       pa_context_get_server_info(pulse->context, pulseDeviceServerInfo, pulse);
-   if ((ret = pulseDeviceWait(pulse, op)) < 0) {
-      av_log(NULL, AV_LOG_ERROR, "Failed to get PulseAudio server info: %s\n",
-             av_err2str(ret));
-      goto error;
+   if (strcmp(rsConfig.audioDevice, "auto") == 0) {
+      pa_operation *op =
+          pa_context_get_server_info(pulse->context, pulseDeviceServerInfo, pulse);
+      if ((ret = pulseDeviceWait(pulse, op)) < 0) {
+         av_log(NULL, AV_LOG_ERROR, "Failed to get PulseAudio server info: %s\n",
+                av_err2str(ret));
+         goto error;
+      }
+      av_log(NULL, AV_LOG_INFO, "PulseAudio stream name: %s\n", pulse->streamName);
+   } else if (strcmp(rsConfig.audioDevice, "system") != 0) {
+      pulse->streamName = av_strdup(rsConfig.audioDevice);
+      if (pulse->streamName == NULL) {
+         ret = AVERROR(ENOMEM);
+         goto error;
+      }
    }
-   av_log(NULL, AV_LOG_INFO, "PulseAudio stream name: %s\n", pulse->streamName);
 
    device->params->sample_rate = rsConfig.audioSamplerate;
    if (device->params->sample_rate == RS_CONFIG_AUTO) {
-      op = pa_context_get_source_info_by_name(pulse->context, pulse->streamName,
-                                              pulseDeviceSourceInfo, device);
+      pa_operation *op = pa_context_get_source_info_by_name(
+          pulse->context, pulse->streamName, pulseDeviceSourceInfo, device);
       if ((ret = pulseDeviceWait(pulse, op)) < 0) {
          av_log(NULL, AV_LOG_ERROR, "Failed to get PulseAudio source info: %s\n",
                 av_err2str(ret));

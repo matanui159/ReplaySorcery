@@ -67,6 +67,7 @@ typedef struct RSConfig {
    int scaleWidth;
    int scaleHeight;
    int audioInput;
+   char *audioDevice;
    int audioSamplerate;
    int audioEncoder;
    int audioProfile;
