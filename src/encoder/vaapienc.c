@@ -108,7 +108,7 @@ int rsVaapiEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
    }
    if (codecCtx->extradata == NULL) {
       av_log(NULL, AV_LOG_WARNING,
-             "VAAPI encoder is missing extradata, getting from software encoder...\n");
+             "VA-API encoder is missing extradata, getting from software encoder...\n");
       if ((ret = vaapiEncoderExtradata(encoder, params)) < 0) {
          av_log(NULL, AV_LOG_WARNING,
                 "Failed to get extradata from software encoder: %s\n", av_err2str(ret));

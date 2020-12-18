@@ -119,7 +119,7 @@ static const AVOption configOptions[] = {
     CONFIG_CONST(debug, RS_CONFIG_CONTROL_DEBUG, controller),
     CONFIG_CONST(x11, RS_CONFIG_CONTROL_X11, controller),
     CONFIG_STRING(keyName, "r"),
-    CONFIG_FLAGS(keyMods, RS_CONFIG_KEYMOD_CTRL | RS_CONFIG_KEYMOD_SHIFT, keyMods),
+    CONFIG_FLAGS(keyMods, RS_CONFIG_KEYMOD_CTRL | RS_CONFIG_KEYMOD_SUPER, keyMods),
     CONFIG_CONST(ctrl, RS_CONFIG_KEYMOD_CTRL, keyMods),
     CONFIG_CONST(shift, RS_CONFIG_KEYMOD_SHIFT, keyMods),
     CONFIG_CONST(alt, RS_CONFIG_KEYMOD_ALT, keyMods),
