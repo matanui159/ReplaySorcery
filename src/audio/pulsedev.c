@@ -31,10 +31,10 @@
 
 typedef struct PulseDevice {
    int error;
-   char *streamName;
    pa_mainloop *mainloop;
    pa_context *context;
    pa_stream *stream;
+   char *prevSink;
 } PulseDevice;
 
 static int pulseDeviceError(int error) {
@@ -67,6 +67,59 @@ static int pulseDeviceError(int error) {
       return AVERROR(EBUSY);
    default:
       return AVERROR_EXTERNAL;
+   }
+}
+
+static void pulseDeviceStreamDestroy(PulseDevice *pulse) {
+   if (pulse->stream != NULL) {
+      if (pa_stream_get_state(pulse->stream) != PA_STREAM_UNCONNECTED) {
+         pa_stream_disconnect(pulse->stream);
+      }
+      pa_stream_unref(pulse->stream);
+   }
+}
+
+static int pulseDeviceStreamCreate(PulseDevice *pulse, const char *name) {
+   int ret;
+   pulseDeviceStreamDestroy(pulse);
+   av_log(NULL, AV_LOG_INFO, "Connecting to Pulse Audio device: %s...\n",
+          name == NULL ? "system" : name);
+   pulse->stream = pa_stream_new(pulse->context, RS_NAME,
+                                 &(pa_sample_spec){
+                                     .format = PA_SAMPLE_FLOAT32NE,
+                                     .channels = 1,
+                                     .rate = (uint32_t)rsConfig.audioSamplerate,
+                                 },
+                                 NULL);
+   if (pulse->stream == NULL) {
+      ret = pa_context_errno(pulse->context);
+      av_log(NULL, AV_LOG_ERROR, "Failed to create PulseAudio stream: %s\n",
+             pa_strerror(ret));
+      return pulseDeviceError(ret);
+   }
+   if ((ret = pa_stream_connect_record(pulse->stream, name, NULL, 0)) < 0) {
+      av_log(NULL, AV_LOG_ERROR, "Failed to connect PulseAudio stream: %s\n",
+             pa_strerror(ret));
+      return pulseDeviceError(ret);
+   }
+   return 0;
+}
+
+static void pulseDeviceDestroy(RSDevice *device) {
+   PulseDevice *pulse = device->extra;
+   if (pulse != NULL) {
+      av_freep(&pulse->prevSink);
+      pulseDeviceStreamDestroy(pulse);
+      if (pulse->context != NULL) {
+         if (pa_context_get_state(pulse->context) != PA_CONTEXT_UNCONNECTED) {
+            pa_context_disconnect(pulse->context);
+         }
+         pa_context_unref(pulse->context);
+      }
+      if (pulse->mainloop != NULL) {
+         pa_mainloop_free(pulse->mainloop);
+      }
+      av_freep(&device->extra);
    }
 }
 
@@ -113,32 +166,18 @@ error:
    return ret;
 }
 
-static void pulseDeviceDestroy(RSDevice *device) {
-   PulseDevice *pulse = device->extra;
-   if (pulse != NULL) {
-      if (pulse->stream != NULL) {
-         if (pa_stream_get_state(pulse->stream) != PA_STREAM_UNCONNECTED) {
-            pa_stream_disconnect(pulse->stream);
-         }
-         pa_stream_unref(pulse->stream);
-      }
-      av_freep(&pulse->streamName);
-
-      if (pulse->context != NULL) {
-         if (pa_context_get_state(pulse->context) != PA_CONTEXT_UNCONNECTED) {
-            pa_context_disconnect(pulse->context);
-         }
-         pa_context_unref(pulse->context);
-      }
-      if (pulse->mainloop != NULL) {
-         pa_mainloop_free(pulse->mainloop);
-      }
-      av_freep(&device->extra);
-   }
-}
-
 static int pulseDeviceRead(PulseDevice *pulse, AVFrame *frame) {
    int ret;
+   pa_stream_state_t state;
+   if ((state = pa_stream_get_state(pulse->stream)) != PA_STREAM_READY) {
+      if (state == PA_STREAM_CREATING) {
+         return AVERROR(EAGAIN);
+      } else {
+         av_log(NULL, AV_LOG_ERROR, "Failed to create PulseAudio stream\n");
+         return AVERROR_EXTERNAL;
+      }
+   }
+
    const void *data;
    size_t size;
    if ((ret = pa_stream_peek(pulse->stream, &data, &size)) < 0) {
@@ -189,31 +228,44 @@ static int pulseDeviceNextFrame(RSDevice *device, AVFrame *frame) {
 
 static void pulseDeviceServerInfo(pa_context *context, const pa_server_info *info,
                                   void *extra) {
+   int ret;
    (void)context;
    PulseDevice *pulse = extra;
-   av_log(NULL, AV_LOG_INFO, "PulseAudio server: %s %s\n", info->server_name,
-          info->server_version);
-   pulse->streamName = rsFormat("%s.monitor", info->default_sink_name);
-   if (pulse->streamName == NULL) {
-      pulse->error = AVERROR(ENOMEM);
-      return;
+   if (pulse->prevSink == NULL) {
+      av_log(NULL, AV_LOG_INFO, "PulseAudio server: %s %s\n", info->server_name,
+             info->server_version);
    }
-}
-
-static void pulseDeviceSourceInfo(pa_context *context, const pa_source_info *info,
-                                  int end, void *extra) {
-   (void)context;
-   RSDevice *device = extra;
-   PulseDevice *pulse = device->extra;
-   if (end != 0) {
-      if (end < 0) {
-         av_log(NULL, AV_LOG_INFO, "Failed to get PulseAudio source info: %s\n",
-                pa_strerror(end));
-         pulse->error = pulseDeviceError(end);
+   if (pulse->prevSink == NULL || strcmp(pulse->prevSink, info->default_sink_name) != 0) {
+      av_freep(&pulse->prevSink);
+      pulse->prevSink = av_strdup(info->default_sink_name);
+      if (pulse->prevSink == NULL) {
+         ret = AVERROR(ENOMEM);
+         goto error;
       }
-      return;
+      char *source = rsFormat("%s.monitor", info->default_sink_name);
+      if (source == NULL) {
+         ret = AVERROR(ENOMEM);
+         goto error;
+      }
+      ret = pulseDeviceStreamCreate(pulse, source);
+      av_freep(&source);
+      if (ret < 0) {
+         goto error;
+      }
    }
-   device->params->sample_rate = (int)info->sample_spec.rate;
+
+   ret = 0;
+   pa_operation *op;
+error:
+   op = pa_context_get_server_info(pulse->context, pulseDeviceServerInfo, pulse);
+   if (op != NULL) {
+      pa_operation_unref(op);
+   }
+   if (ret < 0) {
+      av_log(NULL, AV_LOG_ERROR, "Failed to handle PulseAudio server info: %s\n",
+             av_err2str(ret));
+      pulse->error = ret;
+   }
 }
 #endif
 
@@ -231,6 +283,7 @@ int rsPulseDeviceCreate(RSDevice *device) {
    device->params->format = AV_SAMPLE_FMT_FLT;
    device->params->channels = 1;
    device->params->channel_layout = AV_CH_LAYOUT_MONO;
+   device->params->sample_rate = rsConfig.audioSamplerate;
    if (pulse == NULL) {
       ret = AVERROR(ENOMEM);
       goto error;
@@ -277,59 +330,14 @@ int rsPulseDeviceCreate(RSDevice *device) {
                 av_err2str(ret));
          goto error;
       }
-      av_log(NULL, AV_LOG_INFO, "PulseAudio stream name: %s\n", pulse->streamName);
-   } else if (strcmp(rsConfig.audioDevice, "system") != 0) {
-      pulse->streamName = av_strdup(rsConfig.audioDevice);
-      if (pulse->streamName == NULL) {
-         ret = AVERROR(ENOMEM);
+   } else if (strcmp(rsConfig.audioDevice, "system") == 0) {
+      if ((ret = pulseDeviceStreamCreate(pulse, NULL)) < 0) {
          goto error;
       }
-   }
-
-   device->params->sample_rate = rsConfig.audioSamplerate;
-   if (device->params->sample_rate == RS_CONFIG_AUTO) {
-      pa_operation *op = pa_context_get_source_info_by_name(
-          pulse->context, pulse->streamName, pulseDeviceSourceInfo, device);
-      if ((ret = pulseDeviceWait(pulse, op)) < 0) {
-         av_log(NULL, AV_LOG_ERROR, "Failed to get PulseAudio source info: %s\n",
-                av_err2str(ret));
+   } else {
+      if ((ret = pulseDeviceStreamCreate(pulse, rsConfig.audioDevice)) < 0) {
          goto error;
       }
-      av_log(NULL, AV_LOG_INFO, "PulseAudio sample rate: %i\n",
-             device->params->sample_rate);
-   }
-
-   pulse->stream = pa_stream_new(pulse->context, RS_NAME,
-                                 &(pa_sample_spec){
-                                     .format = PA_SAMPLE_FLOAT32NE,
-                                     .channels = 1,
-                                     .rate = (uint32_t)device->params->sample_rate,
-                                 },
-                                 NULL);
-   if (pulse->stream == NULL) {
-      ret = pa_context_errno(pulse->context);
-      av_log(NULL, AV_LOG_ERROR, "Failed to create PulseAudio stream: %s\n",
-             pa_strerror(ret));
-      ret = pulseDeviceError(ret);
-      goto error;
-   }
-   if ((ret = pa_stream_connect_record(pulse->stream, pulse->streamName, NULL, 0)) < 0) {
-      av_log(NULL, AV_LOG_ERROR, "Failed to connect PulseAudio stream: %s\n",
-             pa_strerror(ret));
-      ret = pulseDeviceError(ret);
-      goto error;
-   }
-
-   pa_stream_state_t streamState;
-   while ((streamState = pa_stream_get_state(pulse->stream)) == PA_STREAM_CREATING) {
-      if ((ret = pulseDeviceIterate(pulse)) < 0) {
-         goto error;
-      }
-   }
-   if (streamState != PA_STREAM_READY) {
-      av_log(NULL, AV_LOG_ERROR, "Failed to create PulseAudio stream\n");
-      ret = AVERROR_EXTERNAL;
-      goto error;
    }
 
    return 0;
