@@ -52,6 +52,3 @@ The config file is located at `@CMAKE_INSTALL_PREFIX@/etc/replay-sorcery.conf` (
 - Cross-platform support
   - Doubt there is any demand though
   - Maybe for Intel devices if they are fast enough?
-- Smaller tweaks:
-  - Add sound effect for when it saves
-  - Allow downscaling before saving
