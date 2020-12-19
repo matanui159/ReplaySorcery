@@ -28,14 +28,15 @@ static void *audioThread(void *extra) {
    RSAudioThread *thread = extra;
    while (thread->running) {
       if ((ret = rsDeviceNextFrame(&thread->device, thread->frame)) < 0) {
-         goto error;
-      }
-
-      rsAudioThreadLock(thread);
-      ret = rsAudioBufferAddFrame(&thread->buffer, thread->frame);
-      rsAudioThreadUnlock(thread);
-      if (ret < 0) {
-         goto error;
+         av_log(NULL, AV_LOG_WARNING, "Failed to frame from audio device: %s\n",
+                av_err2str(ret));
+      } else {
+         rsAudioThreadLock(thread);
+         ret = rsAudioBufferAddFrame(&thread->buffer, thread->frame);
+         rsAudioThreadUnlock(thread);
+         if (ret < 0) {
+            goto error;
+         }
       }
    }
 

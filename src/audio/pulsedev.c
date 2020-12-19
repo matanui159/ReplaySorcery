@@ -173,7 +173,7 @@ static int pulseDeviceRead(PulseDevice *pulse, AVFrame *frame) {
       if (state == PA_STREAM_CREATING) {
          return AVERROR(EAGAIN);
       } else {
-         av_log(NULL, AV_LOG_ERROR, "Failed to create PulseAudio stream\n");
+         av_log(NULL, AV_LOG_ERROR, "Failed to setup PulseAudio stream\n");
          return AVERROR_EXTERNAL;
       }
    }
