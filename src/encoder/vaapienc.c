@@ -66,14 +66,9 @@ int rsVaapiEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
    if (height == RS_CONFIG_AUTO) {
       height = params->height - rsConfig.videoY;
    }
-   int scaleWidth = rsConfig.scaleWidth;
-   if (scaleWidth == RS_CONFIG_AUTO) {
-      scaleWidth = width;
-   }
-   int scaleHeight = rsConfig.scaleHeight;
-   if (scaleHeight == RS_CONFIG_AUTO) {
-      scaleHeight = height;
-   }
+   int scaleWidth = width;
+   int scaleHeight = height;
+   rsScaleSize(&scaleWidth, &scaleHeight);
    if ((ret = rsFFmpegEncoderCreate(
             encoder, "h264_vaapi",
             "hwmap=derive_device=vaapi,crop=%i:%i:%i:%i,scale_vaapi=%i:%i:nv12", width,

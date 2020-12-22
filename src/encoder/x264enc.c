@@ -18,19 +18,15 @@
  */
 
 #include "../config.h"
+#include "../util.h"
 #include "encoder.h"
 #include "ffenc.h"
 
 int rsX264EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params) {
    int ret;
-   int scaleWidth = rsConfig.scaleWidth;
-   if (scaleWidth == RS_CONFIG_AUTO) {
-      scaleWidth = params->width;
-   }
-   int scaleHeight = rsConfig.scaleHeight;
-   if (scaleHeight == RS_CONFIG_AUTO) {
-      scaleHeight = params->height;
-   }
+   int scaleWidth = params->width;
+   int scaleHeight = params->height;
+   rsScaleSize(&scaleWidth, &scaleHeight);
    if ((ret = rsFFmpegEncoderCreate(encoder, "libx264", "scale=%ix%i,format=yuv420p",
                                     scaleWidth, scaleHeight)) < 0) {
       goto error;

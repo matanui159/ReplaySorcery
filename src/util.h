@@ -41,6 +41,7 @@ static av_always_inline void rsClear(void *mem, size_t size) {
 char *rsFormat(const char *fmt, ...);
 char *rsFormatv(const char *fmt, va_list args);
 
+void rsScaleSize(int *width, int *height);
 AVCodecParameters *rsParamsClone(const AVCodecParameters *params);
 
 void rsOptionsSet(AVDictionary **options, int *error, const char *key, const char *fmt,

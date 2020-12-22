@@ -18,6 +18,7 @@
  */
 
 #include "util.h"
+#include "config.h"
 
 char *rsFormat(const char *fmt, ...) {
    va_list args;
@@ -58,6 +59,25 @@ AVCodecParameters *rsParamsClone(const AVCodecParameters *params) {
 error:
    avcodec_parameters_free(&clone);
    return NULL;
+}
+
+void rsScaleSize(int *width, int *height) {
+   int scaleWidth = *width;
+   int scaleHeight = *height;
+   if (rsConfig.scaleWidth != RS_CONFIG_AUTO) {
+      scaleWidth = rsConfig.scaleWidth;
+      if (rsConfig.scaleHeight == RS_CONFIG_AUTO) {
+         scaleHeight = (int)av_rescale(scaleWidth, *height, *width);
+      }
+   }
+   if (rsConfig.scaleHeight != RS_CONFIG_AUTO) {
+      scaleHeight = rsConfig.scaleHeight;
+      if (rsConfig.scaleWidth == RS_CONFIG_AUTO) {
+         scaleWidth = (int)av_rescale(scaleHeight, *width, *height);
+      }
+   }
+   *width = (scaleWidth >> 1) << 1;
+   *height = (scaleHeight >> 1) << 1;
 }
 
 void rsOptionsSet(AVDictionary **options, int *error, const char *key, const char *fmt,
