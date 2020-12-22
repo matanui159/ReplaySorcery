@@ -42,6 +42,11 @@ You can also use systemd to look at the output:
 $ journalctl --user -fu replay-sorcery
 ```
 
+The service runs as root using `SETUID` and `SETGID` permissions since this is needed if you enable hardware acceleration. If this causes issues, you can disable it with `-DRS_SETID=OFF` in CMake:
+```
+$ cmake -B bin -DRS_SETID=OFF
+```
+
 ## Configuration
 The config file location and options has completely changed since version 0.3.x
 
