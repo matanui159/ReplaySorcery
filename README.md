@@ -45,7 +45,11 @@ $ journalctl --user -fu replay-sorcery
 ## Configuration
 The config file location and options has completely changed since version 0.3.x
 
-The config file is located at `@CMAKE_INSTALL_PREFIX@/etc/replay-sorcery.conf` (`/usr/local/etc/replay-sorcery.conf` by default). See `sys/replay-sorcery.conf` for the default values along with documentation.
+There are two config files:
+- The global config file is located at `@CMAKE_INSTALL_PREFIX@/etc/replay-sorcery.conf` (`/usr/local/etc/replay-sorcery.conf` by default).
+- The local config file is located at `~/.config/replay-sorcery.conf`. Options in this file will overwrite options in the global file.
+
+See `sys/replay-sorcery.conf` for the default values along with documentation. This file is installed into the global config file location.
 
 # TODO
 - Document code better

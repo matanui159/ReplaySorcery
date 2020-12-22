@@ -148,12 +148,12 @@ static char *configTrim(char *str) {
    return str;
 }
 
-int rsConfigInit(void) {
+static int configParse(const char *path) {
    int ret;
-   av_opt_set_defaults(&rsConfig);
    AVIOContext *file;
-   if ((ret = avio_open(&file, RS_BUILD_CONFIG_FILE, AVIO_FLAG_READ)) < 0) {
-      av_log(NULL, AV_LOG_WARNING, "Failed to open config file: %s\n", av_err2str(ret));
+   if ((ret = avio_open(&file, path, AVIO_FLAG_READ)) < 0) {
+      av_log(NULL, AV_LOG_WARNING, "Failed to open config file '%s': %s\n", path,
+             av_err2str(ret));
       return 0;
    }
 
@@ -214,6 +214,32 @@ error:
    avio_closep(&file);
    rsConfigExit();
    return ret;
+}
+
+int rsConfigInit(void) {
+   int ret;
+   av_opt_set_defaults(&rsConfig);
+   if ((ret = configParse(RS_BUILD_GLOBAL_CONFIG)) < 0) {
+      return ret;
+   }
+
+   const char *home = getenv("HOME");
+   if (home == NULL) {
+      av_log(NULL, AV_LOG_ERROR, "Failed to get $HOME variable\n");
+      return AVERROR_EXTERNAL;
+   }
+
+   char *local = rsFormat(RS_BUILD_LOCAL_CONFIG, home);
+   if (local == NULL) {
+      return AVERROR(ENOMEM);
+   }
+
+   ret = configParse(local);
+   av_freep(&local);
+   if (ret < 0) {
+      return ret;
+   }
+   return 0;
 }
 
 void rsConfigExit(void) {
