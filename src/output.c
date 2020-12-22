@@ -153,9 +153,11 @@ error:
 }
 
 void rsOutputDestroy(RSOutput *output) {
-   avio_closep(&output->formatCtx->pb);
-   avformat_free_context(output->formatCtx);
-   output->formatCtx = NULL;
+   if (output->formatCtx != NULL) {
+      avio_closep(&output->formatCtx->pb);
+      avformat_free_context(output->formatCtx);
+      output->formatCtx = NULL;
+   }
    av_freep(&output->path);
 }
 
