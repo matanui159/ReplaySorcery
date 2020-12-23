@@ -20,6 +20,7 @@ set(sources
    src/audio/audio.c
    src/audio/fdkenc.c
    src/audio/pulsedev.c
+   src/command/kmscmd.c
    src/control/control.c
    src/control/dbgctrl.c
    src/control/x11ctrl.c
@@ -44,6 +45,7 @@ set(headers
    src/audio/adevice.h
    src/audio/aencoder.h
    src/audio/audio.h
+   src/command/kmscmd.h
    src/control/control.h
    src/device/device.h
    src/device/ffdev.h
@@ -125,6 +127,13 @@ pkg_check_modules(PULSE IMPORTED_TARGET libpulse)
 if (PULSE_FOUND)
    set(RS_BUILD_PULSE_FOUND ON)
    target_link_libraries(${binary} PRIVATE PkgConfig::PULSE)
+endif()
+
+# libdrm
+pkg_check_modules(LIBDRM IMPORTED_TARGET libdrm)
+if (LIBDRM_FOUND)
+   set(RS_BUILD_LIBDRM_FOUND ON)
+   target_link_libraries(${binary} PRIVATE PkgConfig::LIBDRM)
 endif()
 
 # Build configuration

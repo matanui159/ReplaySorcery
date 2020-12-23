@@ -2,10 +2,19 @@
    "version": "0.2.0",
    "configurations": [
       {
-         "name": "GDB",
+         "name": "ReplaySorcery",
          "type": "cppdbg",
          "request": "launch",
          "program": "${workspaceFolder}/bin/replay-sorcery",
+         "cwd": "${workspaceFolder}",
+         "preLaunchTask": "Make"
+      },
+      {
+         "name": "KMS Devices",
+         "type": "cppdbg",
+         "request": "launch",
+         "program": "${workspaceFolder}/bin/replay-sorcery",
+         "args": ["kms-devices"],
          "cwd": "${workspaceFolder}",
          "preLaunchTask": "Make"
       }

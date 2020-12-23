@@ -20,6 +20,7 @@
 #include "audio/abuffer.h"
 #include "audio/audio.h"
 #include "buffer.h"
+#include "command/kmscmd.h"
 #include "config.h"
 #include "control/control.h"
 #include "device/device.h"
@@ -43,6 +44,15 @@ static void mainSignal(int sig) {
    av_log(NULL, AV_LOG_INFO, "\nExiting...\n");
    running = 0;
    signal(sig, SIG_DFL);
+}
+
+static int mainCommand(const char *name) {
+   if (strcmp(name, "kms-devices") == 0) {
+      return rsKMSDevices();
+   } else {
+      av_log(NULL, AV_LOG_ERROR, "Unknown command: %s\n", name);
+      return AVERROR(ENOSYS);
+   }
 }
 
 static int mainStep(void) {
@@ -132,10 +142,12 @@ error:
 }
 
 int main(int argc, char *argv[]) {
-   (void)argc;
-   (void)argv;
-   int ret;
    rsLogInit();
+   if (argc >= 2) {
+      return mainCommand(argv[1]);
+   }
+
+   int ret;
    if ((ret = rsConfigInit()) < 0) {
       goto error;
    }
@@ -201,6 +213,7 @@ error:
    rsBufferDestroy(&videoBuffer);
    rsEncoderDestroy(&videoEncoder);
    rsDeviceDestroy(&videoDevice);
+   rsConfigExit();
    if (ret < 0) {
       av_log(NULL, AV_LOG_FATAL, "%s\n", av_err2str(ret));
       return EXIT_FAILURE;
