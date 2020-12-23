@@ -28,6 +28,7 @@ $ sudo make -C bin install
 
 ### Optional dependencies
 - PulseAudio (for audio recording)
+- `libdrm` (for listing `kms` devices)
 
 ## Running
 It can be enabled as a user systemd service:
