@@ -67,6 +67,7 @@ static const AVOption configOptions[] = {
     CONFIG_INT(recordSeconds, 30, 1, INT_MAX, ),
     CONFIG_INT(videoInput, RS_CONFIG_AUTO, RS_CONFIG_DEVICE_HWACCEL, RS_CONFIG_DEVICE_KMS,
                videoInput),
+    CONFIG_STRING(videoDevice, "auto"),
     CONFIG_CONST(hwaccel, RS_CONFIG_DEVICE_HWACCEL, videoInput),
     CONFIG_CONST(auto, RS_CONFIG_AUTO, videoInput),
     CONFIG_CONST(x11, RS_CONFIG_DEVICE_X11, videoInput),
@@ -191,6 +192,7 @@ static int configParse(const char *path) {
       if (eq == NULL) {
          av_log(NULL, AV_LOG_ERROR,
                 "Config file format: key = value [# optional comment]\n");
+         ret = AVERROR_INVALIDDATA;
          goto error;
       }
 

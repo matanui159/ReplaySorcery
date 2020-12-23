@@ -32,6 +32,18 @@ int rsKMSDeviceCreate(RSDevice *device) {
    }
 
    rsFFmpegDeviceSetOption(device, "framerate", "%i", rsConfig.videoFramerate);
+   if (strcmp(rsConfig.videoDevice, "auto") != 0) {
+      int cardID;
+      int planeID;
+      char c;
+      if (sscanf(rsConfig.videoDevice, "card%i:%i%c", &cardID, &planeID, &c) != 2) {
+         av_log(NULL, AV_LOG_ERROR, "KMS device format: cardX:<plane ID>\n");
+         ret = AVERROR(EINVAL);
+         goto error;
+      }
+      rsFFmpegDeviceSetOption(device, "device", "/dev/dri/card%i", cardID);
+      rsFFmpegDeviceSetOption(device, "plane_id", "%i", planeID);
+   }
    if ((ret = rsFFmpegDeviceOpen(device, NULL)) < 0) {
       goto error;
    }

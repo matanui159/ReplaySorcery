@@ -25,9 +25,12 @@
 
 int rsX11DeviceCreate(RSDevice *device) {
    int ret;
-   const char *input = getenv("DISPLAY");
-   if (input == NULL) {
-      input = ":0";
+   const char *input = rsConfig.videoDevice;
+   if (strcmp(input, "auto") == 0) {
+      input = getenv("DISPLAY");
+      if (input == NULL) {
+         input = ":0";
+      }
    }
 
    int width = rsConfig.videoWidth;

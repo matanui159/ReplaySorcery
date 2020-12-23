@@ -53,6 +53,7 @@ typedef struct RSConfig {
    int traceLevel;
    int recordSeconds;
    int videoInput;
+   char *videoDevice;
    int videoX;
    int videoY;
    int videoWidth;
