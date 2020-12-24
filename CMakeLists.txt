@@ -89,6 +89,8 @@ ExternalProject_Add(backtrace
    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dep/libbacktrace"
    CONFIGURE_COMMAND <SOURCE_DIR>/configure
       --prefix=<INSTALL_DIR>
+      --includedir=<INSTALL_DIR>/include
+      --libdir=<INSTALL_DIR>/lib
       CFLAGS=-O3
 )
 add_dependencies(${binary} backtrace)
