@@ -58,6 +58,7 @@ There are two config files:
 See [`sys/replay-sorcery.conf`](sys/replay-sorcery.conf) for the default values along with documentation. This file is installed into the global config file location.
 
 # TODO
+- Support NVENC API
 - Document code better
 - Cross-platform support
   - Doubt there is any demand though
