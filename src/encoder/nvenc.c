@@ -27,9 +27,9 @@ int rsNVEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
    int scaleWidth = params->width;
    int scaleHeight = params->height;
    rsScaleSize(&scaleWidth, &scaleHeight);
-   if ((ret = rsFFmpegEncoderCreate(
-            encoder, "h264_nvenc",
-            "hwmap=derive_device=cuda,scale_cuda=%i:%i", scaleWidth, scaleHeight)) < 0) {
+   if ((ret = rsFFmpegEncoderCreate(encoder, "h264_nvenc",
+                                    "hwmap=derive_device=cuda,scale_cuda=%i:%i",
+                                    scaleWidth, scaleHeight)) < 0) {
       goto error;
    }
 
