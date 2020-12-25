@@ -30,6 +30,7 @@ set(sources
    src/device/x11dev.c
    src/encoder/encoder.c
    src/encoder/ffenc.c
+   src/encoder/nvenc.c
    src/encoder/openh264enc.c
    src/encoder/vaapienc_hevc.c
    src/encoder/vaapienc.c

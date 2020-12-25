@@ -51,6 +51,8 @@ int rsVideoEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
       return rsX265EncoderCreate(encoder, params);
    case RS_CONFIG_ENCODER_VAAPI:
       return rsVaapiEncoderCreate(encoder, params, hwFrames);
+   case RS_CONFIG_ENCODER_NVENC:
+      return rsNVEncoderCreate(encoder, params, hwFrames);
    case RS_CONFIG_ENCODER_VAAPI_HEVC:
       return rsVaapiHevcEncoderCreate(encoder, params, hwFrames);
    }
@@ -73,6 +75,13 @@ int rsVideoEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
          return 0;
       }
       av_log(NULL, AV_LOG_WARNING, "Failed to create VA-API encoder: %s\n",
+             av_err2str(ret));
+
+      if ((ret = rsNVEncoderCreate(encoder, params, hwFrames)) >= 0) {
+         av_log(NULL, AV_LOG_INFO, "Created nVidia encoder\n");
+         return 0;
+      }
+      av_log(NULL, AV_LOG_WARNING, "Failed to create nVidia encoder: %s\n",
              av_err2str(ret));
 
       return AVERROR(ENOSYS);
