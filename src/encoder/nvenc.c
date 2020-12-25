@@ -24,21 +24,12 @@
 int rsNVEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
                       const AVBufferRef *hwFrames) {
    int ret;
-   int width = rsConfig.videoWidth;
-   if (width == RS_CONFIG_AUTO) {
-      width = params->width - rsConfig.videoX;
-   }
-   int height = rsConfig.videoHeight;
-   if (height == RS_CONFIG_AUTO) {
-      height = params->height - rsConfig.videoY;
-   }
-   int scaleWidth = width;
-   int scaleHeight = height;
+   int scaleWidth = params->width;
+   int scaleHeight = params->height;
    rsScaleSize(&scaleWidth, &scaleHeight);
    if ((ret = rsFFmpegEncoderCreate(
             encoder, "h264_nvenc",
-            "hwmap=derive_device=cuda,crop=%i:%i:%i:%i,scale_cuda=%i:%i", width, height,
-            rsConfig.videoX, rsConfig.videoY, scaleWidth, scaleHeight)) < 0) {
+            "hwmap=derive_device=cuda,scale_cuda=%i:%i", scaleWidth, scaleHeight)) < 0) {
       goto error;
    }
 
