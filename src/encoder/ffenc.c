@@ -164,6 +164,7 @@ int rsFFmpegEncoderCreate(RSEncoder *encoder, const char *name, const char *filt
    }
    ffmpeg->codecCtx->flags = AV_CODEC_FLAG_GLOBAL_HEADER;
    ffmpeg->codecCtx->thread_count = 1;
+   ffmpeg->codecCtx->profile = FF_PROFILE_RESERVED;
 
    ffmpeg->filterGraph = avfilter_graph_alloc();
    if (ffmpeg->filterGraph == NULL) {
@@ -298,8 +299,7 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const AVCodecParameters *params,
           av_buffersink_get_sample_aspect_ratio(ffmpeg->sinkCtx);
       ffmpeg->codecCtx->framerate = av_buffersink_get_frame_rate(ffmpeg->sinkCtx);
       ffmpeg->codecCtx->gop_size = rsConfig.videoGOP;
-      if (ffmpeg->codecCtx->codec_id == AV_CODEC_ID_H264 &&
-          ffmpeg->codecCtx->profile != FF_PROFILE_UNKNOWN) {
+      if (ffmpeg->codecCtx->profile == FF_PROFILE_UNKNOWN) {
          ffmpeg->codecCtx->profile = rsConfig.videoProfile;
       }
       if (rsConfig.videoBitrate != RS_CONFIG_AUTO) {

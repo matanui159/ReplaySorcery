@@ -45,6 +45,7 @@ int rsVaapiHevcEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params
 
    AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(encoder);
    codecCtx->sw_pix_fmt = AV_PIX_FMT_NV12;
+   codecCtx->profile = FF_PROFILE_UNKNOWN;
    if (rsConfig.videoQuality != RS_CONFIG_AUTO) {
       codecCtx->global_quality = rsConfig.videoQuality;
       if (rsConfig.videoBitrate != RS_CONFIG_AUTO) {
