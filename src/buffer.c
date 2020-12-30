@@ -127,7 +127,7 @@ int rsBufferWrite(RSBuffer *buffer, RSOutput *output, int stream) {
 
       packet.stream_index = stream;
       packet.pts -= start->packet.pts;
-      packet.dts -= start->packet.dts;
+      packet.dts -= start->packet.pts;
       if ((ret = rsOutputWrite(output, &packet)) < 0) {
          return ret;
       }

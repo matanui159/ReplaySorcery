@@ -47,18 +47,42 @@ int rsVideoEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
       return rsX264EncoderCreate(encoder, params);
    case RS_CONFIG_ENCODER_OPENH264:
       return rsOpenH264EncoderCreate(encoder, params);
+   case RS_CONFIG_ENCODER_X265:
+      return rsX265EncoderCreate(encoder, params);
    case RS_CONFIG_ENCODER_VAAPI:
       return rsVaapiEncoderCreate(encoder, params, hwFrames);
+   case RS_CONFIG_ENCODER_VAAPI_HEVC:
+      return rsVaapiHevcEncoderCreate(encoder, params, hwFrames);
    }
 
    const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(params->format);
    if (desc->flags & AV_PIX_FMT_FLAG_HWACCEL) {
+      if (rsConfig.videoEncoder == RS_CONFIG_ENCODER_HEVC) {
+         if ((ret = rsVaapiHevcEncoderCreate(encoder, params, hwFrames)) >= 0) {
+            av_log(NULL, AV_LOG_INFO, "Created VA-API HEVC encoder\n");
+            return 0;
+         }
+         av_log(NULL, AV_LOG_WARNING, "Failed to create VA-API HEVC encoder: %s\n", av_err2str(ret));
+
+         return AVERROR(ENOSYS);
+      }
+
       if ((ret = rsVaapiEncoderCreate(encoder, params, hwFrames)) >= 0) {
          av_log(NULL, AV_LOG_INFO, "Created VA-API encoder\n");
          return 0;
       }
       av_log(NULL, AV_LOG_WARNING, "Failed to create VA-API encoder: %s\n",
              av_err2str(ret));
+
+      return AVERROR(ENOSYS);
+   }
+
+   if (rsConfig.videoEncoder == RS_CONFIG_ENCODER_HEVC) {
+      if ((ret = rsX265EncoderCreate(encoder, params)) >= 0) {
+         av_log(NULL, AV_LOG_INFO, "Created x265 encoder\n");
+         return 0;
+      }
+      av_log(NULL, AV_LOG_WARNING, "Failed to create x265 encoder: %s\n", av_err2str(ret));
 
       return AVERROR(ENOSYS);
    }

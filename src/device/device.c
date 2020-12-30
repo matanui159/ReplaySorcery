@@ -43,11 +43,11 @@ int rsVideoDeviceCreate(RSDevice *device) {
    case RS_CONFIG_DEVICE_X11:
       return rsX11DeviceCreate(device);
    case RS_CONFIG_DEVICE_KMS:
-      return rsKMSDeviceCreate(device);
+      return rsKmsDeviceCreate(device);
    }
 
    if (rsConfig.videoInput == RS_CONFIG_DEVICE_HWACCEL) {
-      if ((ret = rsKMSDeviceCreate(device)) >= 0) {
+      if ((ret = rsKmsDeviceCreate(device)) >= 0) {
          av_log(NULL, AV_LOG_INFO, "Created KMS device\n");
          return 0;
       }

@@ -31,8 +31,10 @@ set(sources
    src/encoder/encoder.c
    src/encoder/ffenc.c
    src/encoder/openh264enc.c
+   src/encoder/vaapienc_hevc.c
    src/encoder/vaapienc.c
    src/encoder/x264enc.c
+   src/encoder/x265enc.c
 )
 set(headers
    src/buffer.h

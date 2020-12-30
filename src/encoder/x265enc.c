@@ -17,44 +17,38 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "../config.h"
-#include "../util.h"
 #include "encoder.h"
 #include "ffenc.h"
+#include "../config.h"
+#include "../util.h"
 
-int rsOpenH264EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params) {
+int rsX265EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params) {
    int ret;
    int scaleWidth = params->width;
    int scaleHeight = params->height;
    rsScaleSize(&scaleWidth, &scaleHeight);
-   if ((ret = rsFFmpegEncoderCreate(encoder, "libopenh264", "scale=%ix%i,format=yuv420p",
-                                    scaleWidth, scaleHeight)) < 0) {
+   if ((ret = rsFFmpegEncoderCreate(encoder, "libx265", "scale=%ix%i,format=yuv420p", scaleWidth, scaleHeight)) < 0) {
       goto error;
    }
 
-   AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(encoder);
-   codecCtx->slices = 1;
-   if (rsConfig.videoProfile == FF_PROFILE_H264_BASELINE) {
-      av_log(NULL, AV_LOG_WARNING, "Baseline profile is not supported\n");
-      codecCtx->profile = FF_PROFILE_H264_CONSTRAINED_BASELINE;
-   }
+   rsFFmpegEncoderSetOption(encoder, "forced-idr", "true");
    if (rsConfig.videoQuality != RS_CONFIG_AUTO) {
-      codecCtx->qmax = rsConfig.videoQuality;
-      codecCtx->qmin = rsConfig.videoQuality / 2;
-   }
-   if (rsConfig.videoBitrate != RS_CONFIG_AUTO) {
-      rsFFmpegEncoderSetOption(encoder, "allow_skip_frames", "1");
+      if (rsConfig.videoPreset == RS_CONFIG_PRESET_FAST) {
+         rsFFmpegEncoderSetOption(encoder, "x265-params", "qp=%i", rsConfig.videoQuality);
+      } else {
+         rsFFmpegEncoderSetOption(encoder, "crf", "%i", rsConfig.videoQuality);
+      }
    }
    switch (rsConfig.videoPreset) {
    case RS_CONFIG_PRESET_FAST:
-      rsFFmpegEncoderSetOption(encoder, "loopfilter", "0");
-      rsFFmpegEncoderSetOption(encoder, "coder", "cavlc");
+      rsFFmpegEncoderSetOption(encoder, "preset", "ultrafast");
       break;
    case RS_CONFIG_PRESET_MEDIUM:
-      rsFFmpegEncoderSetOption(encoder, "coder", "cavlc");
+      rsFFmpegEncoderSetOption(encoder, "preset", "medium");
       break;
    case RS_CONFIG_PRESET_SLOW:
-      rsFFmpegEncoderSetOption(encoder, "coder", "cabac");
+      rsFFmpegEncoderSetOption(encoder, "preset", "slower");
+      break;
    }
    if ((ret = rsFFmpegEncoderOpen(encoder, params, NULL)) < 0) {
       goto error;

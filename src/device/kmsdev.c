@@ -21,7 +21,7 @@
 #include "device.h"
 #include "ffdev.h"
 
-int rsKMSDeviceCreate(RSDevice *device) {
+int rsKmsDeviceCreate(RSDevice *device) {
    int ret;
    AVFrame *frame = av_frame_alloc();
    if (frame == NULL) {

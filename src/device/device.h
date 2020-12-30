@@ -38,7 +38,7 @@ int rsDeviceCreate(RSDevice *device);
 void rsDeviceDestroy(RSDevice *device);
 
 int rsX11DeviceCreate(RSDevice *device);
-int rsKMSDeviceCreate(RSDevice *device);
+int rsKmsDeviceCreate(RSDevice *device);
 int rsVideoDeviceCreate(RSDevice *device);
 
 #endif
