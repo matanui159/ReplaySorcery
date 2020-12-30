@@ -62,7 +62,8 @@ int rsVideoEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
             av_log(NULL, AV_LOG_INFO, "Created VA-API HEVC encoder\n");
             return 0;
          }
-         av_log(NULL, AV_LOG_WARNING, "Failed to create VA-API HEVC encoder: %s\n", av_err2str(ret));
+         av_log(NULL, AV_LOG_WARNING, "Failed to create VA-API HEVC encoder: %s\n",
+                av_err2str(ret));
 
          return AVERROR(ENOSYS);
       }
@@ -82,7 +83,8 @@ int rsVideoEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
          av_log(NULL, AV_LOG_INFO, "Created x265 encoder\n");
          return 0;
       }
-      av_log(NULL, AV_LOG_WARNING, "Failed to create x265 encoder: %s\n", av_err2str(ret));
+      av_log(NULL, AV_LOG_WARNING, "Failed to create x265 encoder: %s\n",
+             av_err2str(ret));
 
       return AVERROR(ENOSYS);
    }

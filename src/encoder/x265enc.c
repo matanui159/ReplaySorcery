@@ -17,17 +17,18 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "encoder.h"
-#include "ffenc.h"
 #include "../config.h"
 #include "../util.h"
+#include "encoder.h"
+#include "ffenc.h"
 
 int rsX265EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params) {
    int ret;
    int scaleWidth = params->width;
    int scaleHeight = params->height;
    rsScaleSize(&scaleWidth, &scaleHeight);
-   if ((ret = rsFFmpegEncoderCreate(encoder, "libx265", "scale=%ix%i,format=yuv420p", scaleWidth, scaleHeight)) < 0) {
+   if ((ret = rsFFmpegEncoderCreate(encoder, "libx265", "scale=%ix%i,format=yuv420p",
+                                    scaleWidth, scaleHeight)) < 0) {
       goto error;
    }
 

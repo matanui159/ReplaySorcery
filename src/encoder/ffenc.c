@@ -298,7 +298,8 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const AVCodecParameters *params,
           av_buffersink_get_sample_aspect_ratio(ffmpeg->sinkCtx);
       ffmpeg->codecCtx->framerate = av_buffersink_get_frame_rate(ffmpeg->sinkCtx);
       ffmpeg->codecCtx->gop_size = rsConfig.videoGOP;
-      if (ffmpeg->codecCtx->codec_id == AV_CODEC_ID_H264 && ffmpeg->codecCtx->profile != FF_PROFILE_UNKNOWN) {
+      if (ffmpeg->codecCtx->codec_id == AV_CODEC_ID_H264 &&
+          ffmpeg->codecCtx->profile != FF_PROFILE_UNKNOWN) {
          ffmpeg->codecCtx->profile = rsConfig.videoProfile;
       }
       if (rsConfig.videoBitrate != RS_CONFIG_AUTO) {

@@ -17,12 +17,13 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "../config.h"
+#include "../util.h"
 #include "encoder.h"
 #include "ffenc.h"
-#include "../util.h"
-#include "../config.h"
 
-int rsVaapiHevcEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params, const AVBufferRef *hwFrames) {
+int rsVaapiHevcEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
+                             const AVBufferRef *hwFrames) {
    int ret;
    int width = rsConfig.videoWidth;
    if (width == RS_CONFIG_AUTO) {
@@ -35,7 +36,10 @@ int rsVaapiHevcEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params
    int scaleWidth = width;
    int scaleHeight = height;
    rsScaleSize(&scaleWidth, &scaleHeight);
-   if ((ret = rsFFmpegEncoderCreate(encoder, "hevc_vaapi", "hwmap=derive_device=vaapi,crop=%i:%i:%i:%i,scale_vaapi=%i:%i:nv12", width, height, rsConfig.videoX, rsConfig.videoY, scaleWidth, scaleHeight)) < 0) {
+   if ((ret = rsFFmpegEncoderCreate(
+            encoder, "hevc_vaapi",
+            "hwmap=derive_device=vaapi,crop=%i:%i:%i:%i,scale_vaapi=%i:%i:nv12", width,
+            height, rsConfig.videoX, rsConfig.videoY, scaleWidth, scaleHeight)) < 0) {
       goto error;
    }
 
