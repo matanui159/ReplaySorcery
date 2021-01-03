@@ -299,7 +299,7 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const AVCodecParameters *params,
           av_buffersink_get_sample_aspect_ratio(ffmpeg->sinkCtx);
       ffmpeg->codecCtx->framerate = av_buffersink_get_frame_rate(ffmpeg->sinkCtx);
       ffmpeg->codecCtx->gop_size = rsConfig.videoGOP;
-      if (ffmpeg->codecCtx->profile == FF_PROFILE_UNKNOWN) {
+      if (ffmpeg->codecCtx->profile == FF_PROFILE_RESERVED) {
          ffmpeg->codecCtx->profile = rsConfig.videoProfile;
       }
       if (rsConfig.videoBitrate != RS_CONFIG_AUTO) {
@@ -330,6 +330,7 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const AVCodecParameters *params,
          goto error;
       }
    }
+   av_log(NULL, AV_LOG_INFO, "%i\n", ffmpeg->codecCtx->profile);
    if ((ret = avcodec_open2(ffmpeg->codecCtx, NULL, &ffmpeg->options)) < 0) {
       av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to open encoder: %s\n",
              av_err2str(ret));
