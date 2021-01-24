@@ -19,6 +19,7 @@
 
 #include "log.h"
 #include "config.h"
+#include "thread.h"
 #include <backtrace.h>
 #include <libavutil/avutil.h>
 #include <signal.h>
@@ -27,6 +28,8 @@
 #include <stdlib.h>
 
 static struct backtrace_state *traceState = NULL;
+static RSMutex silenceMutex;
+static int silenceCounter;
 
 static void logDefault(void *ctx, int level, const char *format, ...) {
    va_list args;
@@ -75,10 +78,36 @@ static void logSignal(int signal) {
    abort();
 }
 
-void rsLogInit(void) {
+int rsLogInit(void) {
+   int ret;
    signal(SIGSEGV, logSignal);
    signal(SIGILL, logSignal);
    signal(SIGFPE, logSignal);
    av_log_set_callback(logCallback);
    traceState = backtrace_create_state(NULL, true, logTraceError, NULL);
+   if ((ret = rsMutexCreate(&silenceMutex)) < 0) {
+      return ret;
+   }
+   return 0;
+}
+
+void rsLogExit(void) {
+   rsMutexDestroy(&silenceMutex);
+}
+
+void rsLogSilence(int silence) {
+   rsMutexLock(&silenceMutex);
+   silence += silenceCounter;
+   if (silence <= 0) {
+      silence = 0;
+      if (silenceCounter > 0) {
+         av_log_set_level(rsConfig.logLevel);
+         av_log(NULL, AV_LOG_WARNING, "Logs have been unsilenced\n");
+      }
+   } else if (silenceCounter == 0) {
+      av_log(NULL, AV_LOG_WARNING, "Silencing logs for now\n");
+      av_log_set_level(AV_LOG_FATAL);
+   }
+   silenceCounter = silence;
+   rsMutexUnlock(&silenceMutex);
 }

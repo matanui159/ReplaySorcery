@@ -57,14 +57,20 @@ static int mainCommand(const char *name) {
 
 static int mainStep(void) {
    int ret;
+   int silence = 0;
    while ((ret = rsEncoderNextPacket(&videoEncoder, &videoPacket)) == AVERROR(EAGAIN)) {
       if ((ret = rsDeviceNextFrame(&videoDevice, videoFrame)) < 0) {
-         av_log(NULL, AV_LOG_WARNING,
-                "Failed to get frame from device (%s), silencing logs for now\n",
+         av_log(NULL, AV_LOG_WARNING, "Failed to get frame from device: %s\n",
                 av_err2str(ret));
-         av_log_set_level(AV_LOG_FATAL);
+         if (!silence) {
+            rsLogSilence(1);
+            silence = 1;
+         }
       } else {
-         av_log_set_level(rsConfig.logLevel);
+         if (silence) {
+            rsLogSilence(-1);
+            silence = 0;
+         }
          if ((ret = rsEncoderSendFrame(&videoEncoder, videoFrame)) < 0) {
             return ret;
          }
@@ -142,12 +148,14 @@ error:
 }
 
 int main(int argc, char *argv[]) {
-   rsLogInit();
-   if (argc >= 2) {
-      return mainCommand(argv[1]);
-   }
-
    int ret;
+   if ((ret = rsLogInit()) < 0) {
+      goto error;
+   }
+   if (argc >= 2) {
+      ret = mainCommand(argv[1]);
+      goto error;
+   }
    if ((ret = rsConfigInit()) < 0) {
       goto error;
    }
@@ -214,6 +222,7 @@ error:
    rsEncoderDestroy(&videoEncoder);
    rsDeviceDestroy(&videoDevice);
    rsConfigExit();
+   rsLogExit();
    if (ret < 0) {
       av_log(NULL, AV_LOG_FATAL, "%s\n", av_err2str(ret));
       return EXIT_FAILURE;

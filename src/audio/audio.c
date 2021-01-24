@@ -18,6 +18,7 @@
  */
 
 #include "audio.h"
+#include "../log.h"
 #include "../util.h"
 #include "adevice.h"
 #include "aencoder.h"
@@ -25,11 +26,20 @@
 static void *audioThread(void *extra) {
    int ret;
    RSAudioThread *thread = extra;
+   int silence = 0;
    while (thread->running) {
       if ((ret = rsDeviceNextFrame(&thread->device, thread->frame)) < 0) {
-         av_log(NULL, AV_LOG_WARNING, "Failed to frame from audio device: %s\n",
+         av_log(NULL, AV_LOG_WARNING, "Failed to get frame from audio device: %s\n",
                 av_err2str(ret));
+         if (!silence) {
+            rsLogSilence(1);
+            silence = 1;
+         }
       } else {
+         if (silence) {
+            rsLogSilence(-1);
+            silence = 0;
+         }
          rsAudioThreadLock(thread);
          ret = rsAudioBufferAddFrame(&thread->buffer, thread->frame);
          rsAudioThreadUnlock(thread);

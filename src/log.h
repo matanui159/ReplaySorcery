@@ -20,6 +20,8 @@
 #ifndef RS_UTIL_LOG_H
 #define RS_UTIL_LOG_H
 
-void rsLogInit(void);
+int rsLogInit(void);
+void rsLogExit(void);
+void rsLogSilence(int silence);
 
 #endif
