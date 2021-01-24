@@ -20,6 +20,6 @@
 #ifndef RS_COMMAND_KMSCMD_H
 #define RS_COMMAND_KMSCMD_H
 
-int rsKMSDevices(void);
+int rsKmsDevices(void);
 
 #endif

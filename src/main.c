@@ -48,7 +48,7 @@ static void mainSignal(int sig) {
 
 static int mainCommand(const char *name) {
    if (strcmp(name, "kms-devices") == 0) {
-      return rsKMSDevices();
+      return rsKmsDevices();
    } else {
       av_log(NULL, AV_LOG_ERROR, "Unknown command: %s\n", name);
       return AVERROR(ENOSYS);

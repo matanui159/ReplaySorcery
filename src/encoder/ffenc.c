@@ -330,7 +330,6 @@ int rsFFmpegEncoderOpen(RSEncoder *encoder, const AVCodecParameters *params,
          goto error;
       }
    }
-   av_log(NULL, AV_LOG_INFO, "%i\n", ffmpeg->codecCtx->profile);
    if ((ret = avcodec_open2(ffmpeg->codecCtx, NULL, &ffmpeg->options)) < 0) {
       av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to open encoder: %s\n",
              av_err2str(ret));

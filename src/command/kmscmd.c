@@ -98,7 +98,7 @@ error:
 }
 #endif
 
-int rsKMSDevices(void) {
+int rsKmsDevices(void) {
 #ifdef RS_BUILD_LIBDRM_FOUND
    int ret;
    for (int i = 0; (ret = kmsCardDevices(i)) >= 0; ++i) {
