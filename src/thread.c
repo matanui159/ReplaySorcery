@@ -36,7 +36,8 @@ int rsThreadCreate(RSThread *thread, RSThreadFunction func, void *extra) {
    (void)thread;
    (void)func;
    (void)extra;
-   av_log(NULL, AV_LOG_ERROR, "A supported threads backend was not found during compilation\n");
+   av_log(NULL, AV_LOG_ERROR,
+          "A supported threads backend was not found during compilation\n");
    return AVERROR(ENOSYS);
 #endif
 }

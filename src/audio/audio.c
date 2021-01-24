@@ -63,13 +63,15 @@ int rsAudioThreadCreate(RSAudioThread *thread) {
       goto error;
    }
    if ((ret = rsMutexCreate(&thread->mutex)) < 0) {
-      av_log(NULL, AV_LOG_ERROR, "Mutexes is required for audio support: %s\n", av_err2str(ret));
+      av_log(NULL, AV_LOG_ERROR, "Mutexes is required for audio support: %s\n",
+             av_err2str(ret));
       return ret;
    }
 
    thread->running = 1;
    if ((ret = rsThreadCreate(&thread->thread, audioThread, thread)) < 0) {
-      av_log(NULL, AV_LOG_ERROR, "Threads is required for audio support: %s\n", av_err2str(ret));
+      av_log(NULL, AV_LOG_ERROR, "Threads is required for audio support: %s\n",
+             av_err2str(ret));
       goto error;
    }
 

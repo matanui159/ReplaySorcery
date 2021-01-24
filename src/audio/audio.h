@@ -21,8 +21,8 @@
 #define RS_AUDIO_H
 #include "../device/device.h"
 #include "../encoder/encoder.h"
-#include "abuffer.h"
 #include "../thread.h"
+#include "abuffer.h"
 #include <libavcodec/avcodec.h>
 #include <pthread.h>
 
