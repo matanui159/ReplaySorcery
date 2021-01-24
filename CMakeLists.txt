@@ -12,6 +12,7 @@ set(sources
    src/log.c
    src/main.c
    src/output.c
+   src/thread.c
    src/util.c
    src/audio/aacenc.c
    src/audio/abuffer.c
@@ -42,6 +43,7 @@ set(headers
    src/log.h
    src/output.h
    src/rsbuild.h.in
+   src/thread.h
    src/util.h
    src/audio/abuffer.h
    src/audio/adevice.h

@@ -161,6 +161,7 @@ static int configParse(const char *path) {
       return 0;
    }
 
+   av_log(NULL, AV_LOG_INFO, "Reading config file '%s'...\n", path);
    AVBPrint buffer;
    av_bprint_init(&buffer, 0, AV_BPRINT_SIZE_UNLIMITED);
    char *contents = NULL;

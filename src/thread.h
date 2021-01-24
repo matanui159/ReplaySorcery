@@ -17,27 +17,35 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_AUDIO_H
-#define RS_AUDIO_H
-#include "../device/device.h"
-#include "../encoder/encoder.h"
-#include "abuffer.h"
-#include "../thread.h"
-#include <libavcodec/avcodec.h>
+#ifndef RS_THREAD_H
+#define RS_THREAD_H
+#include "rsbuild.h"
+#include <libavutil/avutil.h>
+#ifdef RS_BUILD_PTHREAD_FOUND
 #include <pthread.h>
+#endif
 
-typedef struct RSAudioThread {
-   RSDevice device;
-   RSAudioBuffer buffer;
-   AVFrame *frame;
-   volatile int running;
-   RSThread thread;
-   RSMutex mutex;
-} RSAudioThread;
+typedef void *(*RSThreadFunction)(void *extra);
 
-int rsAudioThreadCreate(RSAudioThread *thread);
-void rsAudioThreadDestroy(RSAudioThread *thread);
-void rsAudioThreadLock(RSAudioThread *thread);
-void rsAudioThreadUnlock(RSAudioThread *thread);
+typedef struct RSThread {
+#ifdef RS_BUILD_PTHREAD_FOUND
+   pthread_t pthread;
+#endif
+   int created;
+} RSThread;
+
+typedef struct RSMutex {
+#ifdef RS_BUILD_PTHREAD_FOUND
+   pthread_mutex_t mutex;
+#endif
+   int created;
+} RSMutex;
+
+int rsThreadCreate(RSThread *thread, RSThreadFunction func, void *extra);
+void *rsThreadDestroy(RSThread *thread);
+int rsMutexCreate(RSMutex *mutex);
+void rsMutexDestroy(RSMutex *mutex);
+void rsMutexLock(RSMutex *mutex);
+void rsMutexUnlock(RSMutex *mutex);
 
 #endif

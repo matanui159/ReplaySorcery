@@ -22,7 +22,6 @@
 #include "adevice.h"
 #include "aencoder.h"
 
-#ifdef RS_BUILD_PTHREAD_FOUND
 static void *audioThread(void *extra) {
    int ret;
    RSAudioThread *thread = extra;
@@ -47,10 +46,8 @@ error:
    }
    return NULL;
 }
-#endif
 
 int rsAudioThreadCreate(RSAudioThread *thread) {
-#ifdef RS_BUILD_PTHREAD_FOUND
    int ret;
    rsClear(thread, sizeof(RSAudioThread));
    if ((ret = rsAudioDeviceCreate(&thread->device)) < 0) {
@@ -65,29 +62,14 @@ int rsAudioThreadCreate(RSAudioThread *thread) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
-
-   thread->mutex = av_malloc(sizeof(pthread_mutex_t));
-   if (thread->mutex == NULL) {
-      ret = AVERROR(ENOMEM);
-      goto error;
-   }
-   if ((ret = pthread_mutex_init(thread->mutex, NULL)) != 0) {
-      av_freep(&thread->mutex);
-      ret = AVERROR(ret);
-      av_log(NULL, AV_LOG_ERROR, "Failed to create mutex: %s\n", av_err2str(ret));
-      goto error;
+   if ((ret = rsMutexCreate(&thread->mutex)) < 0) {
+      av_log(NULL, AV_LOG_ERROR, "Mutexes is required for audio support: %s\n", av_err2str(ret));
+      return ret;
    }
 
    thread->running = 1;
-   thread->thread = av_malloc(sizeof(pthread_t));
-   if (thread->thread == NULL) {
-      ret = AVERROR(ENOMEM);
-      goto error;
-   }
-   if ((ret = pthread_create(thread->thread, NULL, audioThread, thread)) != 0) {
-      av_freep(&thread->thread);
-      ret = AVERROR(ret);
-      av_log(NULL, AV_LOG_ERROR, "Failed to create thread: %s\n", av_err2str(ret));
+   if ((ret = rsThreadCreate(&thread->thread, audioThread, thread)) < 0) {
+      av_log(NULL, AV_LOG_ERROR, "Threads is required for audio support: %s\n", av_err2str(ret));
       goto error;
    }
 
@@ -95,49 +77,21 @@ int rsAudioThreadCreate(RSAudioThread *thread) {
 error:
    rsAudioThreadDestroy(thread);
    return ret;
-
-#else
-   (void)thread;
-   av_log(NULL, AV_LOG_WARNING, "Pthreads was not found during compilation\n");
-   av_log(NULL, AV_LOG_ERROR, "Pthreads is required for audio support\n");
-   return AVERROR(ENOSYS);
-#endif
 }
 
 void rsAudioThreadDestroy(RSAudioThread *thread) {
-#ifdef RS_BUILD_PTHREAD_FOUND
    thread->running = 0;
-   if (thread->thread != NULL) {
-      pthread_join(*thread->thread, NULL);
-      av_freep(&thread->thread);
-   }
-   if (thread->mutex != NULL) {
-      pthread_mutex_destroy(thread->mutex);
-      av_freep(thread->mutex);
-   }
+   rsThreadDestroy(&thread->thread);
+   rsMutexDestroy(&thread->mutex);
    av_frame_free(&thread->frame);
    rsAudioBufferDestroy(&thread->buffer);
    rsDeviceDestroy(&thread->device);
-
-#else
-   (void)thread;
-#endif
 }
 
 void rsAudioThreadLock(RSAudioThread *thread) {
-#ifdef RS_BUILD_PTHREAD_FOUND
-   pthread_mutex_lock(thread->mutex);
-
-#else
-   (void)thread;
-#endif
+   rsMutexLock(&thread->mutex);
 }
 
 void rsAudioThreadUnlock(RSAudioThread *thread) {
-#ifdef RS_BUILD_PTHREAD_FOUND
-   pthread_mutex_unlock(thread->mutex);
-
-#else
-   (void)thread;
-#endif
+   rsMutexUnlock(&thread->mutex);
 }
