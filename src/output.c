@@ -19,10 +19,52 @@
 
 #include "output.h"
 #include "config.h"
+#include "rsbuild.h"
 #include "util.h"
 #include <libavutil/avutil.h>
 #include <libavutil/bprint.h>
 #include <time.h>
+#ifdef RS_BUILD_MKDIR_FOUND
+#include <sys/stat.h>
+#endif
+
+static int outputDirectory(char *path) {
+#ifdef RS_BUILD_MKDIR_FOUND
+   int ret;
+   char *slash = strrchr(path, '/');
+   if (slash == NULL) {
+      return 0;
+   }
+
+   *slash = '\0';
+   if ((ret = mkdir(path, 0777)) < 0) {
+      ret = errno;
+   }
+   if (ret == ENOENT) {
+      if ((ret = outputDirectory(path)) < 0) {
+         goto error;
+      }
+      if ((ret = mkdir(path, 0777)) < 0) {
+         ret = errno;
+      }
+   }
+   if (ret != 0 && ret != EEXIST) {
+      ret = AVERROR(ret);
+      av_log(NULL, AV_LOG_ERROR, "Failed to create directory: %s\n", av_err2str(ret));
+      goto error;
+   }
+
+   ret = 0;
+error:
+   *slash = '/';
+   return ret;
+
+#else
+   (void)path;
+   av_log(NULL, AV_LOG_WARNING, "mkdir() was not found during compilation\n");
+   return 0;
+#endif
+}
 
 int rsOutputCreate(RSOutput *output) {
    int ret;
@@ -49,6 +91,9 @@ int rsOutputCreate(RSOutput *output) {
       goto error;
    }
    if ((ret = av_bprint_finalize(&buffer, &output->path)) < 0) {
+      goto error;
+   }
+   if ((ret = outputDirectory(output->path)) < 0) {
       goto error;
    }
 

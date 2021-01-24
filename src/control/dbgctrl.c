@@ -20,14 +20,14 @@
 #include "control.h"
 #include "rsbuild.h"
 #include <errno.h>
-#ifdef RS_BUILD_UNISTD_FOUND
+#ifdef RS_BUILD_READ_FOUND
 #include <unistd.h>
 #endif
 #ifdef RS_BUILD_FCNTL_FOUND
 #include <fcntl.h>
 #endif
 
-#if defined(RS_BUILD_UNISTD_FOUND) && defined(RS_BUILD_FCNTL_FOUND)
+#if defined(RS_BUILD_READ_FOUND) && defined(RS_BUILD_FCNTL_FOUND)
 static int debugControlWantsSave(RSControl *control) {
    (void)control;
    int ret = 0;
@@ -50,7 +50,7 @@ static int debugControlWantsSave(RSControl *control) {
 #endif
 
 int rsDebugControlCreate(RSControl *control) {
-#if defined(RS_BUILD_UNISTD_FOUND) && defined(RS_BUILD_FCNTL_FOUND)
+#if defined(RS_BUILD_READ_FOUND) && defined(RS_BUILD_FCNTL_FOUND)
    control->destroy = NULL;
    control->wantsSave = debugControlWantsSave;
    int flags = fcntl(0, F_GETFL);
@@ -59,11 +59,11 @@ int rsDebugControlCreate(RSControl *control) {
 
 #else
    (void)control;
-#ifndef RS_BUILD_UNISTD_FOUND
-   av_log(NULL, AV_LOG_ERROR, "<unistd.h> was not found during compilation\n");
+#ifndef RS_BUILD_READ_FOUND
+   av_log(NULL, AV_LOG_ERROR, "read() was not found during compilation\n");
 #endif
 #ifndef RS_BUILD_FCNTL_FOUND
-   av_log(NULL, AV_LOG_ERROR, "<fcntl.h> was not found during compilation\n");
+   av_log(NULL, AV_LOG_ERROR, "fcntl() was not found during compilation\n");
 #endif
    return AVERROR(ENOSYS);
 #endif

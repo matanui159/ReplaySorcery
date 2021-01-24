@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(ReplaySorcery VERSION 0.5.0)
 include(CheckCCompilerFlag)
-include(CheckIncludeFile)
+include(CheckSymbolExists)
 include(ExternalProject)
 find_package(PkgConfig REQUIRED)
 
@@ -143,8 +143,9 @@ if (LIBDRM_FOUND)
 endif()
 
 # Build configuration
-check_include_file(unistd.h RS_BUILD_UNISTD_FOUND)
-check_include_file(fcntl.h RS_BUILD_FCNTL_FOUND)
+check_symbol_exists(read unistd.h RS_BUILD_READ_FOUND)
+check_symbol_exists(fcntl fcntl.h RS_BUILD_FCNTL_FOUND)
+check_symbol_exists(mkdir sys/stat.h RS_BUILD_MKDIR_FOUND)
 configure_file(src/rsbuild.h.in rsbuild.h)
 target_include_directories(${binary} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
