@@ -8,4 +8,4 @@ TimeoutStopSec=60
 Restart=always
 
 [Install]
-WantedBy=graphical.target
+WantedBy=graphical-session.target

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(ReplaySorcery VERSION 0.5.0)
+project(ReplaySorcery VERSION 0.5.1)
 include(CheckCCompilerFlag)
 include(CheckSymbolExists)
 include(ExternalProject)
@@ -156,14 +156,14 @@ add_custom_target(clang-format
 )
 
 # Install binary
-option(RS_SETID "Enable the SETUID and SETGID permissions" ON)
+option(RS_SETUID "Enable the SETUID permission" ON)
 set(permissions
    OWNER_READ OWNER_WRITE OWNER_EXECUTE
    GROUP_READ GROUP_EXECUTE
    WORLD_READ WORLD_EXECUTE
 )
-if (RS_SETID)
-   set(permissions ${permissions} SETUID SETGID)
+if (RS_SETUID)
+   set(permissions ${permissions} SETUID)
 endif()
 install(TARGETS ${binary} DESTINATION bin PERMISSIONS ${permissions})
 
