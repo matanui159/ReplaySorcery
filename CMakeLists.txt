@@ -1,6 +1,7 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.13)
 project(ReplaySorcery VERSION 0.5.1)
 include(CheckCCompilerFlag)
+include(CheckIncludeFile)
 include(CheckSymbolExists)
 include(ExternalProject)
 find_package(PkgConfig REQUIRED)
@@ -13,6 +14,7 @@ set(sources
    src/main.c
    src/output.c
    src/thread.c
+   src/user.c
    src/util.c
    src/audio/aacenc.c
    src/audio/abuffer.c
@@ -44,6 +46,7 @@ set(headers
    src/output.h
    src/rsbuild.h.in
    src/thread.h
+   src/user.h
    src/util.h
    src/audio/abuffer.h
    src/audio/adevice.h
@@ -143,6 +146,10 @@ if (LIBDRM_FOUND)
 endif()
 
 # Build configuration
+check_include_file(unistd.h RS_BUILD_UNISTD_FOUND)
+check_symbol_exists(getuid unistd.h RS_BUILD_GETUID_FOUND)
+check_symbol_exists(geteuid unistd.h RS_BUILD_GETEUID_FOUND)
+check_symbol_exists(seteuid unistd.h RS_BUILD_SETEUID_FOUND)
 check_symbol_exists(read unistd.h RS_BUILD_READ_FOUND)
 check_symbol_exists(fcntl fcntl.h RS_BUILD_FCNTL_FOUND)
 check_symbol_exists(mkdir sys/stat.h RS_BUILD_MKDIR_FOUND)

@@ -20,7 +20,7 @@
 #include "control.h"
 #include "rsbuild.h"
 #include <errno.h>
-#ifdef RS_BUILD_READ_FOUND
+#ifdef RS_BUILD_UNISTD_FOUND
 #include <unistd.h>
 #endif
 #ifdef RS_BUILD_FCNTL_FOUND

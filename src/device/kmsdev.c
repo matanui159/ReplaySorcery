@@ -31,6 +31,7 @@ int rsKmsDeviceCreate(RSDevice *device) {
       goto error;
    }
 
+   rsFFmpegDeviceEffectiveUser(device);
    rsFFmpegDeviceSetOption(device, "framerate", "%i", rsConfig.videoFramerate);
    if (strcmp(rsConfig.videoDevice, "auto") != 0) {
       int cardID;

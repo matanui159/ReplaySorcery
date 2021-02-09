@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020  <NAME>
  *
  * This file is part of ReplaySorcery.
  *
@@ -17,14 +17,12 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_DEVICE_FFDEV_H
-#define RS_DEVICE_FFDEV_H
-#include "device.h"
+#ifndef RS_USER_H
+#define RS_USER_H
+#include <libavutil/avutil.h>
 
-int rsFFmpegDeviceCreate(RSDevice *device, const char *name);
-void rsFFmpegDeviceSetOption(RSDevice *device, const char *key, const char *fmt, ...)
-    av_printf_format(3, 4);
-void rsFFmpegDeviceEffectiveUser(RSDevice *device);
-int rsFFmpegDeviceOpen(RSDevice *device, const char *input);
+int rsUserInit(void);
+int rsUserReal(void);
+int rsUserEffective(void);
 
 #endif
