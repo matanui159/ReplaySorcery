@@ -42,7 +42,7 @@ static int userSet(unsigned user) {
    return 0;
 
 #else
-   (void) user;
+   (void)user;
    av_log(NULL, AV_LOG_ERROR, "seteuid() was not found during compilation\n");
    return AVERROR(ENOSYS);
 #endif

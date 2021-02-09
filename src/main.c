@@ -22,12 +22,12 @@
 #include "buffer.h"
 #include "command/kmscmd.h"
 #include "config.h"
-#include "user.h"
 #include "control/control.h"
 #include "device/device.h"
 #include "encoder/encoder.h"
 #include "log.h"
 #include "output.h"
+#include "user.h"
 #include "util.h"
 #include <libavutil/avutil.h>
 #include <signal.h>
