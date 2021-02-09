@@ -24,7 +24,6 @@
 #include <libavutil/avutil.h>
 #include <signal.h>
 #include <stdarg.h>
-#include <stdbool.h>
 #include <stdlib.h>
 
 static struct backtrace_state *traceState = NULL;
@@ -84,7 +83,7 @@ int rsLogInit(void) {
    signal(SIGILL, logSignal);
    signal(SIGFPE, logSignal);
    av_log_set_callback(logCallback);
-   traceState = backtrace_create_state(NULL, true, logTraceError, NULL);
+   traceState = backtrace_create_state(NULL, 1, logTraceError, NULL);
    if ((ret = rsMutexCreate(&silenceMutex)) < 0) {
       return ret;
    }
