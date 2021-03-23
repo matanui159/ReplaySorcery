@@ -35,8 +35,12 @@ It can be enabled as a user systemd service:
 ```
 $ systemctl --user enable --now replay-sorcery
 ```
-
 Once it is running, just press Ctrl+Super+R to save the last 30 seconds.
+
+When the configuration file has changed, the service must be reloaded by running:
+```
+$ systemctl --user restart replay-sorcery
+```
 
 You can also use systemd to look at the output:
 ```
