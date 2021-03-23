@@ -38,7 +38,6 @@ $ systemctl --user enable --now replay-sorcery
 Once it is running, just press Ctrl+Super+R to save the last 30 seconds.
 
 When the configuration file has changed, the service must be reloaded by running:
-
 ```
 $ systemctl --user restart replay-sorcery
 ```
