@@ -35,7 +35,7 @@
 static RSDevice videoDevice;
 static RSEncoder videoEncoder;
 static RSBuffer videoBuffer;
-static AVPacket videoPacket;
+static AVPacket *videoPacket;
 static AVFrame *videoFrame;
 static RSAudioThread audioThread;
 static RSControl controller;
@@ -59,7 +59,7 @@ static int mainCommand(const char *name) {
 static int mainStep(void) {
    int ret;
    int silence = 0;
-   while ((ret = rsEncoderNextPacket(&videoEncoder, &videoPacket)) == AVERROR(EAGAIN)) {
+   while ((ret = rsEncoderNextPacket(&videoEncoder, videoPacket)) == AVERROR(EAGAIN)) {
       if ((ret = rsDeviceNextFrame(&videoDevice, videoFrame)) < 0) {
          av_log(NULL, AV_LOG_WARNING, "Failed to get frame from device: %s\n",
                 av_err2str(ret));
@@ -77,7 +77,7 @@ static int mainStep(void) {
          }
       }
    }
-   if ((ret = rsBufferAddPacket(&videoBuffer, &videoPacket)) < 0) {
+   if ((ret = rsBufferAddPacket(&videoBuffer, videoPacket)) < 0) {
       return ret;
    }
    return 0;
@@ -183,9 +183,9 @@ int main(int argc, char *argv[]) {
       goto error;
    }
 
-   av_init_packet(&videoPacket);
+   videoPacket = av_packet_alloc();
    videoFrame = av_frame_alloc();
-   if (videoFrame == NULL) {
+   if (videoPacket == NULL || videoFrame == NULL) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
@@ -223,6 +223,7 @@ error:
    rsControlDestroy(&controller);
    rsAudioThreadDestroy(&audioThread);
    av_frame_free(&videoFrame);
+   av_packet_free(&videoPacket);
    rsBufferDestroy(&videoBuffer);
    rsEncoderDestroy(&videoEncoder);
    rsDeviceDestroy(&videoDevice);

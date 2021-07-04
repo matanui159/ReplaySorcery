@@ -128,8 +128,9 @@ int rsAudioBufferWrite(RSAudioBuffer *buffer, RSOutput *output, int stream,
                        int64_t startTime) {
    int ret;
    startTime = av_rescale(startTime, buffer->params->sample_rate, AV_TIME_BASE);
+   AVPacket *packet = av_packet_alloc();
    AVFrame *frame = av_frame_alloc();
-   if (frame == NULL) {
+   if (packet == NULL || frame == NULL) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
@@ -140,12 +141,10 @@ int rsAudioBufferWrite(RSAudioBuffer *buffer, RSOutput *output, int stream,
    int64_t bufStartTime = buffer->endTime - buffer->size;
    int index = (int)FFMAX(startTime - bufStartTime, 0);
    int pts = 0;
-   AVPacket packet;
-   av_init_packet(&packet);
-   while ((ret = rsEncoderNextPacket(&buffer->encoder, &packet)) != AVERROR_EOF) {
+   while ((ret = rsEncoderNextPacket(&buffer->encoder, packet)) != AVERROR_EOF) {
       if (ret >= 0) {
-         packet.stream_index = stream;
-         if ((ret = rsOutputWrite(output, &packet)) < 0) {
+         packet->stream_index = stream;
+         if ((ret = rsOutputWrite(output, packet)) < 0) {
             goto error;
          }
       } else if (ret == AVERROR(EAGAIN)) {
@@ -162,6 +161,7 @@ int rsAudioBufferWrite(RSAudioBuffer *buffer, RSOutput *output, int stream,
    ret = 0;
 error:
    av_frame_free(&frame);
+   av_packet_free(&packet);
    rsEncoderDestroy(&buffer->encoder);
    return ret;
 }

@@ -33,12 +33,13 @@ typedef struct FFmpegDevice {
    AVInputFormat *format;
    AVFormatContext *formatCtx;
    AVCodecContext *codecCtx;
-   AVPacket packet;
+   AVPacket *packet;
 } FFmpegDevice;
 
 static void ffmpegDeviceDestroy(RSDevice *device) {
    FFmpegDevice *ffmpeg = device->extra;
    if (ffmpeg != NULL) {
+      av_packet_free(&ffmpeg->packet);
       avcodec_free_context(&ffmpeg->codecCtx);
       avformat_close_input(&ffmpeg->formatCtx);
       rsOptionsDestroy(&ffmpeg->options);
@@ -57,14 +58,14 @@ static int ffmpegDeviceNextFrame(RSDevice *device, AVFrame *frame) {
 
    int64_t pts = av_gettime_relative();
    while ((ret = avcodec_receive_frame(ffmpeg->codecCtx, frame)) == AVERROR(EAGAIN)) {
-      if ((ret = av_read_frame(ffmpeg->formatCtx, &ffmpeg->packet)) < 0) {
+      if ((ret = av_read_frame(ffmpeg->formatCtx, ffmpeg->packet)) < 0) {
          av_log(ffmpeg->formatCtx, AV_LOG_ERROR, "Failed to read frame: %s\n",
                 av_err2str(ret));
          goto error;
       }
 
-      ret = avcodec_send_packet(ffmpeg->codecCtx, &ffmpeg->packet);
-      av_packet_unref(&ffmpeg->packet);
+      ret = avcodec_send_packet(ffmpeg->codecCtx, ffmpeg->packet);
+      av_packet_unref(ffmpeg->packet);
       if (ret < 0) {
          av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to send packet to decoder: %s\n",
                 av_err2str(ret));
@@ -111,7 +112,12 @@ int rsFFmpegDeviceCreate(RSDevice *device, const char *name) {
       ret = AVERROR_DEMUXER_NOT_FOUND;
       goto error;
    }
-   av_init_packet(&ffmpeg->packet);
+
+   ffmpeg->packet = av_packet_alloc();
+   if (ffmpeg->packet == NULL) {
+      ret = AVERROR(ENOMEM);
+      goto error;
+   }
 
    return 0;
 error:

@@ -25,7 +25,7 @@
 
 typedef struct RSPacketList {
    struct RSPacketList *next;
-   AVPacket packet;
+   AVPacket *packet;
 } RSPacketList;
 
 typedef struct RSBuffer {
