@@ -28,6 +28,10 @@
 #endif
 
 #if defined(RS_BUILD_READ_FOUND) && defined(RS_BUILD_FCNTL_FOUND)
+#define DEBUG_SUPPORTED
+#endif
+
+#ifdef DEBUG_SUPPORTED
 static int debugControlWantsSave(RSControl *control) {
    (void)control;
    int ret = 0;
@@ -50,7 +54,7 @@ static int debugControlWantsSave(RSControl *control) {
 #endif
 
 int rsDebugControlCreate(RSControl *control) {
-#if defined(RS_BUILD_READ_FOUND) && defined(RS_BUILD_FCNTL_FOUND)
+#ifdef DEBUG_SUPPORTED
    control->destroy = NULL;
    control->wantsSave = debugControlWantsSave;
    int flags = fcntl(0, F_GETFL);

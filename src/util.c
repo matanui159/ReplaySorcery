@@ -19,6 +19,47 @@
 
 #include "util.h"
 #include "config.h"
+#ifdef RS_BUILD_MKDIR_FOUND
+#include <sys/stat.h>
+#endif
+
+static int directoryCreate(char *path) {
+#ifdef RS_BUILD_MKDIR_FOUND
+   int ret;
+   char *slash = strrchr(path, '/');
+   if (slash == NULL) {
+      return 0;
+   }
+
+   *slash = '\0';
+   if ((ret = mkdir(path, 0777)) < 0) {
+      ret = errno;
+   }
+   if (ret == ENOENT) {
+      if ((ret = directoryCreate(path)) < 0) {
+         goto error;
+      }
+      if ((ret = mkdir(path, 0777)) < 0) {
+         ret = errno;
+      }
+   }
+   if (ret != 0 && ret != EEXIST) {
+      ret = AVERROR(ret);
+      av_log(NULL, AV_LOG_ERROR, "Failed to create directory: %s\n", av_err2str(ret));
+      goto error;
+   }
+
+   ret = 0;
+error:
+   *slash = '/';
+   return ret;
+
+#else
+   (void)path;
+   av_log(NULL, AV_LOG_WARNING, "mkdir() was not found during compilation\n");
+   return 0;
+#endif
+}
 
 char *rsFormat(const char *fmt, ...) {
    va_list args;
@@ -107,6 +148,16 @@ void rsOptionsDestroy(AVDictionary **options) {
       av_log(NULL, AV_LOG_WARNING, "Unused option: %s\n", unused);
    }
    av_dict_free(options);
+}
+
+int rsDirectoryCreate(const char *path) {
+   char *dup = av_strdup(path);
+   if (dup == NULL) {
+      return AVERROR(ENOMEM);
+   }
+   int ret = directoryCreate(dup);
+   av_freep(&dup);
+   return ret;
 }
 
 int rsXDisplayOpen(RSXDisplay **display, const char *name) {

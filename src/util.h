@@ -50,6 +50,7 @@ void rsOptionsSetv(AVDictionary **options, int *error, const char *key, const ch
                    va_list ars);
 void rsOptionsDestroy(AVDictionary **options);
 
+int rsDirectoryCreate(const char *path);
 int rsXDisplayOpen(RSXDisplay **display, const char *name);
 
 #endif

@@ -20,7 +20,7 @@
 #include "audio/abuffer.h"
 #include "audio/audio.h"
 #include "buffer.h"
-#include "command/kmscmd.h"
+#include "command/command.h"
 #include "config.h"
 #include "control/control.h"
 #include "device/device.h"
@@ -50,6 +50,8 @@ static void mainSignal(int sig) {
 static int mainCommand(const char *name) {
    if (strcmp(name, "kms-devices") == 0) {
       return rsKmsDevices();
+   } else if (strcmp(name, "save") == 0) {
+      return rsControlSave();
    } else {
       av_log(NULL, AV_LOG_ERROR, "Unknown command: %s\n", name);
       return AVERROR(ENOSYS);

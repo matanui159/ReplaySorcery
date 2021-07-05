@@ -33,6 +33,8 @@ int rsDefaultControlCreate(RSControl *control) {
       return rsDebugControlCreate(control);
    case RS_CONFIG_CONTROL_X11:
       return rsX11ControlCreate(control);
+   case RS_CONFIG_CONTROL_COMMAND:
+      return rsCommandControlCreate(control);
    }
 
    if ((ret = rsX11ControlCreate(control)) >= 0) {
@@ -40,6 +42,12 @@ int rsDefaultControlCreate(RSControl *control) {
       return 0;
    }
    av_log(NULL, AV_LOG_WARNING, "Failed to create X11 controller: %s\n", av_err2str(ret));
+
+   if ((ret = rsCommandControlCreate(control)) >= 0) {
+      av_log(NULL, AV_LOG_INFO, "Created command controller\n");
+      return 0;
+   }
+   av_log(NULL, AV_LOG_WARNING, "Failed to create command controller: %s\n", av_err2str(ret));
 
    return AVERROR(ENOSYS);
 }

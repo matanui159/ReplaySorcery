@@ -23,7 +23,9 @@ set(sources
    src/audio/audio.c
    src/audio/fdkenc.c
    src/audio/pulsedev.c
+   src/command/ctrlcmd.c
    src/command/kmscmd.c
+   src/control/cmdctrl.c
    src/control/control.c
    src/control/dbgctrl.c
    src/control/x11ctrl.c
@@ -52,7 +54,8 @@ set(headers
    src/audio/adevice.h
    src/audio/aencoder.h
    src/audio/audio.h
-   src/command/kmscmd.h
+   src/command/command.h
+   src/control/cmdctrl.h
    src/control/control.h
    src/device/device.h
    src/device/ffdev.h
@@ -152,6 +155,8 @@ check_symbol_exists(geteuid unistd.h RS_BUILD_GETEUID_FOUND)
 check_symbol_exists(seteuid unistd.h RS_BUILD_SETEUID_FOUND)
 check_symbol_exists(read unistd.h RS_BUILD_READ_FOUND)
 check_symbol_exists(fcntl fcntl.h RS_BUILD_FCNTL_FOUND)
+check_include_file(sys/socket.h RS_BUILD_SYS_SOCKET_FOUND)
+check_include_file(sys/un.h RS_BUILD_SYS_UN_FOUND)
 check_symbol_exists(mkdir sys/stat.h RS_BUILD_MKDIR_FOUND)
 configure_file(src/rsbuild.h.in rsbuild.h)
 target_include_directories(${binary} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

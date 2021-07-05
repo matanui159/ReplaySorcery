@@ -35,6 +35,7 @@ void rsControlDestroy(RSControl *control);
 
 int rsDebugControlCreate(RSControl *control);
 int rsX11ControlCreate(RSControl *control);
+int rsCommandControlCreate(RSControl *control);
 int rsDefaultControlCreate(RSControl *control);
 
 #endif

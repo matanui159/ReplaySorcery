@@ -17,24 +17,10 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef RS_BUILD_H
-#define RS_BUILD_H
+#ifndef RS_COMMAND_H
+#define RS_COMMAND_H
 
-#define RS_BUILD_GLOBAL_CONFIG "@CMAKE_INSTALL_PREFIX@/etc/replay-sorcery.conf"
-#define RS_BUILD_LOCAL_CONFIG "%s/.config/replay-sorcery.conf"
-
-#cmakedefine RS_BUILD_UNISTD_FOUND
-#cmakedefine RS_BUILD_GETUID_FOUND
-#cmakedefine RS_BUILD_GETEUID_FOUND
-#cmakedefine RS_BUILD_SETEUID_FOUND
-#cmakedefine RS_BUILD_PTHREAD_FOUND
-#cmakedefine RS_BUILD_X11_FOUND
-#cmakedefine RS_BUILD_PULSE_FOUND
-#cmakedefine RS_BUILD_LIBDRM_FOUND
-#cmakedefine RS_BUILD_READ_FOUND
-#cmakedefine RS_BUILD_FCNTL_FOUND
-#cmakedefine RS_BUILD_SYS_SOCKET_FOUND
-#cmakedefine RS_BUILD_SYS_UN_FOUND
-#cmakedefine RS_BUILD_MKDIR_FOUND
+int rsKmsDevices(void);
+int rsControlSave(void);
 
 #endif
