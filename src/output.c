@@ -24,9 +24,6 @@
 #include <libavutil/avutil.h>
 #include <libavutil/bprint.h>
 #include <time.h>
-#ifdef RS_BUILD_MKDIR_FOUND
-#include <sys/stat.h>
-#endif
 
 int rsOutputCreate(RSOutput *output) {
    int ret;

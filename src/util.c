@@ -19,12 +19,12 @@
 
 #include "util.h"
 #include "config.h"
-#ifdef RS_BUILD_MKDIR_FOUND
+#ifdef RS_BUILD_POSIX_IO_FOUND
 #include <sys/stat.h>
 #endif
 
 static int directoryCreate(char *path) {
-#ifdef RS_BUILD_MKDIR_FOUND
+#ifdef RS_BUILD_POSIX_IO_FOUND
    int ret;
    char *slash = strrchr(path, '/');
    if (slash == NULL) {
@@ -56,7 +56,8 @@ error:
 
 #else
    (void)path;
-   av_log(NULL, AV_LOG_WARNING, "mkdir() was not found during compilation\n");
+   av_log(NULL, AV_LOG_WARNING,
+          "Failed to create directory: Posix I/O was not found during compilation\n");
    return 0;
 #endif
 }

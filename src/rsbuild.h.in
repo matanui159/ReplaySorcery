@@ -27,14 +27,11 @@
 #cmakedefine RS_BUILD_GETUID_FOUND
 #cmakedefine RS_BUILD_GETEUID_FOUND
 #cmakedefine RS_BUILD_SETEUID_FOUND
+#cmakedefine RS_BUILD_POSIX_IO_FOUND
+#cmakedefine RS_BUILD_UNIX_SOCKET_FOUND
 #cmakedefine RS_BUILD_PTHREAD_FOUND
 #cmakedefine RS_BUILD_X11_FOUND
 #cmakedefine RS_BUILD_PULSE_FOUND
 #cmakedefine RS_BUILD_LIBDRM_FOUND
-#cmakedefine RS_BUILD_READ_FOUND
-#cmakedefine RS_BUILD_FCNTL_FOUND
-#cmakedefine RS_BUILD_SYS_SOCKET_FOUND
-#cmakedefine RS_BUILD_SYS_UN_FOUND
-#cmakedefine RS_BUILD_MKDIR_FOUND
 
 #endif

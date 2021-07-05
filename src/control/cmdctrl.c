@@ -17,22 +17,28 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "cmdctrl.h"
 #include "../util.h"
+#include "control.h"
+#include "rsbuild.h"
 #include <stdio.h>
+#ifdef RS_BUILD_UNIX_SOCKET_FOUND
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#endif
 
 typedef struct CommandControl {
    int fd;
 } CommandControl;
 
-#ifdef RS_COMMAND_SUPPORTED
+#ifdef RS_BUILD_UNIX_SOCKET_FOUND
 static void commandControlDestroy(RSControl *control) {
    CommandControl *command = control->extra;
    if (command != NULL) {
       if (command->fd) {
          close(command->fd);
       }
-      remove(RS_COMMAND_PATH);
+      remove(RS_COMMAND_CONTROL_PATH);
       av_freep(&control->extra);
    }
 }
@@ -57,7 +63,7 @@ static int commandControlWantsSave(RSControl *control) {
 #endif
 
 int rsCommandControlCreate(RSControl *control) {
-#ifdef RS_COMMAND_SUPPORTED
+#ifdef RS_BUILD_UNIX_SOCKET_FOUND
    int ret;
    CommandControl *command = av_mallocz(sizeof(CommandControl));
    control->extra = command;
@@ -67,18 +73,18 @@ int rsCommandControlCreate(RSControl *control) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
-   if ((ret = rsDirectoryCreate(RS_COMMAND_PATH)) < 0) {
+   if ((ret = rsDirectoryCreate(RS_COMMAND_CONTROL_PATH)) < 0) {
       goto error;
    }
 
-   command->fd = socket(AF_LOCAL, SOCK_STREAM | SOCK_NONBLOCK, 0);
+   command->fd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0);
    if (command->fd == -1) {
       ret = AVERROR(errno);
       av_log(NULL, AV_LOG_ERROR, "Failed to create socket: %s\n", av_err2str(ret));
       goto error;
    }
 
-   struct sockaddr_un addr = {.sun_family = AF_LOCAL, .sun_path = RS_COMMAND_PATH};
+   struct sockaddr_un addr = {.sun_family = AF_UNIX, .sun_path = RS_COMMAND_CONTROL_PATH};
    if (bind(command->fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
       ret = AVERROR(errno);
       av_log(NULL, AV_LOG_ERROR, "Failed to bind socket: %s\n", av_err2str(ret));
@@ -93,15 +99,7 @@ error:
 
 #else
    (void)control;
-#ifndef RS_BUILD_UNISTD_FOUND
-   av_log(NULL, AV_LOG_ERROR, "unistd.h was not found during compilation\n");
-#endif
-#ifndef RS_BUILD_SYS_SOCKET_FOUND
-   av_log(NULL, AV_LOG_ERROR, "sys/socket.h was not found during compilation\n");
-#endif
-#ifndef RS_BUILD_SYS_UN_FOUND
-   av_log(NULL, AV_LOG_ERROR, "sys/un.h was not found during compilation\n");
-#endif
+   av_log(NULL, AV_LOG_ERROR, "Unix socket was not found during compilation\n");
    return AVERROR(ENOSYS);
 #endif
 }

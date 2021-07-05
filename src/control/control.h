@@ -38,4 +38,6 @@ int rsX11ControlCreate(RSControl *control);
 int rsCommandControlCreate(RSControl *control);
 int rsDefaultControlCreate(RSControl *control);
 
+#define RS_COMMAND_CONTROL_PATH "/tmp/replay-sorcery/control.sock"
+
 #endif

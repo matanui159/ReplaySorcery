@@ -55,7 +55,6 @@ set(headers
    src/audio/aencoder.h
    src/audio/audio.h
    src/command/command.h
-   src/control/cmdctrl.h
    src/control/control.h
    src/device/device.h
    src/device/ffdev.h
@@ -119,6 +118,43 @@ pkg_check_modules(FFMPEG
 )
 target_link_libraries(${binary} PRIVATE PkgConfig::FFMPEG)
 
+# Posix I/O
+check_symbol_exists(open fcntl.h POSIX_OPEN_FOUND)
+check_symbol_exists(close unistd.h POSIX_CLOSE_FOUND)
+check_symbol_exists(read unistd.h POSIX_READ_FOUND)
+check_symbol_exists(write unistd.h POSIX_WRITE_FOUND)
+check_symbol_exists(fcntl fcntl.h POSIX_FCNTL_FOUND)
+check_symbol_exists(mkdir sys/stat.h POSIX_MKDIR_FOUND)
+if (
+   POSIX_OPEN_FOUND AND
+   POSIX_CLOSE_FOUND AND
+   POSIX_READ_FOUND AND
+   POSIX_WRITE_FOUND AND
+   POSIX_FCNTL_FOUND AND
+   POSIX_MKDIR_FOUND
+)
+   set(RS_BUILD_POSIX_IO_FOUND ON)
+endif()
+
+# Unix Sockets
+check_symbol_exists(socket sys/socket.h UNIX_SOCKET_FOUND)
+check_symbol_exists(bind sys/socket.h UNIX_BIND_FOUND)
+check_symbol_exists(listen sys/socket.h UNIX_LISTEN_FOUND)
+check_symbol_exists(accept sys/socket.h UNIX_ACCEPT_FOUND)
+check_symbol_exists(connect sys/socket.h UNIX_CONNECT_FOUND)
+check_include_file(sys/un.h UNIX_UN_FOUND)
+if (
+   RS_BUILD_POSIX_IO_FOUND AND
+   UNIX_SOCKET_FOUND AND
+   UNIX_BIND_FOUND AND
+   UNIX_LISTEN_FOUND AND
+   UNIX_ACCEPT_FOUND AND
+   UNIX_CONNECT_FOUND AND
+   UNIX_UN_FOUND
+)
+   set(RS_BUILD_UNIX_SOCKET_FOUND ON)
+endif()
+
 # PThreads
 find_package(Threads)
 if (CMAKE_USE_PTHREADS_INIT)
@@ -153,11 +189,6 @@ check_include_file(unistd.h RS_BUILD_UNISTD_FOUND)
 check_symbol_exists(getuid unistd.h RS_BUILD_GETUID_FOUND)
 check_symbol_exists(geteuid unistd.h RS_BUILD_GETEUID_FOUND)
 check_symbol_exists(seteuid unistd.h RS_BUILD_SETEUID_FOUND)
-check_symbol_exists(read unistd.h RS_BUILD_READ_FOUND)
-check_symbol_exists(fcntl fcntl.h RS_BUILD_FCNTL_FOUND)
-check_include_file(sys/socket.h RS_BUILD_SYS_SOCKET_FOUND)
-check_include_file(sys/un.h RS_BUILD_SYS_UN_FOUND)
-check_symbol_exists(mkdir sys/stat.h RS_BUILD_MKDIR_FOUND)
 configure_file(src/rsbuild.h.in rsbuild.h)
 target_include_directories(${binary} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 

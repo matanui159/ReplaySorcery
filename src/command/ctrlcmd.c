@@ -17,20 +17,26 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "../control/cmdctrl.h"
+#include "../control/control.h"
 #include "command.h"
+#include "rsbuild.h"
+#ifdef RS_BUILD_UNIX_SOCKET_FOUND
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#endif
 
 int rsControlSave(void) {
-#ifdef RS_COMMAND_SUPPORTED
+#ifdef RS_BUILD_UNIX_SOCKET_FOUND
    int ret;
-   int fd = socket(AF_LOCAL, SOCK_STREAM, 0);
+   int fd = socket(AF_UNIX, SOCK_STREAM, 0);
    if (fd == -1) {
       ret = AVERROR(errno);
       av_log(NULL, AV_LOG_ERROR, "Failed to create socket: %s\n", av_err2str(ret));
       goto error;
    }
 
-   struct sockaddr_un addr = {.sun_family = AF_LOCAL, .sun_path = RS_COMMAND_PATH};
+   struct sockaddr_un addr = {.sun_family = AF_UNIX, .sun_path = RS_COMMAND_CONTROL_PATH};
    if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
       ret = AVERROR(errno);
       av_log(NULL, AV_LOG_ERROR, "Failed to connect socket: %s\n", av_err2str(ret));
@@ -45,6 +51,7 @@ error:
    return ret;
 
 #else
+   av_log(NULL, AV_LOG_ERROR, "Unix socket was not found during compilation\n");
    return AVERROR(ENOSYS);
 #endif
 }
