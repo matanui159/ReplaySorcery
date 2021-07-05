@@ -31,7 +31,8 @@
 #include <sys/un.h>
 #endif
 
-#if defined(RS_BUILD_UNISTD_FOUND) && defined(RS_BUILD_SYS_SOCKET_FOUND) && defined(RS_BUILD_SYS_UN_FOUND)
+#if defined(RS_BUILD_UNISTD_FOUND) && defined(RS_BUILD_SYS_SOCKET_FOUND) &&              \
+    defined(RS_BUILD_SYS_UN_FOUND)
 #define RS_COMMAND_SUPPORTED
 #endif
 

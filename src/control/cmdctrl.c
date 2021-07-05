@@ -45,7 +45,8 @@ static int commandControlWantsSave(RSControl *control) {
       if (fd == -1) {
          if (errno != EAGAIN) {
             ret = AVERROR(errno);
-            av_log(NULL, AV_LOG_ERROR, "Failed to accept connection: %s\n", av_err2str(ret));
+            av_log(NULL, AV_LOG_ERROR, "Failed to accept connection: %s\n",
+                   av_err2str(ret));
          }
          return ret;
       }
@@ -77,11 +78,8 @@ int rsCommandControlCreate(RSControl *control) {
       goto error;
    }
 
-   struct sockaddr_un addr = {
-      .sun_family = AF_LOCAL,
-      .sun_path = RS_COMMAND_PATH
-   };
-   if (bind(command->fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+   struct sockaddr_un addr = {.sun_family = AF_LOCAL, .sun_path = RS_COMMAND_PATH};
+   if (bind(command->fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
       ret = AVERROR(errno);
       av_log(NULL, AV_LOG_ERROR, "Failed to bind socket: %s\n", av_err2str(ret));
       goto error;

@@ -17,8 +17,8 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "command.h"
 #include "../control/cmdctrl.h"
+#include "command.h"
 
 int rsControlSave(void) {
 #ifdef RS_COMMAND_SUPPORTED
@@ -30,10 +30,7 @@ int rsControlSave(void) {
       goto error;
    }
 
-   struct sockaddr_un addr = {
-      .sun_family = AF_LOCAL,
-      .sun_path = RS_COMMAND_PATH
-   };
+   struct sockaddr_un addr = {.sun_family = AF_LOCAL, .sun_path = RS_COMMAND_PATH};
    if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
       ret = AVERROR(errno);
       av_log(NULL, AV_LOG_ERROR, "Failed to connect socket: %s\n", av_err2str(ret));

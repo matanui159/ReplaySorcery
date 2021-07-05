@@ -17,8 +17,8 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "command.h"
 #include "../util.h"
+#include "command.h"
 #include <libavutil/avutil.h>
 #include <libavutil/hwcontext.h>
 #include <rsbuild.h>

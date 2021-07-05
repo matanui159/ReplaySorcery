@@ -47,7 +47,8 @@ int rsDefaultControlCreate(RSControl *control) {
       av_log(NULL, AV_LOG_INFO, "Created command controller\n");
       return 0;
    }
-   av_log(NULL, AV_LOG_WARNING, "Failed to create command controller: %s\n", av_err2str(ret));
+   av_log(NULL, AV_LOG_WARNING, "Failed to create command controller: %s\n",
+          av_err2str(ret));
 
    return AVERROR(ENOSYS);
 }
