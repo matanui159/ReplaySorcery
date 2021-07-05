@@ -209,6 +209,7 @@ int rsFFmpegEncoderCreate(RSEncoder *encoder, const char *name, const char *filt
    if ((ret = avfilter_link(outputCtx, (unsigned)outputIndex, ffmpeg->sinkCtx, 0)) < 0) {
       av_log(ffmpeg->sinkCtx, AV_LOG_ERROR, "Failed to link output filter: %s\n",
              av_err2str(ret));
+      goto error;
    }
 
    return 0;

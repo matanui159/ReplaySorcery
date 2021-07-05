@@ -76,6 +76,7 @@ static int ffmpegDeviceNextFrame(RSDevice *device, AVFrame *frame) {
    if (ret < 0) {
       av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to receive frame from decoder: %s\n",
              av_err2str(ret));
+      goto error;
    }
    frame->pts = pts;
    ret = 0;
