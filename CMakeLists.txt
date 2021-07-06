@@ -81,6 +81,7 @@ target_c_flag(${binary} -Wpedantic HAVE_PEDANTIC_WARN)
 target_c_flag(${binary} -Wconversion HAVE_CONVERSION_WARN)
 target_c_flag(${binary} -Wstrict-prototypes HAVE_STRICT_PROTOTYPES_WARN)
 target_c_flag(${binary} -Wmissing-prototypes HAVE_MISSING_PROTOTYPES_WARN)
+target_c_flag(${binary} -Wvla HAVE_VLA_WARN)
 
 # Used for CI. I do not like warnings in my code but during development its fine
 option(RS_WARN_ERROR "Fail on compiler warning" OFF)
@@ -125,13 +126,17 @@ check_symbol_exists(read unistd.h POSIX_READ_FOUND)
 check_symbol_exists(write unistd.h POSIX_WRITE_FOUND)
 check_symbol_exists(fcntl fcntl.h POSIX_FCNTL_FOUND)
 check_symbol_exists(mkdir sys/stat.h POSIX_MKDIR_FOUND)
+check_symbol_exists(chmod sys/stat.h POSIX_CHMOD_FOUND)
+check_symbol_exists(poll poll.h POSIX_POLL_FOUND)
 if (
    POSIX_OPEN_FOUND AND
    POSIX_CLOSE_FOUND AND
    POSIX_READ_FOUND AND
    POSIX_WRITE_FOUND AND
    POSIX_FCNTL_FOUND AND
-   POSIX_MKDIR_FOUND
+   POSIX_MKDIR_FOUND AND
+   POSIX_CHMOD_FOUND AND
+   POSIX_POLL_FOUND
 )
    set(RS_BUILD_POSIX_IO_FOUND ON)
 endif()
@@ -142,6 +147,8 @@ check_symbol_exists(bind sys/socket.h UNIX_BIND_FOUND)
 check_symbol_exists(listen sys/socket.h UNIX_LISTEN_FOUND)
 check_symbol_exists(accept sys/socket.h UNIX_ACCEPT_FOUND)
 check_symbol_exists(connect sys/socket.h UNIX_CONNECT_FOUND)
+check_symbol_exists(sendmsg sys/socket.h UNIX_SENDMSG_FOUND)
+check_symbol_exists(recvmsg sys/socket.h UNIX_RECVMSG_FOUND)
 check_include_file(sys/un.h UNIX_UN_FOUND)
 if (
    RS_BUILD_POSIX_IO_FOUND AND
@@ -150,6 +157,8 @@ if (
    UNIX_LISTEN_FOUND AND
    UNIX_ACCEPT_FOUND AND
    UNIX_CONNECT_FOUND AND
+   UNIX_SENDMSG_FOUND AND
+   UNIX_RECVMSG_FOUND AND
    UNIX_UN_FOUND
 )
    set(RS_BUILD_UNIX_SOCKET_FOUND ON)

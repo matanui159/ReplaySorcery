@@ -77,7 +77,8 @@ int rsCommandControlCreate(RSControl *control) {
       goto error;
    }
 
-   command->fd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0);
+   // TODO: use poll instead
+   command->fd = socket(AF_UNIX, SOCK_SEQPACKET | SOCK_NONBLOCK, 0);
    if (command->fd == -1) {
       ret = AVERROR(errno);
       av_log(NULL, AV_LOG_ERROR, "Failed to create socket: %s\n", av_err2str(ret));
@@ -90,7 +91,12 @@ int rsCommandControlCreate(RSControl *control) {
       av_log(NULL, AV_LOG_ERROR, "Failed to bind socket: %s\n", av_err2str(ret));
       goto error;
    }
-   listen(command->fd, 1);
+   if (listen(command->fd, 1) == -1) {
+      ret = AVERROR(errno);
+      av_log(NULL, AV_LOG_ERROR, "Failed to listen for connections: %s\n",
+             av_err2str(ret));
+      goto error;
+   }
 
    return 0;
 error:

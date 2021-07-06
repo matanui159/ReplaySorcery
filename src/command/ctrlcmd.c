@@ -29,7 +29,7 @@
 int rsControlSave(void) {
 #ifdef RS_BUILD_UNIX_SOCKET_FOUND
    int ret;
-   int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+   int fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
    if (fd == -1) {
       ret = AVERROR(errno);
       av_log(NULL, AV_LOG_ERROR, "Failed to create socket: %s\n", av_err2str(ret));

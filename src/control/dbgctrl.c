@@ -32,7 +32,7 @@ static int debugControlWantsSave(RSControl *control) {
    for (;;) {
       char c;
       ssize_t result = read(0, &c, 1);
-      if (result < 0) {
+      if (result == -1) {
          if (errno != EAGAIN) {
             ret = AVERROR(errno);
             av_log(NULL, AV_LOG_ERROR, "Failed to read from stdin: %s\n",
