@@ -13,6 +13,7 @@ set(sources
    src/log.c
    src/main.c
    src/output.c
+   src/socket.c
    src/thread.c
    src/user.c
    src/util.c
@@ -47,6 +48,7 @@ set(headers
    src/log.h
    src/output.h
    src/rsbuild.h.in
+   src/socket.h
    src/thread.h
    src/user.h
    src/util.h

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020-2021  Joshua Minter
  *
  * This file is part of ReplaySorcery.
  *
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
    }
 
    av_log(NULL, AV_LOG_INFO, "%s\n",
-          RS_NAME "  Copyright (C) 2020  ReplaySorcery developers\n"
+          RS_NAME "  Copyright (C) 2020-2021  ReplaySorcery developers\n"
                   "This program comes with ABSOLUTELY NO WARRANTY.\n"
                   "This is free software, and you are welcome to redistribute it\n"
                   "under certain conditions; see COPYING for details.");

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  <NAME>
+ * Copyright (C) 2021  Joshua Minter
  *
  * This file is part of ReplaySorcery.
  *
@@ -18,40 +18,21 @@
  */
 
 #include "../control/control.h"
+#include "../socket.h"
 #include "command.h"
-#include "rsbuild.h"
-#ifdef RS_BUILD_UNIX_SOCKET_FOUND
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
-#endif
 
 int rsControlSave(void) {
-#ifdef RS_BUILD_UNIX_SOCKET_FOUND
    int ret;
-   int fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
-   if (fd == -1) {
-      ret = AVERROR(errno);
-      av_log(NULL, AV_LOG_ERROR, "Failed to create socket: %s\n", av_err2str(ret));
+   RSSocket sock = {0};
+   if ((ret = rsSocketCreate(&sock)) < 0) {
       goto error;
    }
-
-   struct sockaddr_un addr = {.sun_family = AF_UNIX, .sun_path = RS_COMMAND_CONTROL_PATH};
-   if (connect(fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-      ret = AVERROR(errno);
-      av_log(NULL, AV_LOG_ERROR, "Failed to connect socket: %s\n", av_err2str(ret));
+   if ((ret = rsSocketConnect(&sock, RS_COMMAND_CONTROL_PATH)) < 0) {
       goto error;
    }
 
    ret = 0;
 error:
-   if (fd != -1) {
-      close(fd);
-   }
+   rsSocketDestroy(&sock);
    return ret;
-
-#else
-   av_log(NULL, AV_LOG_ERROR, "Unix socket was not found during compilation\n");
-   return AVERROR(ENOSYS);
-#endif
 }

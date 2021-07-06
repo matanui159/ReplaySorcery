@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2021  Joshua Minter
  *
  * This file is part of ReplaySorcery.
  *
@@ -17,84 +17,49 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "../util.h"
+#include "../socket.h"
 #include "control.h"
-#include "rsbuild.h"
-#include <stdio.h>
-#ifdef RS_BUILD_UNIX_SOCKET_FOUND
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
-#endif
-
-typedef struct CommandControl {
-   int fd;
-} CommandControl;
 
 #ifdef RS_BUILD_UNIX_SOCKET_FOUND
 static void commandControlDestroy(RSControl *control) {
-   CommandControl *command = control->extra;
-   if (command != NULL) {
-      if (command->fd) {
-         close(command->fd);
-      }
-      remove(RS_COMMAND_CONTROL_PATH);
+   RSSocket *sock = control->extra;
+   if (sock != NULL) {
+      rsSocketDestroy(sock);
       av_freep(&control->extra);
    }
 }
 
 static int commandControlWantsSave(RSControl *control) {
-   int ret = 0;
-   CommandControl *command = control->extra;
-   for (;;) {
-      int fd = accept(command->fd, NULL, NULL);
-      if (fd == -1) {
-         if (errno != EAGAIN) {
-            ret = AVERROR(errno);
-            av_log(NULL, AV_LOG_ERROR, "Failed to accept connection: %s\n",
-                   av_err2str(ret));
-         }
+   int ret;
+   RSSocket *sock = control->extra;
+   RSSocket conn = {0};
+   if ((ret = rsSocketAccept(sock, &conn, 0)) < 0) {
+      if (ret == AVERROR(EAGAIN)) {
+         return 0;
+      } else {
          return ret;
       }
-      ret = 1;
-      close(fd);
    }
+   rsSocketDestroy(&conn);
+   return 1;
 }
 #endif
 
 int rsCommandControlCreate(RSControl *control) {
 #ifdef RS_BUILD_UNIX_SOCKET_FOUND
    int ret;
-   CommandControl *command = av_mallocz(sizeof(CommandControl));
-   control->extra = command;
+   RSSocket *sock = av_mallocz(sizeof(RSSocket));
+   control->extra = sock;
    control->destroy = commandControlDestroy;
    control->wantsSave = commandControlWantsSave;
-   if (command == NULL) {
+   if (sock == NULL) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
-   if ((ret = rsDirectoryCreate(RS_COMMAND_CONTROL_PATH)) < 0) {
+   if ((ret = rsSocketCreate(sock)) < 0) {
       goto error;
    }
-
-   // TODO: use poll instead
-   command->fd = socket(AF_UNIX, SOCK_SEQPACKET | SOCK_NONBLOCK, 0);
-   if (command->fd == -1) {
-      ret = AVERROR(errno);
-      av_log(NULL, AV_LOG_ERROR, "Failed to create socket: %s\n", av_err2str(ret));
-      goto error;
-   }
-
-   struct sockaddr_un addr = {.sun_family = AF_UNIX, .sun_path = RS_COMMAND_CONTROL_PATH};
-   if (bind(command->fd, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-      ret = AVERROR(errno);
-      av_log(NULL, AV_LOG_ERROR, "Failed to bind socket: %s\n", av_err2str(ret));
-      goto error;
-   }
-   if (listen(command->fd, 1) == -1) {
-      ret = AVERROR(errno);
-      av_log(NULL, AV_LOG_ERROR, "Failed to listen for connections: %s\n",
-             av_err2str(ret));
+   if ((ret = rsSocketBind(sock, RS_COMMAND_CONTROL_PATH)) < 0) {
       goto error;
    }
 
