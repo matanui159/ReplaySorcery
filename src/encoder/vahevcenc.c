@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020-2021  Joshua Minter
  *
  * This file is part of ReplaySorcery.
  *
@@ -22,8 +22,8 @@
 #include "encoder.h"
 #include "ffenc.h"
 
-int rsVaapiEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
-                         const AVBufferRef *hwFrames) {
+int rsVaapiHevcEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
+                             const AVBufferRef *hwFrames) {
    int ret;
    int width = rsConfig.videoWidth;
    if (width == RS_CONFIG_AUTO) {
@@ -37,7 +37,7 @@ int rsVaapiEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
    int scaleHeight = height;
    rsScaleSize(&scaleWidth, &scaleHeight);
    if ((ret = rsFFmpegEncoderCreate(
-            encoder, "h264_vaapi",
+            encoder, "hevc_vaapi",
             "hwmap=derive_device=vaapi,crop=%i:%i:%i:%i,scale_vaapi=%i:%i:nv12", width,
             height, rsConfig.videoX, rsConfig.videoY, scaleWidth, scaleHeight)) < 0) {
       goto error;
@@ -45,6 +45,7 @@ int rsVaapiEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
 
    AVCodecContext *codecCtx = rsFFmpegEncoderGetContext(encoder);
    codecCtx->sw_pix_fmt = AV_PIX_FMT_NV12;
+   codecCtx->profile = FF_PROFILE_UNKNOWN;
    if (rsConfig.videoQuality != RS_CONFIG_AUTO) {
       codecCtx->global_quality = rsConfig.videoQuality;
       if (rsConfig.videoBitrate != RS_CONFIG_AUTO) {
@@ -56,7 +57,6 @@ int rsVaapiEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
    switch (rsConfig.videoPreset) {
    case RS_CONFIG_PRESET_FAST:
       codecCtx->compression_level = 6;
-      rsFFmpegEncoderSetOption(encoder, "coder", "cavlc");
       break;
    case RS_CONFIG_PRESET_MEDIUM:
       codecCtx->compression_level = 4;

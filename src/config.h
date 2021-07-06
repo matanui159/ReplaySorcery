@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020-2021  Joshua Minter
  *
  * This file is part of ReplaySorcery.
  *
@@ -33,7 +33,7 @@
 #define RS_CONFIG_ENCODER_X264 0
 #define RS_CONFIG_ENCODER_OPENH264 1
 #define RS_CONFIG_ENCODER_X265 2
-#define RS_CONFIG_ENCODER_VAAPI 3
+#define RS_CONFIG_ENCODER_VAAPI_H264 3
 #define RS_CONFIG_ENCODER_VAAPI_HEVC 4
 #define RS_CONFIG_ENCODER_AAC 0
 #define RS_CONFIG_ENCODER_FDK 1

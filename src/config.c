@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020-2021  Joshua Minter
  *
  * This file is part of ReplaySorcery.
  *
@@ -84,7 +84,7 @@ static const AVOption configOptions[] = {
     CONFIG_CONST(x264, RS_CONFIG_ENCODER_X264, videoEncoder),
     CONFIG_CONST(openh264, RS_CONFIG_ENCODER_OPENH264, videoEncoder),
     CONFIG_CONST(x265, RS_CONFIG_ENCODER_X265, videoEncoder),
-    CONFIG_CONST(vaapi, RS_CONFIG_ENCODER_VAAPI, videoEncoder),
+    CONFIG_CONST(vaapi_h264, RS_CONFIG_ENCODER_VAAPI_H264, videoEncoder),
     CONFIG_CONST(vaapi_hevc, RS_CONFIG_ENCODER_VAAPI_HEVC, videoEncoder),
     CONFIG_INT(videoProfile, FF_PROFILE_H264_BASELINE, 0, INT_MAX, videoProfile),
     CONFIG_CONST(baseline, FF_PROFILE_H264_BASELINE, videoProfile),

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020-2021  Joshua Minter
  *
  * This file is part of ReplaySorcery.
  *
@@ -44,7 +44,7 @@ void rsEncoderDestroy(RSEncoder *encoder);
 int rsX264EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
 int rsOpenH264EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
 int rsX265EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
-int rsVaapiEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
+int rsVaapiH264EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
                          const AVBufferRef *hwFrames);
 int rsVaapiHevcEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
                              const AVBufferRef *hwFrames);

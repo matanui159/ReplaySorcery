@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020-2021  Joshua Minter
  *
  * This file is part of ReplaySorcery.
  *
@@ -49,8 +49,8 @@ int rsVideoEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
       return rsOpenH264EncoderCreate(encoder, params);
    case RS_CONFIG_ENCODER_X265:
       return rsX265EncoderCreate(encoder, params);
-   case RS_CONFIG_ENCODER_VAAPI:
-      return rsVaapiEncoderCreate(encoder, params, hwFrames);
+   case RS_CONFIG_ENCODER_VAAPI_H264:
+      return rsVaapiH264EncoderCreate(encoder, params, hwFrames);
    case RS_CONFIG_ENCODER_VAAPI_HEVC:
       return rsVaapiHevcEncoderCreate(encoder, params, hwFrames);
    }
@@ -68,7 +68,7 @@ int rsVideoEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
          return AVERROR(ENOSYS);
       }
 
-      if ((ret = rsVaapiEncoderCreate(encoder, params, hwFrames)) >= 0) {
+      if ((ret = rsVaapiH264EncoderCreate(encoder, params, hwFrames)) >= 0) {
          av_log(NULL, AV_LOG_INFO, "Created VA-API encoder\n");
          return 0;
       }
