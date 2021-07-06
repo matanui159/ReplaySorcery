@@ -21,6 +21,7 @@
 #include "../socket.h"
 #include "command.h"
 #include "rsbuild.h"
+#include <libavutil/avutil.h>
 #include <libavutil/hwcontext_drm.h>
 #include <signal.h>
 #ifdef RS_BUILD_POSIX_IO_FOUND
@@ -57,6 +58,8 @@ static int kmsConnection(RSSocket *sock) {
    if ((ret = rsSocketReceive(sock, info.deviceLength, deviceName, 0, NULL)) < 0) {
       goto error;
    }
+
+   av_log(NULL, AV_LOG_INFO, "Framerate = %i, Device = %s\n", info.framerate, deviceName);
    if ((ret = rsKmsDeviceCreate(&device, deviceName, info.framerate)) < 0) {
       goto error;
    }
@@ -83,6 +86,10 @@ static int kmsConnection(RSSocket *sock) {
                               (size_t)desc->nb_objects, objects)) < 0) {
          goto error;
       }
+      if ((ret = rsSocketSend(sock, sizeof(int64_t), &frame->pts, 0, NULL)) < 0) {
+         goto error;
+      }
+      av_frame_unref(frame);
    }
 
    ret = 0;
@@ -124,7 +131,7 @@ int rsKmsService(void) {
       ret = kmsConnection(&conn);
       rsSocketDestroy(&conn);
       if (ret < 0) {
-         goto error;
+         av_log(NULL, AV_LOG_WARNING, "Disconnected: %s\n", av_err2str(ret));
       }
    }
 

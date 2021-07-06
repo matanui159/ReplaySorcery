@@ -39,6 +39,7 @@ void rsDeviceDestroy(RSDevice *device);
 
 int rsX11DeviceCreate(RSDevice *device);
 int rsKmsDeviceCreate(RSDevice *device, const char *deviceName, int framerate);
+int rsKmsServiceDeviceCreate(RSDevice *device);
 int rsVideoDeviceCreate(RSDevice *device);
 
 // Services

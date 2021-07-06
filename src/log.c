@@ -84,6 +84,7 @@ int rsLogInit(void) {
    signal(SIGFPE, logSignal);
    av_log_set_callback(logCallback);
    traceState = backtrace_create_state(NULL, 1, logTraceError, NULL);
+   rsConfig.traceLevel = AV_LOG_ERROR;
    if ((ret = rsMutexCreate(&silenceMutex)) < 0) {
       return ret;
    }

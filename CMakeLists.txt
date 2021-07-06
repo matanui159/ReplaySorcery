@@ -34,6 +34,7 @@ set(sources
    src/device/device.c
    src/device/ffdev.c
    src/device/kmsdev.c
+   src/device/svkmsdev.c
    src/device/x11dev.c
    src/encoder/encoder.c
    src/encoder/ffenc.c

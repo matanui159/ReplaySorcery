@@ -34,6 +34,7 @@ void rsDeviceDestroy(RSDevice *device) {
    if (device->destroy != NULL) {
       device->destroy(device);
    }
+   av_buffer_unref(&device->hwFrames);
    avcodec_parameters_free(&device->params);
 }
 
@@ -44,9 +45,18 @@ int rsVideoDeviceCreate(RSDevice *device) {
       return rsX11DeviceCreate(device);
    case RS_CONFIG_DEVICE_KMS:
       return rsKmsDeviceCreate(device, rsConfig.videoDevice, rsConfig.videoFramerate);
+   case RS_CONFIG_DEVICE_KMS_SERVICE:
+      return rsKmsServiceDeviceCreate(device);
    }
 
    if (rsConfig.videoInput == RS_CONFIG_DEVICE_HWACCEL) {
+      if ((ret = rsKmsServiceDeviceCreate(device)) >= 0) {
+         av_log(NULL, AV_LOG_INFO, "Created KMS service device\n");
+         return 0;
+      }
+      av_log(NULL, AV_LOG_WARNING, "Failed to create KMS service device: %s\n",
+             av_err2str(ret));
+
       if ((ret = rsKmsDeviceCreate(device, rsConfig.videoDevice,
                                    rsConfig.videoFramerate)) >= 0) {
          av_log(NULL, AV_LOG_INFO, "Created KMS device\n");
