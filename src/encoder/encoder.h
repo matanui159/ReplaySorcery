@@ -45,7 +45,7 @@ int rsX264EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
 int rsOpenH264EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
 int rsX265EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params);
 int rsVaapiH264EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
-                         const AVBufferRef *hwFrames);
+                             const AVBufferRef *hwFrames);
 int rsVaapiHevcEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
                              const AVBufferRef *hwFrames);
 int rsVideoEncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,

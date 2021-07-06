@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020-2021  Joshua Minter
  *
  * This file is part of ReplaySorcery.
  *
@@ -38,7 +38,16 @@ int rsDeviceCreate(RSDevice *device);
 void rsDeviceDestroy(RSDevice *device);
 
 int rsX11DeviceCreate(RSDevice *device);
-int rsKmsDeviceCreate(RSDevice *device);
+int rsKmsDeviceCreate(RSDevice *device, const char *deviceName, int framerate);
 int rsVideoDeviceCreate(RSDevice *device);
+
+// Services
+
+#define RS_SERVICE_DEVICE_PATH "/tmp/replay-sorcery/device.sock"
+
+typedef struct RSServiceDeviceInfo {
+   int framerate;
+   size_t deviceLength;
+} RSServiceDeviceInfo;
 
 #endif

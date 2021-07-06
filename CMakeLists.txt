@@ -26,6 +26,7 @@ set(sources
    src/audio/pulsedev.c
    src/command/ctrlcmd.c
    src/command/kmscmd.c
+   src/command/svkmscmd.c
    src/control/cmdctrl.c
    src/control/control.c
    src/control/dbgctrl.c

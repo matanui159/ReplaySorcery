@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020-2021  Joshua Minter
  *
  * This file is part of ReplaySorcery.
  *
@@ -21,6 +21,7 @@
 #define RS_COMMAND_H
 
 int rsKmsDevices(void);
+int rsKmsService(void);
 int rsControlSave(void);
 
 #endif

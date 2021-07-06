@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020-2021  Joshua Minter
  *
  * This file is part of ReplaySorcery.
  *
@@ -17,11 +17,10 @@
  * along with ReplaySorcery.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "../config.h"
 #include "device.h"
 #include "ffdev.h"
 
-int rsKmsDeviceCreate(RSDevice *device) {
+int rsKmsDeviceCreate(RSDevice *device, const char *deviceName, int framerate) {
    int ret;
    AVFrame *frame = av_frame_alloc();
    if (frame == NULL) {
@@ -32,12 +31,12 @@ int rsKmsDeviceCreate(RSDevice *device) {
    }
 
    rsFFmpegDeviceEffectiveUser(device);
-   rsFFmpegDeviceSetOption(device, "framerate", "%i", rsConfig.videoFramerate);
-   if (strcmp(rsConfig.videoDevice, "auto") != 0) {
+   rsFFmpegDeviceSetOption(device, "framerate", "%i", framerate);
+   if (strcmp(deviceName, "auto") != 0) {
       int cardID;
       int planeID;
       char c;
-      if (sscanf(rsConfig.videoDevice, "card%i:%i%c", &cardID, &planeID, &c) != 2) {
+      if (sscanf(deviceName, "card%i:%i%c", &cardID, &planeID, &c) != 2) {
          av_log(NULL, AV_LOG_ERROR, "KMS device format: cardX:<plane ID>\n");
          ret = AVERROR(EINVAL);
          goto error;

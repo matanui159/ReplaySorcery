@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020-2021  Joshua Minter
  *
  * This file is part of ReplaySorcery.
  *
@@ -43,11 +43,12 @@ int rsVideoDeviceCreate(RSDevice *device) {
    case RS_CONFIG_DEVICE_X11:
       return rsX11DeviceCreate(device);
    case RS_CONFIG_DEVICE_KMS:
-      return rsKmsDeviceCreate(device);
+      return rsKmsDeviceCreate(device, rsConfig.videoDevice, rsConfig.videoFramerate);
    }
 
    if (rsConfig.videoInput == RS_CONFIG_DEVICE_HWACCEL) {
-      if ((ret = rsKmsDeviceCreate(device)) >= 0) {
+      if ((ret = rsKmsDeviceCreate(device, rsConfig.videoDevice,
+                                   rsConfig.videoFramerate)) >= 0) {
          av_log(NULL, AV_LOG_INFO, "Created KMS device\n");
          return 0;
       }

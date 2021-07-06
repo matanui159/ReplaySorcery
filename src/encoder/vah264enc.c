@@ -23,7 +23,7 @@
 #include "ffenc.h"
 
 int rsVaapiH264EncoderCreate(RSEncoder *encoder, const AVCodecParameters *params,
-                         const AVBufferRef *hwFrames) {
+                             const AVBufferRef *hwFrames) {
    int ret;
    int width = rsConfig.videoWidth;
    if (width == RS_CONFIG_AUTO) {

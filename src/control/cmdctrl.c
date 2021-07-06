@@ -20,7 +20,6 @@
 #include "../socket.h"
 #include "control.h"
 
-#ifdef RS_BUILD_UNIX_SOCKET_FOUND
 static void commandControlDestroy(RSControl *control) {
    RSSocket *sock = control->extra;
    if (sock != NULL) {
@@ -43,10 +42,8 @@ static int commandControlWantsSave(RSControl *control) {
    rsSocketDestroy(&conn);
    return 1;
 }
-#endif
 
 int rsCommandControlCreate(RSControl *control) {
-#ifdef RS_BUILD_UNIX_SOCKET_FOUND
    int ret;
    RSSocket *sock = av_mallocz(sizeof(RSSocket));
    control->extra = sock;
@@ -67,10 +64,4 @@ int rsCommandControlCreate(RSControl *control) {
 error:
    rsControlDestroy(control);
    return ret;
-
-#else
-   (void)control;
-   av_log(NULL, AV_LOG_ERROR, "Unix socket was not found during compilation\n");
-   return AVERROR(ENOSYS);
-#endif
 }

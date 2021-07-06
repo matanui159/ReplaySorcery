@@ -50,6 +50,8 @@ static void mainSignal(int sig) {
 static int mainCommand(const char *name) {
    if (strcmp(name, "kms-devices") == 0) {
       return rsKmsDevices();
+   } else if (strcmp(name, "kms-service") == 0) {
+      return rsKmsService();
    } else if (strcmp(name, "save") == 0) {
       return rsControlSave();
    } else {
