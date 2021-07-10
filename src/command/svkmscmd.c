@@ -36,6 +36,23 @@ static void kmsSignal(int sig) {
    signal(sig, SIG_DFL);
 }
 
+static int kmsChmod(const char *path) {
+#ifdef RS_BUILD_POSIX_IO_FOUND
+   if (chmod(path, 0777) == -1) {
+      int ret = AVERROR(errno);
+      av_log(NULL, AV_LOG_ERROR, "Failed to change permissions: %s\n", av_err2str(ret));
+      return ret;
+   }
+   return 0;
+
+#else
+   (void)path;
+   av_log(NULL, AV_LOG_WARNING,
+          "Failed to change permissions: Posix I/O was not found during compilation\n");
+   return 0;
+#endif
+}
+
 static int kmsConnection(RSSocket *sock) {
    int ret;
    RSServiceDeviceInfo info;
@@ -72,9 +89,17 @@ static int kmsConnection(RSSocket *sock) {
    }
 
    while (running) {
+      int64_t pts;
       if ((ret = rsDeviceNextFrame(&device, frame)) < 0) {
-         // TODO: properly handle error
+         pts = ret;
+      } else {
+         pts = frame->pts;
+      }
+      if ((ret = rsSocketSend(sock, sizeof(int64_t), &pts, 0, NULL)) < 0) {
          goto error;
+      }
+      if (pts < 0) {
+         continue;
       }
 
       int objects[AV_DRM_MAX_PLANES];
@@ -84,9 +109,6 @@ static int kmsConnection(RSSocket *sock) {
       }
       if ((ret = rsSocketSend(sock, sizeof(AVDRMFrameDescriptor), desc,
                               (size_t)desc->nb_objects, objects)) < 0) {
-         goto error;
-      }
-      if ((ret = rsSocketSend(sock, sizeof(int64_t), &frame->pts, 0, NULL)) < 0) {
          goto error;
       }
       av_frame_unref(frame);
@@ -109,10 +131,10 @@ int rsKmsService(void) {
    if ((ret = rsSocketBind(&sock, RS_SERVICE_DEVICE_PATH)) < 0) {
       goto error;
    }
-   if (chmod(RS_SERVICE_DEVICE_PATH, S_IROTH | S_IWOTH) == -1) {
-      ret = AVERROR(errno);
-      av_log(NULL, AV_LOG_ERROR, "Failed to change socket permissions: %s\n",
-             av_err2str(ret));
+   if (kmsChmod("/tmp/replay-sorcery") < 0) {
+      goto error;
+   }
+   if (kmsChmod(RS_SERVICE_DEVICE_PATH) < 0) {
       goto error;
    }
 

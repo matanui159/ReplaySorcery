@@ -39,6 +39,7 @@ static AVPacket *videoPacket;
 static AVFrame *videoFrame;
 static RSAudioThread audioThread;
 static RSControl controller;
+static int silence = 0;
 static volatile sig_atomic_t running = 1;
 
 static void mainSignal(int sig) {
@@ -60,9 +61,15 @@ static int mainCommand(const char *name) {
    }
 }
 
+static void mainUnsilence(void) {
+   if (silence) {
+      rsLogSilence(-1);
+      silence = 0;
+   }
+}
+
 static int mainStep(void) {
    int ret;
-   int silence = 0;
    while ((ret = rsEncoderNextPacket(&videoEncoder, videoPacket)) == AVERROR(EAGAIN)) {
       if ((ret = rsDeviceNextFrame(&videoDevice, videoFrame)) < 0) {
          av_log(NULL, AV_LOG_WARNING, "Failed to get frame from device: %s\n",
@@ -71,14 +78,12 @@ static int mainStep(void) {
             rsLogSilence(1);
             silence = 1;
          }
-      } else {
-         if (silence) {
-            rsLogSilence(-1);
-            silence = 0;
-         }
-         if ((ret = rsEncoderSendFrame(&videoEncoder, videoFrame)) < 0) {
-            return ret;
-         }
+         return 0;
+      }
+
+      mainUnsilence();
+      if ((ret = rsEncoderSendFrame(&videoEncoder, videoFrame)) < 0) {
+         return ret;
       }
    }
    if ((ret = rsBufferAddPacket(&videoBuffer, videoPacket)) < 0) {
@@ -224,6 +229,7 @@ int main(int argc, char *argv[]) {
 
    ret = 0;
 error:
+   mainUnsilence();
    rsControlDestroy(&controller);
    rsAudioThreadDestroy(&audioThread);
    av_frame_free(&videoFrame);

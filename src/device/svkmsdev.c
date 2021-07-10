@@ -56,15 +56,21 @@ static int kmsServiceDeviceNextFrame(RSDevice *device, AVFrame *frame) {
       ret = AVERROR(ENOMEM);
       goto error;
    }
+   if ((ret = rsSocketReceive(sock, sizeof(int64_t), &frame->pts, 0, NULL)) < 0) {
+      goto error;
+   }
+   if (frame->pts < 0) {
+      ret = (int)frame->pts;
+      av_log(NULL, AV_LOG_ERROR, "KMS service failed to get frame: %s\n",
+             av_err2str(ret));
+      goto error;
+   }
    if ((ret = rsSocketReceive(sock, sizeof(AVDRMFrameDescriptor), desc, AV_DRM_MAX_PLANES,
                               objects)) < 0) {
       goto error;
    }
    for (int i = 0; i < desc->nb_objects; ++i) {
       desc->objects[i].fd = objects[i];
-   }
-   if ((ret = rsSocketReceive(sock, sizeof(int64_t), &frame->pts, 0, NULL)) < 0) {
-      goto error;
    }
 
    frame->hw_frames_ctx = av_buffer_ref(device->hwFrames);
