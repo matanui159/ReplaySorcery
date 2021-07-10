@@ -164,9 +164,10 @@ int rsSocketSend(RSSocket *sock, size_t size, const void *buffer, size_t fileCou
    }
 
    struct msghdr msg = {0};
+   struct iovec *iov = &(struct iovec){.iov_base = (void *)buffer, .iov_len = size};
    if (size > 0) {
       msg.msg_iovlen = 1;
-      msg.msg_iov = &(struct iovec){.iov_base = (void *)buffer, .iov_len = size};
+      msg.msg_iov = iov;
    }
    if (fileCount > 0) {
       size_t filesSize = sizeof(int) * fileCount;
@@ -203,11 +204,12 @@ int rsSocketReceive(RSSocket *sock, size_t size, void *buffer, size_t fileCount,
    }
 
    struct msghdr msg = {0};
+   struct iovec *iov = &(struct iovec){.iov_base = buffer, .iov_len = size};
    size_t filesSize = sizeof(int) * fileCount;
    struct cmsghdr *cmsg = NULL;
    if (size > 0) {
       msg.msg_iovlen = 1;
-      msg.msg_iov = &(struct iovec){.iov_base = buffer, .iov_len = size};
+      msg.msg_iov = iov;
    }
    if (fileCount > 0) {
       msg.msg_control = sock->buffer;

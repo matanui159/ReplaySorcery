@@ -7,6 +7,19 @@ I wanted something like this for Linux...
 I got tired waiting for someone else to do it.
 
 # Documentation
+- [Installing](#installing)
+  - [Arch](#arch)
+- [Building from Source](#building-from-source)
+  - [Required Dependencies](#required-dependencies)
+  - [Optional Dependencies](#optional-dependencies)
+- [Running](#running)
+- [Configuration](#configuration)
+- [Hardware Acceleration](#hardware-acceleration)
+  - [Using `replay-sorcery-kms`](#using-replay-sorcery-kms)
+  - [Using `RS_SETUID`](#using-rs_setuid)
+  - [nVidia Support](#nvidia-support)
+- [Wayland Support](#wayland-support)
+
 ## Installing
 ### Arch
 There is an official AUR package that gets updated from the CI (thanks to [Bennett Hardwick](https://github.com/bennetthardwick)): [replay-sorcery](https://aur.archlinux.org/packages/replay-sorcery).
@@ -24,9 +37,9 @@ $ sudo make -C bin install
 ### Required dependencies
 - CMake
 - FFmpeg
-- X11
 
 ### Optional dependencies
+- Xlib (for the keyboard shortcut on X11)
 - PulseAudio (for audio recording)
 - `libdrm` (for listing `kms` devices)
 
@@ -47,11 +60,6 @@ You can also use systemd to look at the output:
 $ journalctl --user -fu replay-sorcery
 ```
 
-The service runs as root using the `SETUID` permission since this is needed if you enable hardware acceleration. If this causes issues, you can disable it with `-DRS_SETUID=OFF` in CMake:
-```
-$ cmake -B bin -DRS_SETUID=OFF
-```
-
 ## Configuration
 The config file location and options has completely changed since version 0.3.x
 
@@ -60,6 +68,34 @@ There are two config files:
 - The local config file is located at `~/.config/replay-sorcery.conf`. Options in this file will overwrite options in the global file.
 
 See [`sys/replay-sorcery.conf`](sys/replay-sorcery.conf) for the default values along with documentation. This file is installed into the global config file location.
+
+## Hardware Acceleration
+### Using `replay-sorcery-kms`
+Due to hardware acceleration requiring root permissions, the recommended way of enabling hardware acceleration is by using the KMS service. Start the service by running:
+```
+$ sudo systemctl enable --now replay-sorcery-kms
+```
+
+Then set `videoInput` in the configuration file to either `hwaccel` or `kms_service` and start or restart the user service as documented above.
+
+### Using `RS_SETUID`
+**NOTE: from a security perspective this is a BAD IDEA. This will be removed in a future release.**
+
+You can able `setuid` on the user service so it can access KMS without requiring a second service. You can enable it by using the CMake option:
+```
+$ cmake -B bin -DRS_SETUID=ON
+```
+
+### nVidia Support
+The Nouveau open source drivers are supported but sadly the proprietary nVidia drivers do not support VA-API which is currently required for hardware acceleration. In the future NVENC might be supported. Software encoding is always supported and tries to use as little CPU as possible.
+
+## Wayland Support
+Wayland screen grabbing is not currently supported, however hardware accelerated screen grabbing works fine. See above for steps for enabling that.
+
+Wayland also does not allow listening to keyboard events unless you are the active window. To get around this you can set `controller` in the configuration file to `command` and setup a shortcut in your window manager to run:
+```
+$ replay-sorcery save
+```
 
 # TODO
 - Support NVENC API

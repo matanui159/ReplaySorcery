@@ -1,0 +1,11 @@
+[Unit]
+Description=ReplaySorcery KMS service
+
+[Service]
+Type=simple
+ExecStart=@CMAKE_INSTALL_PREFIX@/bin/replay-sorcery kms-service
+TimeoutStopSec=60
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

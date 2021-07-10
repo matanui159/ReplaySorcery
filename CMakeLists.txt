@@ -212,7 +212,7 @@ add_custom_target(clang-format
 )
 
 # Install binary
-option(RS_SETUID "Enable the SETUID permission" ON)
+option(RS_SETUID "Enable the SETUID permission" OFF)
 set(permissions
    OWNER_READ OWNER_WRITE OWNER_EXECUTE
    GROUP_READ GROUP_EXECUTE
@@ -226,8 +226,9 @@ install(TARGETS ${binary} DESTINATION bin PERMISSIONS ${permissions})
 # Install config
 install(FILES sys/replay-sorcery.conf DESTINATION etc)
 
-# Install service
-set(RS_SYSTEMD_DIR /usr/lib/systemd/user CACHE STRING "Where to install the systemd service")
-set(service replay-sorcery.service)
-configure_file(sys/${service}.in ${service})
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${service}" DESTINATION "${RS_SYSTEMD_DIR}")
+# Install services
+set(RS_SYSTEMD_DIR /usr/lib/systemd CACHE STRING "Where to install the systemd services")
+configure_file(sys/replay-sorcery.service.in replay-sorcery.service)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/replay-sorcery.service" DESTINATION "${RS_SYSTEMD_DIR}/user")
+configure_file(sys/replay-sorcery-kms.service.in replay-sorcery-kms.service)
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/replay-sorcery-kms.service" DESTINATION "${RS_SYSTEMD_DIR}/system")
