@@ -103,7 +103,7 @@ int rsXClientGetKeyCode(RSXClient *client, uint32_t sym) {
    xcb_generic_error_t *err;
    const xcb_setup_t *setup = xcb_get_setup(client->xcb);
    xcb_get_keyboard_mapping_cookie_t ckmapping = xcb_get_keyboard_mapping(
-       client->xcb, setup->min_keycode, setup->max_keycode - setup->min_keycode);
+       client->xcb, setup->min_keycode, (xcb_keycode_t)(setup->max_keycode - setup->min_keycode));
    xcb_get_keyboard_mapping_reply_t *mapping =
        xcb_get_keyboard_mapping_reply(client->xcb, ckmapping, &err);
    if (mapping == NULL) {
