@@ -27,7 +27,6 @@
 #include "encoder/encoder.h"
 #include "log.h"
 #include "output.h"
-#include "user.h"
 #include "util.h"
 #include <libavutil/avutil.h>
 #include <signal.h>
@@ -159,10 +158,6 @@ error:
 
 int main(int argc, char *argv[]) {
    int ret;
-   // Run user-init first to remove any root permissions
-   if ((ret = rsUserInit()) < 0) {
-      goto error;
-   }
    if ((ret = rsLogInit()) < 0) {
       goto error;
    }

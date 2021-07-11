@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020-2021  Joshua Minter
  *
  * This file is part of ReplaySorcery.
  *
@@ -18,7 +18,6 @@
  */
 
 #include "ffdev.h"
-#include "../user.h"
 #include "../util.h"
 #include <libavcodec/avcodec.h>
 #include <libavdevice/avdevice.h>
@@ -28,7 +27,6 @@
 
 typedef struct FFmpegDevice {
    AVDictionary *options;
-   int effectiveUser;
    int error;
    AVInputFormat *format;
    AVFormatContext *formatCtx;
@@ -50,18 +48,12 @@ static void ffmpegDeviceDestroy(RSDevice *device) {
 static int ffmpegDeviceNextFrame(RSDevice *device, AVFrame *frame) {
    int ret;
    FFmpegDevice *ffmpeg = device->extra;
-   if (ffmpeg->effectiveUser) {
-      if ((ret = rsUserEffective()) < 0) {
-         goto error;
-      }
-   }
-
    int64_t pts = av_gettime_relative();
    while ((ret = avcodec_receive_frame(ffmpeg->codecCtx, frame)) == AVERROR(EAGAIN)) {
       if ((ret = av_read_frame(ffmpeg->formatCtx, ffmpeg->packet)) < 0) {
          av_log(ffmpeg->formatCtx, AV_LOG_ERROR, "Failed to read frame: %s\n",
                 av_err2str(ret));
-         goto error;
+         return ret;
       }
 
       ret = avcodec_send_packet(ffmpeg->codecCtx, ffmpeg->packet);
@@ -69,26 +61,17 @@ static int ffmpegDeviceNextFrame(RSDevice *device, AVFrame *frame) {
       if (ret < 0) {
          av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to send packet to decoder: %s\n",
                 av_err2str(ret));
-         goto error;
+         return ret;
       }
    }
 
    if (ret < 0) {
       av_log(ffmpeg->codecCtx, AV_LOG_ERROR, "Failed to receive frame from decoder: %s\n",
              av_err2str(ret));
-      goto error;
+      return ret;
    }
    frame->pts = pts;
-   ret = 0;
-error:
-   if (ffmpeg->effectiveUser) {
-      if (ret < 0) {
-         rsUserReal();
-      } else {
-         ret = rsUserReal();
-      }
-   }
-   return ret;
+   return 0;
 }
 
 int rsFFmpegDeviceCreate(RSDevice *device, const char *name) {
@@ -134,21 +117,11 @@ void rsFFmpegDeviceSetOption(RSDevice *device, const char *key, const char *fmt,
    va_end(args);
 }
 
-void rsFFmpegDeviceEffectiveUser(RSDevice *device) {
-   FFmpegDevice *ffmpeg = device->extra;
-   ffmpeg->effectiveUser = 1;
-}
-
 int rsFFmpegDeviceOpen(RSDevice *device, const char *input) {
    int ret;
    FFmpegDevice *ffmpeg = device->extra;
    if (ffmpeg->error < 0) {
       return ffmpeg->error;
-   }
-   if (ffmpeg->effectiveUser) {
-      if ((ret = rsUserEffective()) < 0) {
-         return ret;
-      }
    }
    if ((ret = avformat_open_input(&ffmpeg->formatCtx, input, ffmpeg->format,
                                   &ffmpeg->options)) < 0) {
@@ -178,11 +151,6 @@ int rsFFmpegDeviceOpen(RSDevice *device, const char *input) {
    }
    if ((ret = avcodec_parameters_from_context(device->params, ffmpeg->codecCtx)) < 0) {
       return AVERROR(ENOMEM);
-   }
-   if (ffmpeg->effectiveUser) {
-      if ((ret = rsUserReal()) < 0) {
-         return ret;
-      }
    }
    return 0;
 }

@@ -16,7 +16,6 @@ I got tired waiting for someone else to do it.
 - [Configuration](#configuration)
 - [Hardware Acceleration](#hardware-acceleration)
   - [Using `replay-sorcery-kms`](#using-replay-sorcery-kms)
-  - [Using `RS_SETUID`](#using-rs_setuid)
   - [nVidia Support](#nvidia-support)
 - [Wayland Support](#wayland-support)
 
@@ -77,14 +76,6 @@ $ sudo systemctl enable --now replay-sorcery-kms
 ```
 
 Then set `videoInput` in the configuration file to either `hwaccel` or `kms_service` and start or restart the user service as documented above.
-
-### Using `RS_SETUID`
-**NOTE: from a security perspective this is a BAD IDEA. This will be removed in a future release.**
-
-You can able `setuid` on the user service so it can access KMS without requiring a second service. You can enable it by using the CMake option:
-```
-$ cmake -B bin -DRS_SETUID=ON
-```
 
 ### nVidia Support
 The Nouveau open source drivers are supported but sadly the proprietary nVidia drivers do not support VA-API which is currently required for hardware acceleration. In the future NVENC might be supported. Software encoding is always supported and tries to use as little CPU as possible.

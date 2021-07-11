@@ -23,10 +23,6 @@
 #define RS_BUILD_GLOBAL_CONFIG "@CMAKE_INSTALL_PREFIX@/etc/replay-sorcery.conf"
 #define RS_BUILD_LOCAL_CONFIG "%s/.config/replay-sorcery.conf"
 
-#cmakedefine RS_BUILD_UNISTD_FOUND
-#cmakedefine RS_BUILD_GETUID_FOUND
-#cmakedefine RS_BUILD_GETEUID_FOUND
-#cmakedefine RS_BUILD_SETEUID_FOUND
 #cmakedefine RS_BUILD_POSIX_IO_FOUND
 #cmakedefine RS_BUILD_UNIX_SOCKET_FOUND
 #cmakedefine RS_BUILD_PTHREAD_FOUND

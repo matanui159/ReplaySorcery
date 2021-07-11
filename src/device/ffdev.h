@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2020-2021  Joshua Minter
  *
  * This file is part of ReplaySorcery.
  *
@@ -24,7 +24,6 @@
 int rsFFmpegDeviceCreate(RSDevice *device, const char *name);
 void rsFFmpegDeviceSetOption(RSDevice *device, const char *key, const char *fmt, ...)
     av_printf_format(3, 4);
-void rsFFmpegDeviceEffectiveUser(RSDevice *device);
 int rsFFmpegDeviceOpen(RSDevice *device, const char *input);
 
 #endif

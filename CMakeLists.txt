@@ -15,7 +15,6 @@ set(sources
    src/output.c
    src/socket.c
    src/thread.c
-   src/user.c
    src/util.c
    src/audio/aacenc.c
    src/audio/abuffer.c
@@ -52,7 +51,6 @@ set(headers
    src/rsbuild.h.in
    src/socket.h
    src/thread.h
-   src/user.h
    src/util.h
    src/audio/abuffer.h
    src/audio/adevice.h
@@ -199,10 +197,6 @@ if (LIBDRM_FOUND)
 endif()
 
 # Build configuration
-check_include_file(unistd.h RS_BUILD_UNISTD_FOUND)
-check_symbol_exists(getuid unistd.h RS_BUILD_GETUID_FOUND)
-check_symbol_exists(geteuid unistd.h RS_BUILD_GETEUID_FOUND)
-check_symbol_exists(seteuid unistd.h RS_BUILD_SETEUID_FOUND)
 configure_file(src/rsbuild.h.in rsbuild.h)
 target_include_directories(${binary} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -213,15 +207,6 @@ add_custom_target(clang-format
 )
 
 # Install binary
-option(RS_SETUID "Enable the SETUID permission" OFF)
-set(permissions
-   OWNER_READ OWNER_WRITE OWNER_EXECUTE
-   GROUP_READ GROUP_EXECUTE
-   WORLD_READ WORLD_EXECUTE
-)
-if (RS_SETUID)
-   set(permissions ${permissions} SETUID)
-endif()
 install(TARGETS ${binary} DESTINATION bin PERMISSIONS ${permissions})
 
 # Install config
