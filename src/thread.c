@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020  Joshua Minter
+ * Copyright (C) 2021  Joshua Minter
  *
  * This file is part of ReplaySorcery.
  *
