@@ -39,7 +39,7 @@ $ sudo make -C bin install
 - FFmpeg
 
 ### Optional dependencies
-- Xlib (for the keyboard shortcut on X11)
+- Xlib and xcb (for software screen recording and keyboard shortcuts on X11)
 - PulseAudio (for audio recording)
 - `libdrm` (for listing `kms` devices)
 

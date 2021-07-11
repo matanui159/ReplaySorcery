@@ -160,25 +160,3 @@ int rsDirectoryCreate(const char *path) {
    av_freep(&dup);
    return ret;
 }
-
-int rsXDisplayOpen(RSXDisplay **display, const char *name) {
-#ifdef RS_BUILD_X11_FOUND
-   *display = XOpenDisplay(name);
-   if (*display == NULL) {
-      av_log(NULL, AV_LOG_ERROR, "Failed to open X11 display\n");
-      return AVERROR_EXTERNAL;
-   } else {
-      av_log(NULL, AV_LOG_INFO, "X11 version: %i.%i\n", ProtocolVersion(*display),
-             ProtocolRevision(*display));
-      av_log(NULL, AV_LOG_INFO, "X11 vendor: %s v%i\n", ServerVendor(*display),
-             VendorRelease(*display));
-      return 0;
-   }
-#else
-
-   (void)display;
-   (void)name;
-   av_log(NULL, AV_LOG_ERROR, "X11 was not found during compilation\n");
-   return AVERROR(ENOSYS);
-#endif
-}

@@ -61,6 +61,7 @@ set(headers
    src/command/command.h
    src/control/control.h
    src/device/device.h
+   src/device/x11dev.h
    src/device/ffdev.h
    src/encoder/encoder.h
    src/encoder/ffenc.h
@@ -177,10 +178,10 @@ endif()
 
 # X11
 find_package(X11)
-if (X11_FOUND)
+if (X11_FOUND AND X11_xcb_FOUND)
    set(RS_BUILD_X11_FOUND ON)
-   target_include_directories(${binary} SYSTEM PRIVATE ${X11_INCLUDE_DIRS})
-   target_link_libraries(${binary} PRIVATE ${X11_LIBRARIES})
+   target_include_directories(${binary} SYSTEM PRIVATE ${X11_INCLUDE_DIRS} ${X11_xcb_INCLUDE_PATH})
+   target_link_libraries(${binary} PRIVATE ${X11_LIBRARIES} ${X11_xcb_LIB})
 endif()
 
 # PulseAudio

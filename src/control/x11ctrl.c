@@ -18,32 +18,44 @@
  */
 
 #include "../config.h"
-#include "../util.h"
+#include "../device/x11dev.h"
 #include "control.h"
 #include "rsbuild.h"
 #ifdef RS_BUILD_X11_FOUND
-#include <X11/keysym.h>
+#include <X11/Xlib.h>
 #endif
 
-#define RSX_ALT_MASK Mod1Mask
-#define RSX_SUPER_MASK Mod4Mask
-#define RSX_CAPSLOCK_MASK LockMask
-#define RSX_NUMLOCK_MASK Mod2Mask
+#define X11_CONTROL_MASK_CAPSLOCK XCB_MOD_MASK_LOCK
+#define X11_CONTROL_MASK_ALT XCB_MOD_MASK_1
+#define X11_CONTROL_MASK_NUMLOCK XCB_MOD_MASK_2
+#define X11_CONTROL_MASK_SUPER XCB_MOD_MASK_4
 
 #ifdef RS_BUILD_X11_FOUND
-static void x11ControlGrabKey(RSXDisplay *display, int key, unsigned mods) {
-   Window window = DefaultRootWindow(display);
-   XGrabKey(display, key, mods, window, 0, GrabModeAsync, GrabModeAsync);
+static void x11ControlGrabKey(RSXClient *client, int key, uint16_t mods, int *ret) {
+   if (*ret < 0) {
+      return;
+   }
+
+   xcb_generic_error_t *err;
+   const RSXScreen *screen = rsXClientGetScreen(client, client->screenIndex);
+   xcb_void_cookie_t ckvoid =
+       xcb_grab_key_checked(client->xcb, 0, screen->root, mods, (xcb_keycode_t)key,
+                            XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+   if ((err = xcb_request_check(client->xcb, ckvoid)) != NULL) {
+      av_log(NULL, AV_LOG_ERROR, "Failed to grab key: %" PRIu8 "\n", err->error_code);
+      *ret = AVERROR_EXTERNAL;
+   }
 }
 #endif
 
 static void x11ControlDestroy(RSControl *control) {
 #ifdef RS_BUILD_X11_FOUND
-   RSXDisplay *display = control->extra;
-   if (display != NULL) {
-      XCloseDisplay(display);
-      control->extra = NULL;
+   RSXClient *client = control->extra;
+   if (client != NULL) {
+      rsXClientDestroy(client);
+      av_freep(&control->extra);
    }
+
 #else
    (void)control;
 #endif
@@ -52,15 +64,15 @@ static void x11ControlDestroy(RSControl *control) {
 static int x11ControlWantsSave(RSControl *control) {
 #ifdef RS_BUILD_X11_FOUND
    int ret = 0;
-   RSXDisplay *display = control->extra;
-   while (XPending(display) > 0) {
-      XEvent event;
-      XNextEvent(display, &event);
-      if (event.type == KeyPress) {
+   RSXClient *client = control->extra;
+   xcb_generic_event_t *event;
+   while ((event = xcb_poll_for_event(client->xcb)) != NULL) {
+      if (event->response_type == XCB_KEY_PRESS) {
          ret = 1;
       }
    }
    return ret;
+
 #else
    (void)control;
    return AVERROR(ENOSYS);
@@ -69,36 +81,47 @@ static int x11ControlWantsSave(RSControl *control) {
 
 int rsX11ControlCreate(RSControl *control) {
    int ret = 0;
-   RSXDisplay *display = NULL;
-   ret = rsXDisplayOpen(&display, NULL);
-   control->extra = display;
+   RSXClient *client = av_mallocz(sizeof(RSXClient));
+   control->extra = client;
    control->destroy = x11ControlDestroy;
    control->wantsSave = x11ControlWantsSave;
    if (ret < 0) {
       goto error;
    }
+   if ((ret = rsXClientCreate(client, NULL)) < 0) {
+      goto error;
+   }
 
 #ifdef RS_BUILD_X11_FOUND
-   int key = XKeysymToKeycode(display, XStringToKeysym(rsConfig.keyName));
-   unsigned mods = 0;
-   if (rsConfig.keyMods & RS_CONFIG_KEYMOD_CTRL) {
-      mods |= ControlMask;
-   }
-   if (rsConfig.keyMods & RS_CONFIG_KEYMOD_SHIFT) {
-      mods |= ShiftMask;
-   }
-   if (rsConfig.keyMods & RS_CONFIG_KEYMOD_ALT) {
-      mods |= RSX_ALT_MASK;
-   }
-   if (rsConfig.keyMods & RS_CONFIG_KEYMOD_SUPER) {
-      mods |= RSX_SUPER_MASK;
+   int key = rsXClientGetKeyCode(client, (uint32_t)XStringToKeysym(rsConfig.keyName));
+   if (key < 0) {
+      ret = key;
+      goto error;
    }
 
-   x11ControlGrabKey(display, key, mods);
+   uint16_t mods = 0;
+   if (rsConfig.keyMods & RS_CONFIG_KEYMOD_CTRL) {
+      mods |= XCB_MOD_MASK_CONTROL;
+   }
+   if (rsConfig.keyMods & RS_CONFIG_KEYMOD_SHIFT) {
+      mods |= XCB_MOD_MASK_SHIFT;
+   }
+   if (rsConfig.keyMods & RS_CONFIG_KEYMOD_ALT) {
+      mods |= X11_CONTROL_MASK_ALT;
+   }
+   if (rsConfig.keyMods & RS_CONFIG_KEYMOD_SUPER) {
+      mods |= X11_CONTROL_MASK_SUPER;
+   }
+
+   x11ControlGrabKey(client, key, mods, &ret);
    // Also allow capslock and numslock to be enabled
-   x11ControlGrabKey(display, key, mods | RSX_CAPSLOCK_MASK);
-   x11ControlGrabKey(display, key, mods | RSX_NUMLOCK_MASK);
-   x11ControlGrabKey(display, key, mods | RSX_CAPSLOCK_MASK | RSX_NUMLOCK_MASK);
+   x11ControlGrabKey(client, key, mods | X11_CONTROL_MASK_CAPSLOCK, &ret);
+   x11ControlGrabKey(client, key, mods | X11_CONTROL_MASK_NUMLOCK, &ret);
+   x11ControlGrabKey(client, key,
+                     mods | X11_CONTROL_MASK_CAPSLOCK | X11_CONTROL_MASK_NUMLOCK, &ret);
+   if (ret < 0) {
+      goto error;
+   }
 #endif
 
    return 0;

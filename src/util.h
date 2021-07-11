@@ -19,18 +19,9 @@
 
 #ifndef RS_UTIL_H
 #define RS_UTIL_H
-#include "rsbuild.h"
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
 #include <libavutil/dict.h>
-
-#ifdef RS_BUILD_X11_FOUND
-#include <X11/Xlib.h>
-
-typedef Display RSXDisplay;
-#else
-typedef char RSXDisplay;
-#endif
 
 #define RS_NAME "ReplaySorcery"
 
@@ -51,6 +42,5 @@ void rsOptionsSetv(AVDictionary **options, int *error, const char *key, const ch
 void rsOptionsDestroy(AVDictionary **options);
 
 int rsDirectoryCreate(const char *path);
-int rsXDisplayOpen(RSXDisplay **display, const char *name);
 
 #endif
