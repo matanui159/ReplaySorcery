@@ -14,7 +14,7 @@ pkgrel=1
 pkgdesc='An open-source, instant-replay screen recorder for Linux'
 arch=(i686 x86_64)
 license=(GPL3)
-depends=(gcc-libs ffmpeg libx11 libxcb pulseaudio libdrm)
+depends=(gcc-libs ffmpeg libx11 libxcb libpulse libdrm)
 makedepends=(cmake git)
 url='https://github.com/matanui159/ReplaySorcery'
 source=("\${pkgname}"::git+"\${url}".git#tag="\${pkgver}"
