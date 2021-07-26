@@ -67,12 +67,12 @@ static const AVOption configOptions[] = {
     CONFIG_INT(recordSeconds, 30, 1, INT_MAX, ),
     CONFIG_INT(videoInput, RS_CONFIG_AUTO, RS_CONFIG_DEVICE_HWACCEL,
                RS_CONFIG_DEVICE_KMS_SERVICE, videoInput),
-    CONFIG_STRING(videoDevice, "auto"),
     CONFIG_CONST(hwaccel, RS_CONFIG_DEVICE_HWACCEL, videoInput),
     CONFIG_CONST(auto, RS_CONFIG_AUTO, videoInput),
     CONFIG_CONST(x11, RS_CONFIG_DEVICE_X11, videoInput),
     CONFIG_CONST(kms, RS_CONFIG_DEVICE_KMS, videoInput),
     CONFIG_CONST(kms_service, RS_CONFIG_DEVICE_KMS_SERVICE, videoInput),
+    CONFIG_STRING(videoDevice, "auto"),
     CONFIG_INT(videoX, 0, 0, INT_MAX, NULL),
     CONFIG_INT(videoY, 0, 0, INT_MAX, NULL),
     CONFIG_INT(videoWidth, RS_CONFIG_AUTO, RS_CONFIG_AUTO, INT_MAX, auto),
@@ -130,7 +130,7 @@ static const AVOption configOptions[] = {
     CONFIG_CONST(shift, RS_CONFIG_KEYMOD_SHIFT, keyMods),
     CONFIG_CONST(alt, RS_CONFIG_KEYMOD_ALT, keyMods),
     CONFIG_CONST(super, RS_CONFIG_KEYMOD_SUPER, keyMods),
-    CONFIG_STRING(outputFile, "~/Videos/ReplaySorcery_%F_%H-%M-%S.mp4"),
+    CONFIG_STRING(outputFile, "~/Videos/ReplaySorcery/%F_%H-%M-%S.mp4"),
     CONFIG_STRING(outputCommand, "notify-send " RS_NAME " \"Saved replay as %s\""),
     {NULL}};
 

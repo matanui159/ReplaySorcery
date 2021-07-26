@@ -19,6 +19,7 @@
 
 #include "util.h"
 #include "config.h"
+#include "rsbuild.h"
 #ifdef RS_BUILD_POSIX_IO_FOUND
 #include <sys/stat.h>
 #endif
