@@ -50,7 +50,7 @@ static int kmsConnection(RSSocket *sock) {
       goto error;
    }
 
-   deviceName = av_mallocz(info.deviceLength + 1);
+   deviceName = av_mallocz((size_t)(info.deviceLength + 1));
    if (deviceName == NULL) {
       ret = AVERROR(ENOMEM);
       goto error;
