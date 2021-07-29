@@ -128,8 +128,8 @@ check_symbol_exists(close unistd.h POSIX_CLOSE_FOUND)
 check_symbol_exists(read unistd.h POSIX_READ_FOUND)
 check_symbol_exists(write unistd.h POSIX_WRITE_FOUND)
 check_symbol_exists(fcntl fcntl.h POSIX_FCNTL_FOUND)
+check_symbol_exists(umask sys/stat.h POSIX_UMASK_FOUND)
 check_symbol_exists(mkdir sys/stat.h POSIX_MKDIR_FOUND)
-check_symbol_exists(chmod sys/stat.h POSIX_CHMOD_FOUND)
 check_symbol_exists(poll poll.h POSIX_POLL_FOUND)
 if (
    POSIX_OPEN_FOUND AND
@@ -137,8 +137,8 @@ if (
    POSIX_READ_FOUND AND
    POSIX_WRITE_FOUND AND
    POSIX_FCNTL_FOUND AND
+   POSIX_UMASK_FOUND AND
    POSIX_MKDIR_FOUND AND
-   POSIX_CHMOD_FOUND AND
    POSIX_POLL_FOUND
 )
    set(RS_BUILD_POSIX_IO_FOUND ON)

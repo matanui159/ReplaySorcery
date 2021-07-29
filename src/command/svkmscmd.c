@@ -36,23 +36,6 @@ static void kmsSignal(int sig) {
    signal(sig, SIG_DFL);
 }
 
-static int kmsChmod(const char *path) {
-#ifdef RS_BUILD_POSIX_IO_FOUND
-   if (chmod(path, 0777) == -1) {
-      int ret = AVERROR(errno);
-      av_log(NULL, AV_LOG_ERROR, "Failed to change permissions: %s\n", av_err2str(ret));
-      return ret;
-   }
-   return 0;
-
-#else
-   (void)path;
-   av_log(NULL, AV_LOG_WARNING,
-          "Failed to change permissions: Posix I/O was not found during compilation\n");
-   return 0;
-#endif
-}
-
 static int kmsConnection(RSSocket *sock) {
    int ret;
    RSServiceDeviceInfo info;
@@ -125,16 +108,15 @@ error:
 int rsKmsService(void) {
    int ret;
    RSSocket sock = {0};
+#ifdef RS_BUILD_POSIX_IO_FOUND
+   umask(0000);
+#else
+   av_log(NULL, AV_LOG_WARNING, "Failed to change umask: Posix I/O was not found during compilation\n");
+#endif
    if ((ret = rsSocketCreate(&sock)) < 0) {
       goto error;
    }
    if ((ret = rsSocketBind(&sock, RS_SERVICE_DEVICE_PATH)) < 0) {
-      goto error;
-   }
-   if (kmsChmod("/tmp/replay-sorcery") < 0) {
-      goto error;
-   }
-   if (kmsChmod(RS_SERVICE_DEVICE_PATH) < 0) {
       goto error;
    }
 
