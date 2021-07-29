@@ -48,7 +48,7 @@ int rsVideoDeviceCreate(RSDevice *device);
 
 typedef struct RSServiceDeviceInfo {
    int framerate;
-   size_t deviceLength;
+   uint8_t deviceLength;
 } RSServiceDeviceInfo;
 
 #endif

@@ -119,7 +119,7 @@ int rsKmsServiceDeviceCreate(RSDevice *device) {
       goto error;
    }
 
-   size_t deviceLength = strlen(rsConfig.videoDevice);
+   uint8_t deviceLength = (uint8_t)strlen(rsConfig.videoDevice);
    RSServiceDeviceInfo info = {.framerate = rsConfig.videoFramerate,
                                .deviceLength = deviceLength};
    if ((ret = rsSocketSend(sock, sizeof(RSServiceDeviceInfo), &info, 0, NULL)) < 0) {
