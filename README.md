@@ -25,6 +25,12 @@ There is an official AUR package that gets updated from the CI (thanks to [Benne
 
 [Sergey A.](https://github.com/murlakatamenka) has also setup a `-git` AUR package: [replay-sorcery-git](https://aur.archlinux.org/packages/replay-sorcery-git).
 
+### Solus
+ReplaySorcery is packaged by the official distribution maintainers in their main repo.(thanks to [Joshua Strobl](https://github.com/JoshStrobl)): [replaysorcery](https://dev.getsol.us/source/replaysorcery)
+`sudo eopkg it replaysorcery`
+*Debug symbols for ReplaySorcery are also packaged, as replaysorcery-dbginfo*
+
+
 ## Building from Source
 ```
 $ git submodule update --init
